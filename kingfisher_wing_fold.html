@@ -8,16 +8,38 @@
   :root{
     --bg:#0b1420; --panel:#101d2b; --line:#1c2f42; --grid:#16283a;
     --ink:#dce7f0; --dim:#7690a8;
-    --hum:#7fd4ff; --uln:#4fd1c5; --man:#ff8a5c; --bc:#c7b6ff; --rod:#ffd166; --warn:#e5568b;
+    --hum:#7fd4ff; --uln:#4fd1c5; --man:#ff8a5c; --bc:#c7b6ff; --rod:#ffd166; --warn:#e5568b; --ok:#6fd68a;
     --mono:'JetBrains Mono','SF Mono','Consolas',monospace;
     --sans:'Segoe UI','Hiragino Sans','Yu Gothic UI',system-ui,sans-serif;
   }
   *{box-sizing:border-box}
   html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans)}
   .wrap{max-width:1240px;margin:0 auto;padding:20px 16px 40px}
-  header{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:16px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:16px;position:relative}
   header h1{font-size:18px;font-weight:600;margin:0;letter-spacing:.02em}
   header .sub{font-size:12px;color:var(--dim);font-family:var(--mono)}
+  .hright{display:flex;align-items:center;gap:12px}
+  #verBtn{display:flex;align-items:center;gap:8px}
+  #verBtn .tag{font-size:10px;padding:1px 6px;border-radius:3px}
+  #verPanel{position:absolute;right:0;top:calc(100% + 6px);width:min(440px, calc(100vw - 32px));max-height:72vh;overflow:auto;z-index:10;
+    background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px;box-shadow:0 12px 40px rgba(0,0,0,.45);display:none}
+  #verPanel.open{display:block}
+  .vcard{border:1px solid var(--line);border-radius:5px;padding:10px 11px;margin-bottom:8px;background:var(--bg);text-align:left;width:100%;color:var(--ink);font:inherit;display:block}
+  button.vcard{cursor:pointer}
+  button.vcard:hover{border-color:var(--uln)}
+  .vcard.active{border-color:var(--uln);box-shadow:inset 0 0 0 1px var(--uln)}
+  .vcard .top{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  .vcard .vid{font:600 13px var(--mono)}
+  .vcard .ttl{font-size:12.5px;font-weight:600}
+  .vcard .date{margin-left:auto;font:10.5px var(--mono);color:var(--dim)}
+  .vcard .why{font-size:11.5px;color:var(--dim);line-height:1.6}
+  .vcard .met{font:10.5px var(--mono);color:var(--dim);margin-top:6px;display:flex;gap:10px;flex-wrap:wrap}
+  .vcard .met b{color:var(--ink);font-weight:500}
+  .tag{font:10px var(--mono);padding:1px 6px;border-radius:3px;border:1px solid}
+  .tag.current{color:var(--ok);border-color:var(--ok)}
+  .tag.superseded{color:var(--dim);border-color:var(--dim)}
+  .tag.rejected{color:var(--warn);border-color:var(--warn)}
+  .vhint{font-size:11px;color:var(--dim);margin:2px 2px 8px;line-height:1.5}
   .layout{display:grid;grid-template-columns:1.45fr 1fr;gap:16px;align-items:start}
   @media (max-width:920px){.layout{grid-template-columns:1fr}}
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px 16px}
@@ -45,7 +67,7 @@
   .cell .v{font:16px var(--mono);margin-top:2px}
   .cell .u{font-size:11px;color:var(--dim)}
   #status{font:11.5px var(--mono);margin-top:10px;color:var(--dim);line-height:1.55}
-  #status.bad{color:var(--warn)}
+  #status .bad{color:var(--warn)}
   .note{font-size:11.5px;color:var(--dim);line-height:1.65;margin:8px 0 0}
   .note b{color:var(--ink);font-weight:600}
   details{margin-top:4px} summary{cursor:pointer;font:12px var(--mono);color:var(--dim);margin:6px 0}
@@ -54,14 +76,27 @@
   tr + tr td{border-top:1px solid var(--grid)}
   td.grp{color:var(--ink);padding-top:9px;text-align:left!important}
   label.chk{display:inline-flex;align-items:center;gap:6px;font:12px var(--mono);color:var(--dim);margin-right:14px;cursor:pointer}
+  #verNote{font-size:11.5px;color:var(--dim);line-height:1.6;margin:0 0 12px;padding:8px 10px;border-left:2px solid var(--line)}
+  #verNote.rejected{border-color:var(--warn)} #verNote.superseded{border-color:var(--dim)} #verNote.current{border-color:var(--ok)}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>カワセミ翼の開閉リンク</h1>
-    <div class="sub">1 motor · 10-bar · Alcedo atthis bone proportions</div>
+    <div>
+      <h1>カワセミ翼の開閉リンク</h1>
+      <div class="sub">1 motor · Alcedo atthis bone proportions</div>
+    </div>
+    <div class="hright">
+      <button id="verBtn" aria-expanded="false" aria-controls="verPanel"><span id="verLabel">v3</span><span id="verTag" class="tag current">採用中</span>▾</button>
+    </div>
+    <div id="verPanel" role="dialog" aria-label="バージョン履歴">
+      <div class="vhint">設計の履歴です。却下した案も含めて、選ぶとその寸法で動かせます。指標は今の計算で出しています。</div>
+      <div id="verList"></div>
+    </div>
   </header>
+
+  <div id="verNote"></div>
 
   <div class="layout">
     <div>
@@ -69,26 +104,27 @@
         <h2>3D view — ドラッグで回転、Shift＋ドラッグで移動、ホイールで拡大</h2>
         <canvas id="stage" width="760" height="560" aria-label="翼の骨格リンク機構の3D表示"></canvas>
         <div class="bar" style="margin:8px 0 0">
-          <button data-view="top">上から</button>
+          <button data-view="top" class="on">上から</button>
           <button data-view="front">正面</button>
           <button data-view="back">後ろ</button>
           <button data-view="side">横</button>
-          <button data-view="iso" class="on">斜め</button>
+          <button data-view="iso">斜め</button>
         </div>
         <div class="legend">
           <span><i style="background:var(--hum)"></i>上腕骨（モーター）</span>
           <span><i style="background:var(--uln)"></i>尺骨</span>
-          <span><i style="background:var(--man)"></i>手（手根中手骨＋指）</span>
+          <span><i style="background:var(--man)"></i>手</span>
           <span><i style="background:var(--bc)"></i>ベルクランク</span>
           <span><i style="background:var(--rod)"></i>ロッド</span>
+          <span><i style="background:var(--warn)"></i>翼・体からはみ出す部分</span>
         </div>
       </div>
       <div class="panel">
         <h2>joint angles vs. fold — 畳み具合と関節角</h2>
         <canvas id="plot" width="760" height="230" aria-label="畳み具合に対する肘角と手首角"></canvas>
         <div class="legend">
-          <span><i style="background:var(--uln)"></i>肘角（上腕骨–尺骨）</span>
-          <span><i style="background:var(--man)"></i>手首角（尺骨–手）</span>
+          <span><i style="background:var(--uln)"></i>肘角</span>
+          <span><i style="background:var(--man)"></i>手首角</span>
           <span><i style="background:var(--hum)"></i>上腕骨の後退量</span>
           <span><i style="background:#dce7f0;opacity:.45"></i>点線 = 目標</span>
         </div>
@@ -129,18 +165,20 @@
         <div class="row"><label for="tS">肩軸の前後傾き</label><input id="tS" type="range" min="-40" max="40" step="1" value="0"><output id="otS"></output></div>
         <div class="row"><label for="tE">肘軸の傾き</label><input id="tE" type="range" min="-40" max="40" step="1" value="0"><output id="otE"></output></div>
         <div class="row"><label for="tW">手首軸の傾き</label><input id="tW" type="range" min="-50" max="50" step="1" value="0"><output id="otW"></output></div>
-        <p class="note">軸の傾きは各骨の長手方向まわりに測っています。ロッドの両端を<b>ボールエンド（ロッドエンド）</b>にすれば、軸を傾けてもモーター1個のまま動きます。肩軸を傾けると上腕骨が後ろへ引くにつれて下がり、手首軸を傾けると畳んだ手が尺骨の下へ潜ります（Stowers 2017では、最大まで曲げたとき手の面が約45°傾くと報告されています）。</p>
+        <p class="note">ロッドの両端を<b>ボールエンド（ロッドエンド）</b>にすれば、軸を傾けてもモーター1個のまま動きます。体側のベルクランクは肩軸と平行に取り付けます。肩軸を傾けると上腕骨が後ろへ引くにつれて下がり、手首軸を傾けると畳んだ手が尺骨の下へ潜ります。</p>
       </div>
 
       <div class="panel">
         <h2>real size — 製作寸法</h2>
         <div class="row"><label for="scale">拡大率</label><input id="scale" type="range" min="1" max="6" step="0.1" value="2.5"><output id="oscale"></output></div>
         <table id="sizeTable"></table>
-        <p class="note">骨の長さはヨーロッパカワセミ（<i>Alcedo atthis</i>）の実測値で、上腕骨25.7 mm、尺骨32.0 mm、手根中手骨13.3 mm です。指骨の7 mmと羽根の長さは推定値です。座標の原点は肩関節で、x は外側、y は前方です。尺骨・手・上腕骨の上の点は、その骨に沿った座標（骨方向, 前縁側が＋）で書いています。</p>
+        <p class="note">骨の長さはヨーロッパカワセミ（<i>Alcedo atthis</i>）の実測値で、上腕骨25.7 mm、尺骨32.0 mm、手根中手骨13.3 mm です。指骨の7 mmと羽根の長さは推定値です。座標の原点は肩関節で、x は外側、y は前方です。骨の上の点は、その骨に沿った座標（骨方向, 前縁側が＋）で書いています。</p>
         <details>
           <summary>寸法を微調整する</summary>
+          <div class="row"><label for="ah0">上腕 広げた時</label><input id="ah0" type="range" min="-40" max="20" step="0.5" value="-15"><output id="oah0"></output></div>
+          <div class="row"><label for="ah1">上腕 畳んだ時</label><input id="ah1" type="range" min="-110" max="-40" step="0.5" value="-85"><output id="oah1"></output></div>
           <div id="dimSliders"></div>
-          <div class="bar" style="margin-top:6px"><button id="resetDims">最適化した寸法に戻す</button></div>
+          <div class="bar" style="margin-top:6px"><button id="resetDims">このバージョンの寸法に戻す</button></div>
         </details>
       </div>
     </div>
@@ -152,35 +190,67 @@
 'use strict';
 const $ = id => document.getElementById(id);
 const D2R = Math.PI/180, R2D = 180/Math.PI;
-
-// ---------------- design data ----------------
 const BONE = {LH:25.7, LU:32.0, LCMC:13.3, LDIG:7.0};
 BONE.LMAN = BONE.LCMC + BONE.LDIG;
-const TARGET = {E0:150, E1:25, M0:160, M1:25};
-// Optimised 2D design (kingfisher 1:1, mm). Elbow chain lives in the body frame, wrist chain in the humerus frame.
-const OPT = {G1x:0.647, G1y:-23.996, h1x:12.245, h1y:12.0, rb1:13.993, Lc1:25.455, b2x:10.822, b2y:-8.882, L2:16.854, wx:-0.285, wy:-8.0,
-             G2x:32.832, G2y:-12.047, h3x:27.514, h3y:9.342, rb3:13.012, Lc3:32.51, b4x:13.418, b4y:-3.994, L4:34.529, qx:4.235, qy:1.527,
-             ah0:-15, ah1:-75};
-const INIT = {beta1:0.529, phiE:0.516, beta2:0.096, psi:-0.339};   // assembly branch at the open pose
-const TILT3D = {tS:22, tE:-8, tW:-22};
-const DIMS = [
-  ['ah0','上腕 広げた時',-40,20,0.5], ['ah1','上腕 畳んだ時',-110,-40,0.5],
-  ['G1x','肘BC 支点 x',-20,10,0.1], ['G1y','肘BC 支点 y',-40,10,0.1], ['h1x','上腕ホーン 沿',-5,25,0.1], ['h1y','上腕ホーン 前',-15,20,0.1],
-  ['rb1','肘BC 腕1',4,20,0.05], ['Lc1','ロッド1',8,45,0.05], ['b2x','肘BC 腕2 x',-15,20,0.05], ['b2y','肘BC 腕2 y',-20,15,0.05],
-  ['L2','ロッド2',6,40,0.05], ['wx','尺骨レバー 沿',-10,10,0.05], ['wy','尺骨レバー 前',-15,10,0.05],
-  ['G2x','手首BC 支点 沿',10,45,0.1], ['G2y','手首BC 支点 前',-25,10,0.1], ['h3x','尺骨クランク 沿',5,34,0.1], ['h3y','尺骨クランク 前',-15,15,0.1],
-  ['rb3','手首BC 腕1',4,20,0.05], ['Lc3','ロッド3',10,45,0.05], ['b4x','手首BC 腕2 x',-15,20,0.05], ['b4y','手首BC 腕2 y',-15,15,0.05],
-  ['L4','ロッド4',10,45,0.05], ['qx','手レバー 沿',-10,12,0.05], ['qy','手レバー 前',-10,10,0.05]];
-// build fine-tuning sliders
-$('dimSliders').innerHTML = DIMS.map(([id,lab,mn,mx,st]) =>
-  `<div class="row"><label for="${id}">${lab}</label><input id="${id}" type="range" min="${mn}" max="${mx}" step="${st}" value="${OPT[id]}"><output id="o${id}"></output></div>`).join('');
 
-const dimIds = DIMS.map(d => d[0]);
-const tiltIds = ['tS','tE','tW'];
-const allIds = dimIds.concat(tiltIds, ['fold','dur','scale']);
-const el = {}; allIds.forEach(id => el[id] = $(id));
-const setDims = o => dimIds.forEach(id => el[id].value = o[id]);
-const setTilts = o => tiltIds.forEach(id => el[id].value = o[id]);
+// ---------------- version history ----------------
+// topo 'two': 10-bar (two-stage bellcrank chains for elbow and wrist). topo 'single': 6-bar (tendon rod + radius parallel bar).
+// __VERSIONS_START__
+const VERSIONS = [
+  {id:'v3', status:'current', date:'2026-11-12', title:'深く畳む＋リンクを翼の中へ', topo:'two', wristMount:'ulna',
+   why:'上腕骨を70°引き、肘19°・手首17°まで畳む（v2は25°・24°）。すべてのリンクが体・肩〜手首の膜（前翼膜）・上腕骨の後ろ・羽根の裏側に収まるという制約で寸法を決め直した。手首用ベルクランクを上腕骨から尺骨へ移している。肘の後ろの小さなレバー（肘頭に相当）だけが畳む途中で最大2 mm（等倍）出るが、実際の鳥でも肘頭がある位置で、三列風切で覆える。',
+   target:{AH0:-15, AH1:-85, E0:150, E1:18, M0:160, M1:15}, tilt3d:{tS:22, tE:-8, tW:-22},
+   dims:{G1x:-12.925, G1y:-0.4828, h1x:12.1056, h1y:-10.4578, rb1:12.61, Lc1:15.01, b2x:7.5909, b2y:11.7565, L2:21.2869, wx:-4.4446, wy:-0.704,
+         G2x:12.2373, G2y:1.9999, h3x:21.6194, h3y:-11.9989, rb3:14.0, Lc3:18.4, b4x:-6.7042, b4y:12.2901, L4:27.6707, qx:7.1603, qy:1.1366}},
+  {id:'v2', status:'superseded', date:'2026-11-12', title:'10節リンク（初版）', topo:'two',
+   why:'動きは成立するが、畳みが肘25°・手首24°止まりで浅い。上腕骨の突起と尺骨のクランクが翼の前縁より前に突き出す（最大約10 mm、等倍）。',
+   target:{AH0:-15, AH1:-75, E0:150, E1:25, M0:160, M1:25}, tilt3d:{tS:22, tE:-8, tW:-22},
+   dims:{G1x:0.647, G1y:-23.996, h1x:12.245, h1y:12.0, rb1:13.993, Lc1:25.455, b2x:10.822, b2y:-8.882, L2:16.854, wx:-0.285, wy:-8.0,
+         G2x:32.832, G2y:-12.047, h3x:27.514, h3y:9.342, rb3:13.012, Lc3:32.51, b4x:13.418, b4y:-3.994, L4:34.529, qx:4.235, qy:1.527}},
+  {id:'r3', status:'rejected', date:'2026-11-12', title:'全部隠すが手首側レバーが2 mm', topo:'two', wristMount:'hum',
+   why:'v3と同じ制約で、手首用ベルクランクを上腕骨側に置いた案。リンクは完全に隠れて伝達角も40°あるが、手を回すレバーが2 mmしかなく、寸法が0.1 mmずれるだけで畳んだ時の手首角が60°以上狂う。作れないので却下。',
+   target:{AH0:-15, AH1:-85, E0:150, E1:18, M0:160, M1:15}, tilt3d:{tS:22, tE:-8, tW:-22},
+   dims:{G1x:-12.925, G1y:-0.4828, h1x:12.1056, h1y:-10.4578, rb1:12.61, Lc1:15.01, b2x:7.5909, b2y:11.7565, L2:21.2869, wx:-4.4446, wy:-0.704,
+         G2x:17.6416, G2y:-12.0, h3x:30.6182, h3y:-4.5174, rb3:13.9997, Lc3:33.7785, b4x:13.8885, b4y:1.7635, L4:34.1679, qx:-2.0, qy:0.8976}},
+  {id:'r2', status:'rejected', date:'2026-11-12', title:'2段リンク・寸法の上限なし', topo:'two',
+   why:'角度は目標どおりに動き伝達角も十分だが、ベルクランクの腕が46〜60 mmと尺骨（32 mm）より長く、ロッドが翼の外に大きくはみ出す。部品の大きさに上限を入れて作り直した。',
+   target:{AH0:-15, AH1:-75, E0:150, E1:25, M0:160, M1:25}, tilt3d:{tS:0, tE:0, tW:0},
+   dims:{G1x:-29.994, G1y:29.990, h1x:3.275, h1y:-11.192, rb1:21.16, Lc1:41.57, b2x:15.349, b2y:58.684, L2:4.06, wx:3.520, wy:5.839,
+         G2x:30.785, G2y:-19.983, h3x:12.201, h3y:7.455, rb3:22.0, Lc3:25.63, b4x:32.028, b4y:-33.180, L4:60.0, qx:19.979, qy:11.837}},
+  {id:'r1', status:'rejected', date:'2026-11-12', title:'骨格どおりの単段リンク（腱ロッド＋橈骨）', topo:'single',
+   why:'体から尺骨へのロッド1本と、橈骨に見立てた平行リンク1本だけの6節。伝達角を30°以上に保てるのは肘・手首55°までで、止まり木の姿勢まで畳めない。25°まで畳む寸法も作れるが、伝達角が22°まで落ち、平行四辺形に近いため途中で組み方が反転しやすい。',
+   target:{AH0:-15, AH1:-75, E0:150, E1:55, M0:160, M1:55}, tilt3d:{tS:0, tE:0, tW:0},
+   dims:{Ax:4.7169, Ay:3.8928, s:4.0, n:0.5, Lrod:25.5784, px:-4.0154, py:0.9607, qx:-3.6, qy:1.2, Lr:31.9948}},
+  {id:'v1', status:'superseded', date:'2026-11-11', title:'羽ばたき＋折れ込み連動（別ファイル）', topo:null, file:'wing_linkage_simulator.html',
+   why:'飛行中の羽ばたきで翼が少し折れる動きを、モーター1個と連動ロッドで再現する機構。止まり木で翼を畳む動きとは別物だったので、この開閉リンクに作り直した。'}
+];
+// __VERSIONS_END__
+
+const SCHEMA = {
+  two: [['G1x','肘BC 支点 x',-30,10,0.1], ['G1y','肘BC 支点 y',-40,35,0.1], ['h1x','上腕突起 沿',-5,25,0.1], ['h1y','上腕突起 前',-15,20,0.1],
+        ['rb1','肘BC 腕1',4,25,0.05], ['Lc1','ロッド1',5,45,0.05], ['b2x','肘BC 腕2 x',-15,40,0.05], ['b2y','肘BC 腕2 y',-20,65,0.05],
+        ['L2','ロッド2',3,40,0.05], ['wx','尺骨レバー 沿',-10,10,0.05], ['wy','尺骨レバー 前',-15,10,0.05],
+        ['G2x','手首BC 支点 沿',0,45,0.1], ['G2y','手首BC 支点 前',-25,10,0.1], ['h3x','尺骨クランク 沿',0,34,0.1], ['h3y','尺骨クランク 前',-15,15,0.1],
+        ['rb3','手首BC 腕1',4,25,0.05], ['Lc3','ロッド3',5,45,0.05], ['b4x','手首BC 腕2 x',-15,40,0.05], ['b4y','手首BC 腕2 y',-40,15,0.05],
+        ['L4','ロッド4',5,65,0.05], ['qx','手レバー 沿',-10,25,0.05], ['qy','手レバー 前',-10,15,0.05]],
+  single: [['Ax','腱ロッド 体側 x',-30,10,0.05], ['Ay','腱ロッド 体側 y',-30,30,0.05], ['s','尺骨取付 沿',-5,30,0.05], ['n','尺骨取付 前',-10,10,0.05],
+           ['Lrod','腱ロッド長',4,70,0.01], ['px','橈骨 肘側 沿',-10,6,0.01], ['py','橈骨 肘側 前',-6,10,0.01],
+           ['qx','橈骨 手首側 沿',-10,6,0.01], ['qy','橈骨 手首側 前',-6,10,0.01], ['Lr','橈骨長',15,50,0.01]]
+};
+
+let ver = VERSIONS[0], TARGET = ver.target;
+const fixedIds = ['tS','tE','tW','fold','dur','scale','ah0','ah1'];
+const el = {}; fixedIds.forEach(id => el[id] = $(id));
+let dimIds = [];
+function buildDimSliders(){
+  const sch = SCHEMA[ver.topo];
+  $('dimSliders').innerHTML = sch.map(([id,lab,mn,mx,st]) =>
+    `<div class="row"><label for="d_${id}">${lab}</label><input id="d_${id}" type="range" min="${mn}" max="${mx}" step="${st}" value="${ver.dims[id]}"><output id="od_${id}"></output></div>`).join('');
+  dimIds = sch.map(s => s[0]);
+  dimIds.forEach(id => { el['d_'+id] = $('d_'+id); el['d_'+id].addEventListener('input', () => dirty = true); });
+}
+function setDims(){ dimIds.forEach(id => el['d_'+id].value = ver.dims[id]); el.ah0.value = ver.target.AH0; el.ah1.value = ver.target.AH1; }
+const setTilts = o => ['tS','tE','tW'].forEach(id => el[id].value = o[id]);
 
 // ---------------- vector math ----------------
 const add = (a,b) => [a[0]+b[0],a[1]+b[1],a[2]+b[2]];
@@ -189,78 +259,124 @@ const mul = (a,s) => [a[0]*s,a[1]*s,a[2]*s];
 const dot = (a,b) => a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
 const cross = (a,b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
 const norm = a => Math.hypot(a[0],a[1],a[2]);
-const I3 = [[1,0,0],[0,1,0],[0,0,1]];
-function rotM(ax, th){
-  const [x,y,z] = ax, c = Math.cos(th), s = Math.sin(th), C = 1-c;
-  return [[c+x*x*C, x*y*C-z*s, x*z*C+y*s],[y*x*C+z*s, c+y*y*C, y*z*C-x*s],[z*x*C-y*s, z*y*C+x*s, c+z*z*C]];
-}
+function rotM(ax, th){ const [x,y,z] = ax, c = Math.cos(th), s = Math.sin(th), C = 1-c;
+  return [[c+x*x*C, x*y*C-z*s, x*z*C+y*s],[y*x*C+z*s, c+y*y*C, y*z*C-x*s],[z*x*C-y*s, z*y*C+x*s, c+z*z*C]]; }
 const mv = (M,v) => [M[0][0]*v[0]+M[0][1]*v[1]+M[0][2]*v[2], M[1][0]*v[0]+M[1][1]*v[1]+M[1][2]*v[2], M[2][0]*v[0]+M[2][1]*v[1]+M[2][2]*v[2]];
 function mm(A,B){ const R=[[0,0,0],[0,0,0],[0,0,0]]; for(let i=0;i<3;i++)for(let j=0;j<3;j++){let s=0;for(let k=0;k<3;k++)s+=A[i][k]*B[k][j];R[i][j]=s;} return R; }
 const Z = [0,0,1];
-const tiltAxis = t => [0, -Math.sin(t), Math.cos(t)];   // local z tilted about the bone's long axis (local x)
+const tiltAxis = t => [0, -Math.sin(t), Math.cos(t)];
 const angDiff = (a,b) => Math.atan2(Math.sin(a-b), Math.cos(a-b));
-const angAt = (a,b,c) => { const v1 = sub(a,b), v2 = sub(c,b); const t = Math.acos(Math.max(-1,Math.min(1, dot(v1,v2)/(norm(v1)*norm(v2)||1e-12))))*R2D; return Math.min(t, 180-t); };
+const angTrans = (a,b,c) => { const v1 = sub(a,b), v2 = sub(c,b); const t = Math.acos(Math.max(-1,Math.min(1, dot(v1,v2)/(norm(v1)*norm(v2)||1e-12))))*R2D; return Math.min(t, 180-t); };
+const angFull = (a,b,c) => { const v1 = sub(a,b), v2 = sub(c,b); return Math.acos(Math.max(-1,Math.min(1, dot(v1,v2)/(norm(v1)*norm(v2)))))*R2D; };
 
-// Point X(phi) = C + Rf·Rot(a,phi)·w. Find phi with |X - F| = L.  Closed form: P cos + Q sin = R.
-function solveLoop(Rf, C, a, w, F, L, ref){
+// X(phi) = C + Rf·Rot(a,phi)·w ; |X - F| = L  ->  P cos + Q sin = R (closed form, two roots)
+function loopRoots(Rf, C, a, w, F, L){
   const aw = mul(a, dot(a,w));
   const c0 = sub(add(C, mv(Rf, aw)), F), c1 = mv(Rf, sub(w, aw)), c2 = mv(Rf, cross(a, w));
   const P = 2*dot(c0,c1), Q = 2*dot(c0,c2), Rr = L*L - dot(c0,c0) - dot(c1,c1);
-  const amp = Math.hypot(P,Q) || 1e-12; let r = Rr/amp;
-  const margin = 1 - Math.abs(r), ok = margin > 1e-9;
-  r = Math.max(-1, Math.min(1, r));
-  const base = Math.atan2(Q,P), d = Math.acos(r), c = [base + d, base - d];
-  const pickc = Math.abs(angDiff(c[0],ref)) <= Math.abs(angDiff(c[1],ref)) ? c[0] : c[1];
-  return {phi: ref + angDiff(pickc, ref), ok, margin};
+  const amp = Math.hypot(P,Q) || 1e-12; let r = Rr/amp; const margin = 1 - Math.abs(r);
+  r = Math.max(-1, Math.min(1, r)); const base = Math.atan2(Q,P), d = Math.acos(r);
+  return {c:[base + d, base - d], ok: margin > 1e-9, margin};
+}
+// choose root: nearest to the previous solution, or by index on the very first pose
+function choose(rt, ref, idx){ if (ref === undefined) return rt.c[idx]; const k = Math.abs(angDiff(rt.c[0],ref)) <= Math.abs(angDiff(rt.c[1],ref)) ? 0 : 1; return ref + angDiff(rt.c[k], ref); }
+
+function params(){
+  const p = {}; fixedIds.forEach(id => p[id] = parseFloat(el[id].value)); dimIds.forEach(id => p[id] = parseFloat(el['d_'+id].value)); return p;
 }
 
-function params(){ const p = {}; allIds.forEach(id => p[id] = parseFloat(el[id].value)); return p; }
-
-// Full pose for humerus (motor) angle ah [deg]; ref holds the previous solution for branch continuity.
-function pose(p, ah, ref){
-  ref = ref || INIT;
-  // shoulder plane: the motor axis is tilted about the body's lateral (x) axis by tS.
-  // Bellcrank 1 is mounted on the body with its axis parallel to the motor axis, so the elbow chain stays coplanar.
-  const Rs = rotM([1,0,0], p.tS*D2R);
-  const Rh = mm(Rs, rotM(Z, ah*D2R));
-  const E = mv(Rh, [BONE.LH,0,0]);
-  // elbow chain — stage 1: humerus horn H1 pulls body bellcrank 1 (pivot G1)
+function poseTwo(p, ah, ref, pick){
+  ref = ref || {}; pick = pick || [0,0,0,0];
+  const Rs = rotM([1,0,0], p.tS*D2R), Rh = mm(Rs, rotM(Z, ah*D2R)), E = mv(Rh, [BONE.LH,0,0]);
   const G1 = mv(Rs, [p.G1x, p.G1y, 0]), H1 = mv(Rh, [p.h1x, p.h1y, 0]);
-  const s1 = solveLoop(Rs, G1, Z, [p.rb1,0,0], H1, p.Lc1, ref.beta1);
-  const Rb1 = mm(Rs, rotM(Z, s1.phi)), B1 = add(G1, mv(Rb1, [p.rb1,0,0])), B2 = add(G1, mv(Rb1, [p.b2x, p.b2y, 0]));
-  // stage 2: rod 2 from bellcrank to the ulna lever U; ulna turns about the elbow axis
+  const r1 = loopRoots(Rs, G1, Z, [p.rb1,0,0], H1, p.Lc1), b1 = choose(r1, ref.s1, pick[0]);
+  const Rb1 = mm(Rs, rotM(Z, b1)), B1 = add(G1, mv(Rb1, [p.rb1,0,0])), B2 = add(G1, mv(Rb1, [p.b2x, p.b2y, 0]));
   const aE = tiltAxis(p.tE*D2R);
-  const s2 = solveLoop(Rh, E, aE, [p.wx, p.wy, 0], B2, p.L2, ref.phiE);
-  const Ru = mm(Rh, rotM(aE, s2.phi));
-  const U = add(E, mv(Ru, [p.wx, p.wy, 0])), W = add(E, mv(Ru, [BONE.LU,0,0]));
-  // wrist chain — stage 1: ulna crank C3 drives bellcrank 2 mounted on the humerus (pivot G2, humerus z-axis)
-  const G2 = mv(Rh, [p.G2x, p.G2y, 0]), C3 = add(E, mv(Ru, [p.h3x, p.h3y, 0]));
-  const s3 = solveLoop(Rh, G2, Z, [p.rb3,0,0], C3, p.Lc3, ref.beta2);
-  const Rb2 = mm(Rh, rotM(Z, s3.phi)), B3 = add(G2, mv(Rb2, [p.rb3,0,0])), B4 = add(G2, mv(Rb2, [p.b4x, p.b4y, 0]));
-  // stage 2: rod 4 to the hand lever Q; hand turns about the wrist axis
+  const r2 = loopRoots(Rh, E, aE, [p.wx, p.wy, 0], B2, p.L2), pe = choose(r2, ref.s2, pick[1]);
+  const Ru = mm(Rh, rotM(aE, pe)), U = add(E, mv(Ru, [p.wx, p.wy, 0])), W = add(E, mv(Ru, [BONE.LU,0,0]));
+  // wrist chain stage 1. 'hum': bellcrank 2 on the humerus, driven by a crank on the ulna.
+  //                       'ulna': bellcrank 2 on the ulna, driven by a crank on the humerus (shoulder coords).
+  const onUlna = ver.wristMount === 'ulna', Fb = onUlna ? Ru : Rh;
+  const G2 = onUlna ? add(E, mv(Ru, [p.G2x, p.G2y, 0])) : mv(Rh, [p.G2x, p.G2y, 0]);
+  const C3 = onUlna ? mv(Rh, [p.h3x, p.h3y, 0]) : add(E, mv(Ru, [p.h3x, p.h3y, 0]));
+  const r3 = loopRoots(Fb, G2, Z, [p.rb3,0,0], C3, p.Lc3), b2 = choose(r3, ref.s3, pick[2]);
+  const Rb2 = mm(Fb, rotM(Z, b2)), B3 = add(G2, mv(Rb2, [p.rb3,0,0])), B4 = add(G2, mv(Rb2, [p.b4x, p.b4y, 0]));
   const aW = tiltAxis(p.tW*D2R);
-  const s4 = solveLoop(Ru, W, aW, [p.qx, p.qy, 0], B4, p.L4, ref.psi);
-  const Rm = mm(Ru, rotM(aW, s4.phi));
-  const Q = add(W, mv(Rm, [p.qx, p.qy, 0])), CM = add(W, mv(Rm, [BONE.LCMC,0,0])), T = add(W, mv(Rm, [BONE.LMAN,0,0]));
-  const O = [0,0,0];
-  const Edeg = angAtFull(O, E, W), Mdeg = angAtFull(E, W, T);
-  const trans = [angAt(H1,B1,G1), angAt(B2,U,E), angAt(C3,B3,G2), angAt(B4,Q,W)];
-  return {Rh, Ru, Rm, Rb1, Rb2, E, W, U, H1, G1, B1, B2, G2, C3, B3, B4, Q, CM, T, Edeg, Mdeg, trans,
-          ok: s1.ok && s2.ok && s3.ok && s4.ok, margin: Math.min(s1.margin, s2.margin, s3.margin, s4.margin),
-          beta1:s1.phi, phiE:s2.phi, beta2:s3.phi, psi:s4.phi, ah};
+  const r4 = loopRoots(Ru, W, aW, [p.qx, p.qy, 0], B4, p.L4), ps = choose(r4, ref.s4, pick[3]);
+  const Rm = mm(Ru, rotM(aW, ps)), Q = add(W, mv(Rm, [p.qx, p.qy, 0]));
+  const q = finish({Rh, Ru, Rm, E, W, ah}, p);
+  Object.assign(q, {ok: r1.ok && r2.ok && r3.ok && r4.ok, s1:b1, s2:pe, s3:b2, s4:ps,
+    trans:[angTrans(H1,B1,G1), angTrans(B2,U,E), angTrans(C3,B3,G2), angTrans(B4,Q,W)],
+    mech:{plates:[[G1,B1,B2,'bc'],[G2,B3,B4,'bc'],[[0,0,0],E,H1,'hum'],[E,U,add(E,mv(Ru,[4,0,0])),'uln'],[W,Q,q.CM,'man']].concat(onUlna
+            ? [[E,G2,add(E,mv(Ru,[Math.min(BONE.LU,Math.max(2,p.G2x+3)),0,0])),'uln'], [mv(Rh,[Math.max(0,p.h3x-6),0,0]),C3,E,'hum']]
+            : [[E,G2,add(E,mv(Rh,[2,0,0])),'hum'], [add(E,mv(Ru,[Math.max(0,p.h3x-8),0,0])),C3,add(E,mv(Ru,[Math.min(BONE.LU,p.h3x+4),0,0])),'uln']]),
+          rods:[[H1,B1],[B2,U],[C3,B3],[B4,Q]], pivots:[G1,G2], joints:[H1,B1,B2,U,C3,B3,B4,Q]}});
+  return q;
 }
-function angAtFull(a,b,c){ const v1 = sub(a,b), v2 = sub(c,b); return Math.acos(Math.max(-1,Math.min(1, dot(v1,v2)/(norm(v1)*norm(v2)))))*R2D; }
-
+function poseSingle(p, ah, ref, pick){
+  ref = ref || {}; pick = pick || [0,0];
+  const Rs = rotM([1,0,0], p.tS*D2R), Rh = mm(Rs, rotM(Z, ah*D2R)), E = mv(Rh, [BONE.LH,0,0]);
+  const A = mv(Rs, [p.Ax, p.Ay, 0]), aE = tiltAxis(p.tE*D2R);
+  const r1 = loopRoots(Rh, E, aE, [p.s, p.n, 0], A, p.Lrod), pe = choose(r1, ref.s1, pick[0]);
+  const Ru = mm(Rh, rotM(aE, pe)), U = add(E, mv(Ru, [p.s, p.n, 0])), W = add(E, mv(Ru, [BONE.LU,0,0]));
+  const P = add(E, mv(Rh, [p.px, p.py, 0])), aW = tiltAxis(p.tW*D2R);
+  const r2 = loopRoots(Ru, W, aW, [p.qx, p.qy, 0], P, p.Lr), ps = choose(r2, ref.s2, pick[1]);
+  const Rm = mm(Ru, rotM(aW, ps)), Q = add(W, mv(Rm, [p.qx, p.qy, 0]));
+  const q = finish({Rh, Ru, Rm, E, W, ah}, p);
+  Object.assign(q, {ok: r1.ok && r2.ok, s1:pe, s2:ps, trans:[angTrans(A,U,E), angTrans(P,Q,W)],
+    mech:{plates:[[E,U,add(E,mv(Ru,[4,0,0])),'uln'],[W,Q,q.CM,'man']], rods:[[A,U],[P,Q]], pivots:[A], joints:[U,P,Q]}});
+  return q;
+}
+function finish(q, p){
+  q.CM = add(q.W, mv(q.Rm, [BONE.LCMC,0,0])); q.T = add(q.W, mv(q.Rm, [BONE.LMAN,0,0]));
+  q.Edeg = angFull([0,0,0], q.E, q.W); q.Mdeg = angFull(q.E, q.W, q.T); return q;
+}
+const poseFn = () => ver.topo === 'single' ? poseSingle : poseTwo;
+function firstPose(p){
+  // try every assembly branch at the open pose and keep the one closest to the target joint angles
+  const f = poseFn(), n = ver.topo === 'single' ? 2 : 4; let best = null;
+  for (let m=0; m<(1<<n); m++){
+    const pick = []; for (let i=0;i<n;i++) pick.push((m>>i)&1);
+    const q = f(p, p.ah0, null, pick); if (!q.ok) continue;
+    const err = Math.abs(q.Edeg - TARGET.E0) + Math.abs(q.Mdeg - TARGET.M0);
+    if (!best || err < best.err) best = {q, err};
+  }
+  return best ? best.q : f(p, p.ah0, null);
+}
 const NS = 160;
 function path(p){
-  const out = []; let ref = INIT;
-  for (let i=0;i<=NS;i++){ const u = i/NS, q = pose(p, p.ah0 + (p.ah1 - p.ah0)*u, ref); q.u = u; out.push(q); ref = q; }
+  const out = []; let ref = firstPose(p); ref.u = 0; out.push(ref);
+  const f = poseFn();
+  for (let i=1;i<=NS;i++){ const u = i/NS, q = f(p, p.ah0 + (p.ah1 - p.ah0)*u, ref); q.u = u; out.push(q); ref = q; }
   return out;
 }
 
+// ---------------- hidden-part check (top view) ----------------
+// A mechanism point is "hidden" if it lies in the body, in the propatagium triangle (shoulder–elbow–wrist),
+// in the band just behind the humerus, or on the feather side of the ulna or hand.
+const rot2 = (t, x, y) => [Math.cos(t)*x - Math.sin(t)*y, Math.sin(t)*x + Math.cos(t)*y];
+function outsideDist(X, q){
+  let best = Math.max(0, (Math.hypot((X[0]+13)/13, (X[1]+12)/30) - 1)*13);
+  const S = [0,0], E = [q.E[0],q.E[1]], W = [q.W[0],q.W[1]], T = [q.T[0],q.T[1]];
+  const tri = [S,E,W], sg = Math.sign((E[0]-S[0])*(W[1]-S[1]) - (E[1]-S[1])*(W[0]-S[0])) || 1;
+  let dmax = 0; for (let i=0;i<3;i++){ const a = tri[i], b = tri[(i+1)%3], ex = b[0]-a[0], ey = b[1]-a[1], L = Math.hypot(ex,ey)||1e-9;
+    dmax = Math.max(dmax, -((X[0]-a[0])*(-ey) + (X[1]-a[1])*ex)*sg/L); }
+  best = Math.min(best, Math.max(0, dmax));
+  for (const [o, d, L, ymin] of [[S, E, BONE.LH, -12], [E, W, BONE.LU, -38], [W, T, BONE.LMAN, -45]]){
+    const ang = Math.atan2(d[1]-o[1], d[0]-o[0]), loc = rot2(-ang, X[0]-o[0], X[1]-o[1]);
+    best = Math.min(best, Math.max(0, loc[1] - 1, ymin - loc[1], -2 - loc[0], loc[0] - L - 2));
+  }
+  return best;
+}
+function mechSamples(q){
+  const pts = q.mech.joints.concat(q.mech.pivots);
+  for (const [a,b] of q.mech.rods) for (let t=0.25;t<1;t+=0.25) pts.push(add(a, mul(sub(b,a), t)));
+  for (const pl of q.mech.plates) for (let i=0;i<3;i++) pts.push(mul(add(pl[i], pl[(i+1)%3]), 0.5));
+  return pts;
+}
+const protrusion = q => mechSamples(q).reduce((m,X) => Math.max(m, outsideDist(X, q)), 0);
+
 // ---------------- feathers (visual approximation) ----------------
-// Primaries P1..P10 on the hand, secondaries S1..S10 on the ulna. Each feather angle interpolates linearly with the
-// wrist (primaries) or elbow (secondaries) angle, after Matloff et al. 2020. Lengths are estimates for a kingfisher.
 const PRIM = [[0.05,40,-82,-8],[0.15,42,-75,-7],[0.25,44,-68,-6],[0.35,46,-61,-5],[0.45,48,-54,-4],
               [0.55,50,-46,-3.5],[0.68,53,-38,-3],[0.80,56,-29,-2.5],[0.92,57,-20,-2],[1.00,53,-11,-1.5]];
 const SEC = []; for (let i=0;i<10;i++){ SEC.push([0.96 - i*0.095, 40 - i*0.9, -100 - i*3.0, -170 + i*0.8]); }
@@ -270,9 +386,7 @@ function featherQuads(q){
   const out = [];
   const make = (base, frame, angDeg, L, w, kind, order) => {
     const a = angDeg*D2R, dir = mv(frame, [Math.cos(a), Math.sin(a), 0]), side = mv(frame, [-Math.sin(a), Math.cos(a), 0]);
-    const tip = add(base, mul(dir, L)), sh = add(base, mul(dir, L*0.82));
-    // a slight downward offset per feather so the stack reads in 3D (each sits a little under its neighbour)
-    const drop = mv(frame, [0,0,-0.35*order]);
+    const tip = add(base, mul(dir, L)), sh = add(base, mul(dir, L*0.82)), drop = mv(frame, [0,0,-0.35*order]);
     out.push({kind, pts:[add(add(base, mul(side, w*0.22)),drop), add(add(sh, mul(side, w*0.5)),drop), add(tip,drop), add(add(sh, mul(side, -w*0.5)),drop), add(add(base, mul(side, -w*0.22)),drop)]});
   };
   SEC.forEach(([f,L,a0,a1],i) => make(add(q.E, mv(q.Ru, [BONE.LU*f,0,0])), q.Ru, a1 + (a0-a1)*fe, L, 7.5, 's', i*0.2));
@@ -283,11 +397,11 @@ function featherQuads(q){
 // ---------------- camera ----------------
 const stage = $('stage'), ctx = stage.getContext('2d');
 const VIEWS = {top:[0,90], front:[180,0], back:[0,0], side:[90,0], iso:[-35,32]};
-let yaw = -35*D2R, pitch = 32*D2R, zoom = 3.3, panX = 0, panY = 0;
+let yaw = 0, pitch = 90*D2R, zoom = 3.3, panX = 0, panY = 0;
 function setView(name){ const [y,pc] = VIEWS[name]; yaw = y*D2R; pitch = pc*D2R; panX = panY = 0;
   document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === name)); dirty = true; }
 document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => setView(b.dataset.view));
-const BODYX = -13;   // body midline; the shoulder sits at the lateral edge of the torso
+const BODYX = -13;
 function proj(v){
   const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
   const x0 = v[0] - BODYX, x = x0*cy - v[1]*sy, y = x0*sy + v[1]*cy, z = v[2];
@@ -295,27 +409,21 @@ function proj(v){
 }
 let drag = null;
 stage.addEventListener('pointerdown', e => { drag = {x:e.clientX, y:e.clientY, yaw, pitch, shift:e.shiftKey, panX, panY}; stage.setPointerCapture(e.pointerId); });
-stage.addEventListener('pointermove', e => {
-  if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+stage.addEventListener('pointermove', e => { if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
   if (drag.shift){ panX = drag.panX + dx; panY = drag.panY + dy; }
   else { yaw = drag.yaw - dx*0.008; pitch = Math.max(-1.5, Math.min(1.5, drag.pitch + dy*0.008)); document.querySelectorAll('[data-view]').forEach(b => b.classList.remove('on')); }
-  dirty = true;
-});
+  dirty = true; });
 stage.addEventListener('pointerup', () => drag = null);
 stage.addEventListener('wheel', e => { e.preventDefault(); zoom = Math.max(1.2, Math.min(10, zoom*Math.exp(-e.deltaY*0.001))); dirty = true; }, {passive:false});
 
 // ---------------- drawing ----------------
-function hull(pts){
-  pts = pts.slice().sort((a,b) => a[0]-b[0] || a[1]-b[1]);
-  const cr = (o,a,b) => (a[0]-o[0])*(b[1]-o[1]) - (a[1]-o[1])*(b[0]-o[0]); const lo = [], up = [];
+function hull(pts){ pts = pts.slice().sort((a,b) => a[0]-b[0] || a[1]-b[1]); const cr = (o,a,b) => (a[0]-o[0])*(b[1]-o[1]) - (a[1]-o[1])*(b[0]-o[0]); const lo = [], up = [];
   for (const p of pts){ while (lo.length>=2 && cr(lo[lo.length-2], lo[lo.length-1], p) <= 0) lo.pop(); lo.push(p); }
   for (let i=pts.length-1;i>=0;i--){ const p = pts[i]; while (up.length>=2 && cr(up[up.length-2], up[up.length-1], p) <= 0) up.pop(); up.push(p); }
-  up.pop(); lo.pop(); return lo.concat(up);
-}
+  up.pop(); lo.pop(); return lo.concat(up); }
 function ellipsoid(c, r){ const out = []; for (let i=0;i<=12;i++){ const th = Math.PI*i/12; for (let j=0;j<24;j++){ const ph = 2*Math.PI*j/24;
   out.push(proj([c[0]+r[0]*Math.sin(th)*Math.cos(ph), c[1]+r[1]*Math.cos(th), c[2]+r[2]*Math.sin(th)*Math.sin(ph)])); } } return out; }
-function fillPoly(pts, fill, stroke){ ctx.beginPath(); pts.forEach((p,i) => i ? ctx.lineTo(p[0],p[1]) : ctx.moveTo(p[0],p[1])); ctx.closePath();
-  ctx.fillStyle = fill; ctx.fill(); if (stroke){ ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.stroke(); } }
+function fillPoly(pts, fill, stroke){ ctx.beginPath(); pts.forEach((p,i) => i ? ctx.lineTo(p[0],p[1]) : ctx.moveTo(p[0],p[1])); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); if (stroke){ ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.stroke(); } }
 function drawBody(){
   fillPoly(hull([[BODYX-6,-40,-6],[BODYX+6,-40,-6],[BODYX+7,-62,-9],[BODYX-7,-62,-9]].map(proj)), '#1d3a55', '#2c4f6e');
   fillPoly(hull(ellipsoid([BODYX,-12,-9],[13,30,13])), '#173049', '#2a4a66');
@@ -325,8 +433,8 @@ function drawBody(){
 }
 function seg(a,b,color,w){ const A = proj(a), B = proj(b); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(A[0],A[1]); ctx.lineTo(B[0],B[1]); ctx.stroke(); }
 function dotp(a,r,color){ const A = proj(a); ctx.fillStyle = color; ctx.beginPath(); ctx.arc(A[0],A[1],r,0,7); ctx.fill(); }
-function plate(pts, color){ fillPoly(pts.map(proj), color.replace('1)', '.22)'), color); }
 const mir = v => [2*BODYX - v[0], v[1], v[2]];
+const PLATE = {bc:['rgba(199,182,255,.22)','#c7b6ff'], hum:['rgba(127,212,255,.2)','#7fd4ff'], uln:['rgba(79,209,197,.2)','#4fd1c5'], man:['rgba(255,138,92,.2)','#ff8a5c']};
 
 function drawWing(q, opt, mirrored){
   const T = mirrored ? mir : (v => v), bad = !q.ok;
@@ -340,24 +448,21 @@ function drawWing(q, opt, mirrored){
     }
   }
   const O = [0,0,0];
-  if (opt.mech && !mirrored){
-    const bc = bad ? 'rgba(229,86,139,1)' : 'rgba(199,182,255,1)', rod = bad ? '#e5568b' : '#ffd166';
-    plate([q.G1, q.B1, q.B2], bc);                          // bellcrank 1 (on body)
-    plate([q.G2, q.B3, q.B4], bc);                          // bellcrank 2 (on humerus)
-    plate([O, q.E, q.H1], 'rgba(127,212,255,1)');          // humerus horn
-    plate([q.E, q.G2, add(q.E, mv(q.Rh,[2,0,0]))], 'rgba(127,212,255,1)'); // humerus bracket carrying bellcrank 2
-    plate([q.E, q.U, add(q.E, mv(q.Ru,[4,0,0]))], 'rgba(79,209,197,1)');   // ulna lever (olecranon-like)
-    plate([add(q.E, mv(q.Ru,[q.Ru ? 20 : 0,0,0])), q.C3, q.W], 'rgba(79,209,197,1)'); // ulna crank
-    plate([q.W, q.Q, q.CM], 'rgba(255,138,92,1)');         // hand lever
-    seg(q.H1, q.B1, rod, 2); seg(q.B2, q.U, rod, 2); seg(q.C3, q.B3, rod, 2); seg(q.B4, q.Q, rod, 2);
-    [q.H1,q.B1,q.B2,q.U,q.C3,q.B3,q.B4,q.Q].forEach(v => dotp(v, 2.2, rod));
-    dotp(q.G1, 3.2, '#c7b6ff'); dotp(q.G2, 3.2, '#c7b6ff');
+  if (opt.mech){
+    // the same mechanism on both wings (the left one is a mirror image)
+    for (const pl of q.mech.plates){ const c = bad ? ['rgba(229,86,139,.2)','#e5568b'] : PLATE[pl[3]]; fillPoly(pl.slice(0,3).map(v => proj(T(v))), c[0], c[1]); }
+    const rodC = bad ? '#e5568b' : '#ffd166';
+    q.mech.rods.forEach(([a,b]) => seg(T(a), T(b), rodC, 2));
+    q.mech.joints.forEach(v => dotp(T(v), 2.2, rodC));
+    q.mech.pivots.forEach(v => dotp(T(v), 3.2, '#c7b6ff'));
+    // mark every part that sticks out of the wing / body
+    mechSamples(q).forEach(X => { if (outsideDist(X, q) > 0.5) dotp(T(X), 3.4, '#e5568b'); });
   }
   seg(O, T(q.E), '#7fd4ff', 6);
   seg(T(q.E), T(q.W), '#4fd1c5', 5);
   seg(T(q.W), T(q.CM), '#ff8a5c', 4.5);
   seg(T(q.CM), T(q.T), '#ff8a5c', 2.6);
-  dotp(O, 4.2, '#dce7f0'); dotp(T(q.E), 3.6, '#dce7f0'); dotp(T(q.W), 3.4, '#dce7f0');
+  dotp(T(O), 4.2, '#dce7f0'); dotp(T(q.E), 3.6, '#dce7f0'); dotp(T(q.W), 3.4, '#dce7f0');
 }
 function drawGrid(){
   ctx.strokeStyle = '#132538'; ctx.lineWidth = 1;
@@ -400,24 +505,71 @@ function drawPlot(pth, u, p){
 // ---------------- size table ----------------
 function sizeTable(p, q0){
   const k = p.scale, f = v => (v*k).toFixed(1), pt = (a,b) => '('+f(a)+', '+f(b)+')';
-  const rows = [
-    ['g','骨（mm）'], ['上腕骨（肩→肘）', f(BONE.LH)], ['尺骨（肘→手首）', f(BONE.LU)], ['手（手首→指先）', f(BONE.LMAN)],
-    ['g','肘を曲げる系統（体側, mm）'], ['ベルクランク1 支点（体）', pt(p.G1x,p.G1y)], ['上腕骨ホーン（上腕座標）', pt(p.h1x,p.h1y)],
+  let rows = [['g','骨（mm）'], ['上腕骨（肩→肘）', f(BONE.LH)], ['尺骨（肘→手首）', f(BONE.LU)], ['手（手首→指先）', f(BONE.LMAN)]];
+  if (ver.topo === 'two') rows = rows.concat([
+    ['g','肘を曲げる系統（体側, mm）'], ['ベルクランク1 支点（体）', pt(p.G1x,p.G1y)], ['上腕骨の突起（上腕座標）', pt(p.h1x,p.h1y)],
     ['ロッド1', f(p.Lc1)], ['ベルクランク1 腕1 / 腕2', f(p.rb1)+' / '+pt(p.b2x,p.b2y)], ['ロッド2', f(p.L2)], ['尺骨レバー（尺骨座標）', pt(p.wx,p.wy)],
-    ['g','手首を曲げる系統（上腕骨側, mm）'], ['ベルクランク2 支点（上腕座標）', pt(p.G2x,p.G2y)], ['尺骨クランク（尺骨座標）', pt(p.h3x,p.h3y)],
-    ['ロッド3', f(p.Lc3)], ['ベルクランク2 腕1 / 腕2', f(p.rb3)+' / '+pt(p.b4x,p.b4y)], ['ロッド4', f(p.L4)], ['手レバー（手座標）', pt(p.qx,p.qy)],
-    ['g','モーター'], ['回転角（上腕骨）', Math.abs(p.ah0 - p.ah1).toFixed(1)+'°'], ['広げた時の骨格の張り出し', f(q0.T[0])+' mm']];
+    ...(ver.wristMount === 'ulna'
+      ? [['g','手首を曲げる系統（尺骨側, mm）'], ['ベルクランク2 支点（尺骨座標, 肘から）', pt(p.G2x,p.G2y)], ['上腕骨クランク（上腕座標）', pt(p.h3x,p.h3y)]]
+      : [['g','手首を曲げる系統（上腕骨側, mm）'], ['ベルクランク2 支点（上腕座標）', pt(p.G2x,p.G2y)], ['尺骨クランク（尺骨座標）', pt(p.h3x,p.h3y)]]),
+    ['ロッド3', f(p.Lc3)], ['ベルクランク2 腕1 / 腕2', f(p.rb3)+' / '+pt(p.b4x,p.b4y)], ['ロッド4', f(p.L4)], ['手レバー（手座標）', pt(p.qx,p.qy)]]);
+  else rows = rows.concat([
+    ['g','腱ロッドと橈骨（mm）'], ['腱ロッド 体側支点', pt(p.Ax,p.Ay)], ['腱ロッド 尺骨取付（尺骨座標）', pt(p.s,p.n)], ['腱ロッド長', f(p.Lrod)],
+    ['橈骨 肘側（上腕座標, 肘から）', pt(p.px,p.py)], ['橈骨 手首側（手座標）', pt(p.qx,p.qy)], ['橈骨長', f(p.Lr)]]);
+  rows = rows.concat([['g','モーター'], ['回転角（上腕骨）', Math.abs(p.ah0 - p.ah1).toFixed(1)+'°'], ['広げた時の骨格の張り出し', f(q0.T[0])+' mm']]);
   $('sizeTable').innerHTML = rows.map(r => r[0] === 'g' ? '<tr><td class="grp" colspan="2">'+r[1]+'</td></tr>' : '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>').join('');
+}
+
+// ---------------- metrics & version panel ----------------
+function metrics(p){
+  const pth = path(p); let tmin = 180, prot = 0;
+  pth.forEach((q,i) => { q.trans.forEach(t => tmin = Math.min(tmin, t)); if (i % 8 === 0) prot = Math.max(prot, protrusion(q)); });
+  return {pth, ok: pth.every(q => q.ok), tmin, prot, E0: pth[0].Edeg, E1: pth[NS].Edeg, M0: pth[0].Mdeg, M1: pth[NS].Mdeg, fold: pth[NS].T[0]/pth[0].T[0]};
+}
+const STAT = {current:['current','採用中'], superseded:['superseded','置き換え済み'], rejected:['rejected','却下']};
+function versionParams(v){
+  const p = {tS:0, tE:0, tW:0, fold:0, dur:1, scale:1, ah0:v.target.AH0, ah1:v.target.AH1}; Object.assign(p, v.dims); return p;
+}
+function renderVersionList(){
+  const prevVer = ver, prevT = TARGET;
+  $('verList').innerHTML = VERSIONS.map(v => {
+    const [cls, lab] = STAT[v.status];
+    let met = '';
+    if (v.topo){ ver = v; TARGET = v.target; const m = metrics(versionParams(v));
+      met = `<div class="met"><span>肘 <b>${m.E0.toFixed(0)}→${m.E1.toFixed(0)}°</b></span><span>手首 <b>${m.M0.toFixed(0)}→${m.M1.toFixed(0)}°</b></span>`+
+            `<span>最小伝達角 <b>${m.tmin.toFixed(0)}°</b></span><span>はみ出し（等倍） <b>${m.prot.toFixed(1)} mm</b></span></div>`; }
+    else met = `<div class="met"><span>別ファイル: <b>${v.file}</b></span></div>`;
+    const inner = `<div class="top"><span class="vid">${v.id}</span><span class="tag ${cls}">${lab}</span><span class="ttl">${v.title}</span><span class="date">${v.date}</span></div><div class="why">${v.why}</div>${met}`;
+    return v.topo ? `<button class="vcard${v === prevVer ? ' active' : ''}" data-ver="${v.id}">${inner}</button>` : `<div class="vcard">${inner}</div>`;
+  }).join('');
+  ver = prevVer; TARGET = prevT;
+  document.querySelectorAll('[data-ver]').forEach(b => b.onclick = () => { loadVersion(b.dataset.ver); togglePanel(false); });
+}
+function togglePanel(open){ const P = $('verPanel'); open = open === undefined ? !P.classList.contains('open') : open;
+  P.classList.toggle('open', open); $('verBtn').setAttribute('aria-expanded', open); if (open) renderVersionList(); }
+$('verBtn').onclick = e => { e.stopPropagation(); togglePanel(); };
+document.addEventListener('click', e => { if (!$('verPanel').contains(e.target) && e.target !== $('verBtn')) togglePanel(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') togglePanel(false); });
+function loadVersion(id){
+  ver = VERSIONS.find(v => v.id === id); TARGET = ver.target;
+  buildDimSliders(); setDims(); setTilts({tS:0,tE:0,tW:0}); $('p2d').classList.add('on'); $('p3d').classList.remove('on');
+  const [cls, lab] = STAT[ver.status];
+  $('verLabel').textContent = ver.id; $('verTag').className = 'tag ' + cls; $('verTag').textContent = lab;
+  $('verNote').className = cls; $('verNote').innerHTML = `<b style="color:var(--ink)">${ver.id}　${ver.title}</b>（${lab}）— ${ver.why}`;
+  el.fold.value = 0; dirty = true;
 }
 
 // ---------------- UI ----------------
 const fmt = {fold:v => Math.round(v*100)+'%', dur:v => v.toFixed(2)+' s', scale:v => '×'+v.toFixed(1), tS:v => v+'°', tE:v => v+'°', tW:v => v+'°', ah0:v => v+'°', ah1:v => v+'°'};
-function syncOut(){ allIds.forEach(id => { const o = $('o'+id); if (o){ const v = parseFloat(el[id].value); o.textContent = fmt[id] ? fmt[id](v) : v.toFixed(1); } }); }
-allIds.forEach(id => el[id].addEventListener('input', () => { dirty = true; }));
+function syncOut(){
+  fixedIds.forEach(id => { const o = $('o'+id); if (o){ const v = parseFloat(el[id].value); o.textContent = fmt[id] ? fmt[id](v) : v.toFixed(1); } });
+  dimIds.forEach(id => { const o = $('od_'+id); if (o) o.textContent = parseFloat(el['d_'+id].value).toFixed(2); });
+}
+fixedIds.forEach(id => el[id].addEventListener('input', () => { dirty = true; }));
 ['feathers','mirror','mech','trace'].forEach(id => $(id).addEventListener('change', () => dirty = true));
 $('p2d').onclick = () => { setTilts({tS:0,tE:0,tW:0}); $('p2d').classList.add('on'); $('p3d').classList.remove('on'); dirty = true; };
-$('p3d').onclick = () => { setTilts(TILT3D); $('p3d').classList.add('on'); $('p2d').classList.remove('on'); dirty = true; };
-$('resetDims').onclick = () => { setDims(OPT); dirty = true; };
+$('p3d').onclick = () => { setTilts(ver.tilt3d); $('p3d').classList.add('on'); $('p2d').classList.remove('on'); dirty = true; };
+$('resetDims').onclick = () => { setDims(); dirty = true; };
 let anim = null, looping = false;
 const ease = x => 0.5 - 0.5*Math.cos(Math.PI*x);
 const goTo = target => { anim = {from: parseFloat(el.fold.value), to: target, t0: performance.now()}; };
@@ -430,21 +582,21 @@ el.fold.addEventListener('input', () => { anim = null; stopLoop(); });
 let dirty = true;
 function render(){
   syncOut();
-  const p = params(), pth = path(p);
+  const p = params(), m = metrics(p), pth = m.pth;
   const u = p.fold, i = Math.min(NS, Math.round(u*NS));
-  const q = pose(p, p.ah0 + (p.ah1 - p.ah0)*u, pth[Math.max(0, i-1)]);
+  const q = i === 0 && u === 0 ? pth[0] : poseFn()(p, p.ah0 + (p.ah1 - p.ah0)*u, pth[Math.max(0, i-1)]);
   drawStage(q, pth); drawPlot(pth, u, p);
-  const allOk = pth.every(r => r.ok);
-  let tmin = 180; pth.forEach(r => r.trans.forEach(t => tmin = Math.min(tmin, t)));
   $('rMotor').innerHTML = (p.ah0 - q.ah).toFixed(0) + '<span class="u">°</span>';
   $('rE').innerHTML = q.Edeg.toFixed(0) + '<span class="u">°</span>';
   $('rM').innerHTML = q.Mdeg.toFixed(0) + '<span class="u">°</span>';
   $('rSpan').innerHTML = Math.round(100*q.T[0]/pth[0].T[0]) + '<span class="u">%</span>';
-  const st = $('status'), e = pth[0], f = pth[NS];
-  if (!allOk){ st.className = 'bad'; st.textContent = '⚠ 途中でロッドが届かない（または詰まる）区間があります。寸法か軸の傾きを戻してください。'; }
-  else { st.className = tmin < 30 ? 'bad' : '';
-    st.textContent = '全行程で動きます。最小伝達角 ' + tmin.toFixed(0) + '°（30°以上が目安）／ 肘 ' + e.Edeg.toFixed(0) + '°→' + f.Edeg.toFixed(0) + '°、手首 ' + e.Mdeg.toFixed(0) + '°→' + f.Mdeg.toFixed(0) + '°'; }
-  sizeTable(p, e);
+  const bits = [];
+  if (!m.ok) bits.push('<span class="bad">⚠ 途中でロッドが届かない（または詰まる）区間があります</span>');
+  else bits.push((m.tmin < 30 ? '<span class="bad">' : '<span>') + '最小伝達角 ' + m.tmin.toFixed(0) + '°（30°以上が目安）</span>');
+  bits.push('肘 ' + m.E0.toFixed(0) + '°→' + m.E1.toFixed(0) + '°、手首 ' + m.M0.toFixed(0) + '°→' + m.M1.toFixed(0) + '°');
+  bits.push((m.prot > 0.5 ? '<span class="bad">' : '<span>') + '翼・体からのはみ出し 最大 ' + (m.prot*p.scale).toFixed(1) + ' mm（実寸）</span>');
+  $('status').innerHTML = bits.join(' ／ ');
+  sizeTable(p, pth[0]);
 }
 function frame(ts){
   requestAnimationFrame(frame);
@@ -452,7 +604,8 @@ function frame(ts){
     if (x >= 1){ const done = anim.to; anim = null; if (looping) setTimeout(() => { if (looping) goTo(done > 0.5 ? 0 : 1); }, 350); } }
   if (dirty){ dirty = false; render(); }
 }
-window.__wing = {pose, path, params, OPT, TILT3D, setTilts, setDims, INIT};
+window.__wing = {path, params, metrics, protrusion, outsideDist, mechSamples, VERSIONS, loadVersion, setTilts, get ver(){ return ver; }};
+loadVersion(VERSIONS[0].id);
 requestAnimationFrame(frame);
 })();
 </script>
