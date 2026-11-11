@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>カワセミ翼の開閉リンク</title>
+<style>
+  :root{
+    --bg:#0b1420; --panel:#101d2b; --line:#1c2f42; --grid:#16283a;
+    --ink:#dce7f0; --dim:#7690a8;
+    --hum:#7fd4ff; --uln:#4fd1c5; --man:#ff8a5c; --bc:#c7b6ff; --rod:#ffd166; --warn:#e5568b;
+    --mono:'JetBrains Mono','SF Mono','Consolas',monospace;
+    --sans:'Segoe UI','Hiragino Sans','Yu Gothic UI',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans)}
+  .wrap{max-width:1240px;margin:0 auto;padding:20px 16px 40px}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:16px}
+  header h1{font-size:18px;font-weight:600;margin:0;letter-spacing:.02em}
+  header .sub{font-size:12px;color:var(--dim);font-family:var(--mono)}
+  .layout{display:grid;grid-template-columns:1.45fr 1fr;gap:16px;align-items:start}
+  @media (max-width:920px){.layout{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px 16px}
+  .panel + .panel{margin-top:14px}
+  .panel h2{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--dim);margin:0 0 12px;font-weight:600}
+  canvas{display:block;width:100%;height:auto;background:var(--bg);border:1px solid var(--line);border-radius:4px;touch-action:none}
+  #stage{cursor:grab} #stage:active{cursor:grabbing}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--dim);margin-top:8px;font-family:var(--mono)}
+  .legend i{display:inline-block;width:12px;height:3px;margin-right:5px;vertical-align:middle;border-radius:2px}
+  .row{display:grid;grid-template-columns:138px 1fr 58px;align-items:center;gap:10px;margin-bottom:8px;font-size:12px}
+  .row label{color:var(--dim);font-family:var(--mono)}
+  .row output{font-family:var(--mono);color:var(--uln);text-align:right}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:3px;background:var(--grid);border-radius:2px;outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--uln);border:2px solid var(--bg);cursor:pointer}
+  input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--uln);border:2px solid var(--bg);cursor:pointer}
+  input[type=range]:focus-visible{outline:2px solid var(--uln);outline-offset:6px}
+  .bar{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+  button{font:12px var(--mono);padding:7px 11px;border-radius:4px;cursor:pointer;color:var(--ink);background:var(--grid);border:1px solid var(--line)}
+  button:hover{border-color:var(--uln)}
+  button:focus-visible{outline:2px solid var(--uln);outline-offset:2px}
+  button.on{color:var(--uln);border-color:var(--uln);background:rgba(79,209,197,.12)}
+  .cells{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+  .cell{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:7px 9px}
+  .cell .k{font:10px var(--mono);color:var(--dim);letter-spacing:.04em}
+  .cell .v{font:16px var(--mono);margin-top:2px}
+  .cell .u{font-size:11px;color:var(--dim)}
+  #status{font:11.5px var(--mono);margin-top:10px;color:var(--dim);line-height:1.55}
+  #status.bad{color:var(--warn)}
+  .note{font-size:11.5px;color:var(--dim);line-height:1.65;margin:8px 0 0}
+  .note b{color:var(--ink);font-weight:600}
+  details{margin-top:4px} summary{cursor:pointer;font:12px var(--mono);color:var(--dim);margin:6px 0}
+  table{width:100%;border-collapse:collapse;font:11.5px var(--mono);margin-top:4px}
+  td{padding:3px 0;color:var(--dim);vertical-align:top} td:last-child{text-align:right;color:var(--ink)}
+  tr + tr td{border-top:1px solid var(--grid)}
+  td.grp{color:var(--ink);padding-top:9px;text-align:left!important}
+  label.chk{display:inline-flex;align-items:center;gap:6px;font:12px var(--mono);color:var(--dim);margin-right:14px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>カワセミ翼の開閉リンク</h1>
+    <div class="sub">1 motor · 10-bar · Alcedo atthis bone proportions</div>
+  </header>
+
+  <div class="layout">
+    <div>
+      <div class="panel">
+        <h2>3D view — ドラッグで回転、Shift＋ドラッグで移動、ホイールで拡大</h2>
+        <canvas id="stage" width="760" height="560" aria-label="翼の骨格リンク機構の3D表示"></canvas>
+        <div class="bar" style="margin:8px 0 0">
+          <button data-view="top">上から</button>
+          <button data-view="front">正面</button>
+          <button data-view="back">後ろ</button>
+          <button data-view="side">横</button>
+          <button data-view="iso" class="on">斜め</button>
+        </div>
+        <div class="legend">
+          <span><i style="background:var(--hum)"></i>上腕骨（モーター）</span>
+          <span><i style="background:var(--uln)"></i>尺骨</span>
+          <span><i style="background:var(--man)"></i>手（手根中手骨＋指）</span>
+          <span><i style="background:var(--bc)"></i>ベルクランク</span>
+          <span><i style="background:var(--rod)"></i>ロッド</span>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>joint angles vs. fold — 畳み具合と関節角</h2>
+        <canvas id="plot" width="760" height="230" aria-label="畳み具合に対する肘角と手首角"></canvas>
+        <div class="legend">
+          <span><i style="background:var(--uln)"></i>肘角（上腕骨–尺骨）</span>
+          <span><i style="background:var(--man)"></i>手首角（尺骨–手）</span>
+          <span><i style="background:var(--hum)"></i>上腕骨の後退量</span>
+          <span><i style="background:#dce7f0;opacity:.45"></i>点線 = 目標</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h2>motion</h2>
+        <div class="row"><label for="fold">畳み具合</label><input id="fold" type="range" min="0" max="1" step="0.001" value="0"><output id="ofold"></output></div>
+        <div class="bar">
+          <button id="playBtn">▶ 開閉を繰り返す</button>
+          <button id="toOpen">広げる</button>
+          <button id="toClose">畳む</button>
+        </div>
+        <div class="row"><label for="dur">開閉にかける時間</label><input id="dur" type="range" min="0.2" max="4" step="0.05" value="1.2"><output id="odur"></output></div>
+        <div>
+          <label class="chk"><input type="checkbox" id="feathers" checked>羽根</label>
+          <label class="chk"><input type="checkbox" id="mirror" checked>左翼</label>
+          <label class="chk"><input type="checkbox" id="mech" checked>駆動リンク</label>
+          <label class="chk"><input type="checkbox" id="trace">翼端の軌跡</label>
+        </div>
+        <div class="cells">
+          <div class="cell"><div class="k">モーター</div><div class="v" id="rMotor">0</div></div>
+          <div class="cell"><div class="k">肘</div><div class="v" id="rE" style="color:var(--uln)">0</div></div>
+          <div class="cell"><div class="k">手首</div><div class="v" id="rM" style="color:var(--man)">0</div></div>
+          <div class="cell"><div class="k">骨格の張り出し</div><div class="v" id="rSpan">0</div></div>
+        </div>
+        <div id="status"></div>
+      </div>
+
+      <div class="panel">
+        <h2>3D — 関節軸の傾き（0で平面リンク）</h2>
+        <div class="bar">
+          <button id="p2d" class="on">2D（全軸が平行）</button>
+          <button id="p3d">3D（推奨の傾き）</button>
+        </div>
+        <div class="row"><label for="tS">肩軸の前後傾き</label><input id="tS" type="range" min="-40" max="40" step="1" value="0"><output id="otS"></output></div>
+        <div class="row"><label for="tE">肘軸の傾き</label><input id="tE" type="range" min="-40" max="40" step="1" value="0"><output id="otE"></output></div>
+        <div class="row"><label for="tW">手首軸の傾き</label><input id="tW" type="range" min="-50" max="50" step="1" value="0"><output id="otW"></output></div>
+        <p class="note">軸の傾きは各骨の長手方向まわりに測っています。ロッドの両端を<b>ボールエンド（ロッドエンド）</b>にすれば、軸を傾けてもモーター1個のまま動きます。肩軸を傾けると上腕骨が後ろへ引くにつれて下がり、手首軸を傾けると畳んだ手が尺骨の下へ潜ります（Stowers 2017では、最大まで曲げたとき手の面が約45°傾くと報告されています）。</p>
+      </div>
+
+      <div class="panel">
+        <h2>real size — 製作寸法</h2>
+        <div class="row"><label for="scale">拡大率</label><input id="scale" type="range" min="1" max="6" step="0.1" value="2.5"><output id="oscale"></output></div>
+        <table id="sizeTable"></table>
+        <p class="note">骨の長さはヨーロッパカワセミ（<i>Alcedo atthis</i>）の実測値で、上腕骨25.7 mm、尺骨32.0 mm、手根中手骨13.3 mm です。指骨の7 mmと羽根の長さは推定値です。座標の原点は肩関節で、x は外側、y は前方です。尺骨・手・上腕骨の上の点は、その骨に沿った座標（骨方向, 前縁側が＋）で書いています。</p>
+        <details>
+          <summary>寸法を微調整する</summary>
+          <div id="dimSliders"></div>
+          <div class="bar" style="margin-top:6px"><button id="resetDims">最適化した寸法に戻す</button></div>
+        </details>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+const $ = id => document.getElementById(id);
+const D2R = Math.PI/180, R2D = 180/Math.PI;
+
+// ---------------- design data ----------------
+const BONE = {LH:25.7, LU:32.0, LCMC:13.3, LDIG:7.0};
+BONE.LMAN = BONE.LCMC + BONE.LDIG;
+const TARGET = {E0:150, E1:25, M0:160, M1:25};
+// Optimised 2D design (kingfisher 1:1, mm). Elbow chain lives in the body frame, wrist chain in the humerus frame.
+const OPT = {G1x:0.647, G1y:-23.996, h1x:12.245, h1y:12.0, rb1:13.993, Lc1:25.455, b2x:10.822, b2y:-8.882, L2:16.854, wx:-0.285, wy:-8.0,
+             G2x:32.832, G2y:-12.047, h3x:27.514, h3y:9.342, rb3:13.012, Lc3:32.51, b4x:13.418, b4y:-3.994, L4:34.529, qx:4.235, qy:1.527,
+             ah0:-15, ah1:-75};
+const INIT = {beta1:0.529, phiE:0.516, beta2:0.096, psi:-0.339};   // assembly branch at the open pose
+const TILT3D = {tS:22, tE:-8, tW:-22};
+const DIMS = [
+  ['ah0','上腕 広げた時',-40,20,0.5], ['ah1','上腕 畳んだ時',-110,-40,0.5],
+  ['G1x','肘BC 支点 x',-20,10,0.1], ['G1y','肘BC 支点 y',-40,10,0.1], ['h1x','上腕ホーン 沿',-5,25,0.1], ['h1y','上腕ホーン 前',-15,20,0.1],
+  ['rb1','肘BC 腕1',4,20,0.05], ['Lc1','ロッド1',8,45,0.05], ['b2x','肘BC 腕2 x',-15,20,0.05], ['b2y','肘BC 腕2 y',-20,15,0.05],
+  ['L2','ロッド2',6,40,0.05], ['wx','尺骨レバー 沿',-10,10,0.05], ['wy','尺骨レバー 前',-15,10,0.05],
+  ['G2x','手首BC 支点 沿',10,45,0.1], ['G2y','手首BC 支点 前',-25,10,0.1], ['h3x','尺骨クランク 沿',5,34,0.1], ['h3y','尺骨クランク 前',-15,15,0.1],
+  ['rb3','手首BC 腕1',4,20,0.05], ['Lc3','ロッド3',10,45,0.05], ['b4x','手首BC 腕2 x',-15,20,0.05], ['b4y','手首BC 腕2 y',-15,15,0.05],
+  ['L4','ロッド4',10,45,0.05], ['qx','手レバー 沿',-10,12,0.05], ['qy','手レバー 前',-10,10,0.05]];
+// build fine-tuning sliders
+$('dimSliders').innerHTML = DIMS.map(([id,lab,mn,mx,st]) =>
+  `<div class="row"><label for="${id}">${lab}</label><input id="${id}" type="range" min="${mn}" max="${mx}" step="${st}" value="${OPT[id]}"><output id="o${id}"></output></div>`).join('');
+
+const dimIds = DIMS.map(d => d[0]);
+const tiltIds = ['tS','tE','tW'];
+const allIds = dimIds.concat(tiltIds, ['fold','dur','scale']);
+const el = {}; allIds.forEach(id => el[id] = $(id));
+const setDims = o => dimIds.forEach(id => el[id].value = o[id]);
+const setTilts = o => tiltIds.forEach(id => el[id].value = o[id]);
+
+// ---------------- vector math ----------------
+const add = (a,b) => [a[0]+b[0],a[1]+b[1],a[2]+b[2]];
+const sub = (a,b) => [a[0]-b[0],a[1]-b[1],a[2]-b[2]];
+const mul = (a,s) => [a[0]*s,a[1]*s,a[2]*s];
+const dot = (a,b) => a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+const cross = (a,b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+const norm = a => Math.hypot(a[0],a[1],a[2]);
+const I3 = [[1,0,0],[0,1,0],[0,0,1]];
+function rotM(ax, th){
+  const [x,y,z] = ax, c = Math.cos(th), s = Math.sin(th), C = 1-c;
+  return [[c+x*x*C, x*y*C-z*s, x*z*C+y*s],[y*x*C+z*s, c+y*y*C, y*z*C-x*s],[z*x*C-y*s, z*y*C+x*s, c+z*z*C]];
+}
+const mv = (M,v) => [M[0][0]*v[0]+M[0][1]*v[1]+M[0][2]*v[2], M[1][0]*v[0]+M[1][1]*v[1]+M[1][2]*v[2], M[2][0]*v[0]+M[2][1]*v[1]+M[2][2]*v[2]];
+function mm(A,B){ const R=[[0,0,0],[0,0,0],[0,0,0]]; for(let i=0;i<3;i++)for(let j=0;j<3;j++){let s=0;for(let k=0;k<3;k++)s+=A[i][k]*B[k][j];R[i][j]=s;} return R; }
+const Z = [0,0,1];
+const tiltAxis = t => [0, -Math.sin(t), Math.cos(t)];   // local z tilted about the bone's long axis (local x)
+const angDiff = (a,b) => Math.atan2(Math.sin(a-b), Math.cos(a-b));
+const angAt = (a,b,c) => { const v1 = sub(a,b), v2 = sub(c,b); const t = Math.acos(Math.max(-1,Math.min(1, dot(v1,v2)/(norm(v1)*norm(v2)||1e-12))))*R2D; return Math.min(t, 180-t); };
+
+// Point X(phi) = C + Rf·Rot(a,phi)·w. Find phi with |X - F| = L.  Closed form: P cos + Q sin = R.
+function solveLoop(Rf, C, a, w, F, L, ref){
+  const aw = mul(a, dot(a,w));
+  const c0 = sub(add(C, mv(Rf, aw)), F), c1 = mv(Rf, sub(w, aw)), c2 = mv(Rf, cross(a, w));
+  const P = 2*dot(c0,c1), Q = 2*dot(c0,c2), Rr = L*L - dot(c0,c0) - dot(c1,c1);
+  const amp = Math.hypot(P,Q) || 1e-12; let r = Rr/amp;
+  const margin = 1 - Math.abs(r), ok = margin > 1e-9;
+  r = Math.max(-1, Math.min(1, r));
+  const base = Math.atan2(Q,P), d = Math.acos(r), c = [base + d, base - d];
+  const pickc = Math.abs(angDiff(c[0],ref)) <= Math.abs(angDiff(c[1],ref)) ? c[0] : c[1];
+  return {phi: ref + angDiff(pickc, ref), ok, margin};
+}
+
+function params(){ const p = {}; allIds.forEach(id => p[id] = parseFloat(el[id].value)); return p; }
+
+// Full pose for humerus (motor) angle ah [deg]; ref holds the previous solution for branch continuity.
+function pose(p, ah, ref){
+  ref = ref || INIT;
+  // shoulder plane: the motor axis is tilted about the body's lateral (x) axis by tS.
+  // Bellcrank 1 is mounted on the body with its axis parallel to the motor axis, so the elbow chain stays coplanar.
+  const Rs = rotM([1,0,0], p.tS*D2R);
+  const Rh = mm(Rs, rotM(Z, ah*D2R));
+  const E = mv(Rh, [BONE.LH,0,0]);
+  // elbow chain — stage 1: humerus horn H1 pulls body bellcrank 1 (pivot G1)
+  const G1 = mv(Rs, [p.G1x, p.G1y, 0]), H1 = mv(Rh, [p.h1x, p.h1y, 0]);
+  const s1 = solveLoop(Rs, G1, Z, [p.rb1,0,0], H1, p.Lc1, ref.beta1);
+  const Rb1 = mm(Rs, rotM(Z, s1.phi)), B1 = add(G1, mv(Rb1, [p.rb1,0,0])), B2 = add(G1, mv(Rb1, [p.b2x, p.b2y, 0]));
+  // stage 2: rod 2 from bellcrank to the ulna lever U; ulna turns about the elbow axis
+  const aE = tiltAxis(p.tE*D2R);
+  const s2 = solveLoop(Rh, E, aE, [p.wx, p.wy, 0], B2, p.L2, ref.phiE);
+  const Ru = mm(Rh, rotM(aE, s2.phi));
+  const U = add(E, mv(Ru, [p.wx, p.wy, 0])), W = add(E, mv(Ru, [BONE.LU,0,0]));
+  // wrist chain — stage 1: ulna crank C3 drives bellcrank 2 mounted on the humerus (pivot G2, humerus z-axis)
+  const G2 = mv(Rh, [p.G2x, p.G2y, 0]), C3 = add(E, mv(Ru, [p.h3x, p.h3y, 0]));
+  const s3 = solveLoop(Rh, G2, Z, [p.rb3,0,0], C3, p.Lc3, ref.beta2);
+  const Rb2 = mm(Rh, rotM(Z, s3.phi)), B3 = add(G2, mv(Rb2, [p.rb3,0,0])), B4 = add(G2, mv(Rb2, [p.b4x, p.b4y, 0]));
+  // stage 2: rod 4 to the hand lever Q; hand turns about the wrist axis
+  const aW = tiltAxis(p.tW*D2R);
+  const s4 = solveLoop(Ru, W, aW, [p.qx, p.qy, 0], B4, p.L4, ref.psi);
+  const Rm = mm(Ru, rotM(aW, s4.phi));
+  const Q = add(W, mv(Rm, [p.qx, p.qy, 0])), CM = add(W, mv(Rm, [BONE.LCMC,0,0])), T = add(W, mv(Rm, [BONE.LMAN,0,0]));
+  const O = [0,0,0];
+  const Edeg = angAtFull(O, E, W), Mdeg = angAtFull(E, W, T);
+  const trans = [angAt(H1,B1,G1), angAt(B2,U,E), angAt(C3,B3,G2), angAt(B4,Q,W)];
+  return {Rh, Ru, Rm, Rb1, Rb2, E, W, U, H1, G1, B1, B2, G2, C3, B3, B4, Q, CM, T, Edeg, Mdeg, trans,
+          ok: s1.ok && s2.ok && s3.ok && s4.ok, margin: Math.min(s1.margin, s2.margin, s3.margin, s4.margin),
+          beta1:s1.phi, phiE:s2.phi, beta2:s3.phi, psi:s4.phi, ah};
+}
+function angAtFull(a,b,c){ const v1 = sub(a,b), v2 = sub(c,b); return Math.acos(Math.max(-1,Math.min(1, dot(v1,v2)/(norm(v1)*norm(v2)))))*R2D; }
+
+const NS = 160;
+function path(p){
+  const out = []; let ref = INIT;
+  for (let i=0;i<=NS;i++){ const u = i/NS, q = pose(p, p.ah0 + (p.ah1 - p.ah0)*u, ref); q.u = u; out.push(q); ref = q; }
+  return out;
+}
+
+// ---------------- feathers (visual approximation) ----------------
+// Primaries P1..P10 on the hand, secondaries S1..S10 on the ulna. Each feather angle interpolates linearly with the
+// wrist (primaries) or elbow (secondaries) angle, after Matloff et al. 2020. Lengths are estimates for a kingfisher.
+const PRIM = [[0.05,40,-82,-8],[0.15,42,-75,-7],[0.25,44,-68,-6],[0.35,46,-61,-5],[0.45,48,-54,-4],
+              [0.55,50,-46,-3.5],[0.68,53,-38,-3],[0.80,56,-29,-2.5],[0.92,57,-20,-2],[1.00,53,-11,-1.5]];
+const SEC = []; for (let i=0;i<10;i++){ SEC.push([0.96 - i*0.095, 40 - i*0.9, -100 - i*3.0, -170 + i*0.8]); }
+function featherQuads(q){
+  const fw = Math.max(0, Math.min(1, (q.Mdeg - TARGET.M1)/(TARGET.M0 - TARGET.M1)));
+  const fe = Math.max(0, Math.min(1, (q.Edeg - TARGET.E1)/(TARGET.E0 - TARGET.E1)));
+  const out = [];
+  const make = (base, frame, angDeg, L, w, kind, order) => {
+    const a = angDeg*D2R, dir = mv(frame, [Math.cos(a), Math.sin(a), 0]), side = mv(frame, [-Math.sin(a), Math.cos(a), 0]);
+    const tip = add(base, mul(dir, L)), sh = add(base, mul(dir, L*0.82));
+    // a slight downward offset per feather so the stack reads in 3D (each sits a little under its neighbour)
+    const drop = mv(frame, [0,0,-0.35*order]);
+    out.push({kind, pts:[add(add(base, mul(side, w*0.22)),drop), add(add(sh, mul(side, w*0.5)),drop), add(tip,drop), add(add(sh, mul(side, -w*0.5)),drop), add(add(base, mul(side, -w*0.22)),drop)]});
+  };
+  SEC.forEach(([f,L,a0,a1],i) => make(add(q.E, mv(q.Ru, [BONE.LU*f,0,0])), q.Ru, a1 + (a0-a1)*fe, L, 7.5, 's', i*0.2));
+  PRIM.forEach(([f,L,a0,a1],i) => make(add(q.W, mv(q.Rm, [BONE.LMAN*f,0,0])), q.Rm, a1 + (a0-a1)*fw, L, 7, 'p', 2 + i*0.25));
+  return out;
+}
+
+// ---------------- camera ----------------
+const stage = $('stage'), ctx = stage.getContext('2d');
+const VIEWS = {top:[0,90], front:[180,0], back:[0,0], side:[90,0], iso:[-35,32]};
+let yaw = -35*D2R, pitch = 32*D2R, zoom = 3.3, panX = 0, panY = 0;
+function setView(name){ const [y,pc] = VIEWS[name]; yaw = y*D2R; pitch = pc*D2R; panX = panY = 0;
+  document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === name)); dirty = true; }
+document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => setView(b.dataset.view));
+const BODYX = -13;   // body midline; the shoulder sits at the lateral edge of the torso
+function proj(v){
+  const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+  const x0 = v[0] - BODYX, x = x0*cy - v[1]*sy, y = x0*sy + v[1]*cy, z = v[2];
+  return [stage.width/2 + panX + x*zoom, stage.height*0.5 + panY - (z*cp + y*sp)*zoom, y*cp - z*sp];
+}
+let drag = null;
+stage.addEventListener('pointerdown', e => { drag = {x:e.clientX, y:e.clientY, yaw, pitch, shift:e.shiftKey, panX, panY}; stage.setPointerCapture(e.pointerId); });
+stage.addEventListener('pointermove', e => {
+  if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if (drag.shift){ panX = drag.panX + dx; panY = drag.panY + dy; }
+  else { yaw = drag.yaw - dx*0.008; pitch = Math.max(-1.5, Math.min(1.5, drag.pitch + dy*0.008)); document.querySelectorAll('[data-view]').forEach(b => b.classList.remove('on')); }
+  dirty = true;
+});
+stage.addEventListener('pointerup', () => drag = null);
+stage.addEventListener('wheel', e => { e.preventDefault(); zoom = Math.max(1.2, Math.min(10, zoom*Math.exp(-e.deltaY*0.001))); dirty = true; }, {passive:false});
+
+// ---------------- drawing ----------------
+function hull(pts){
+  pts = pts.slice().sort((a,b) => a[0]-b[0] || a[1]-b[1]);
+  const cr = (o,a,b) => (a[0]-o[0])*(b[1]-o[1]) - (a[1]-o[1])*(b[0]-o[0]); const lo = [], up = [];
+  for (const p of pts){ while (lo.length>=2 && cr(lo[lo.length-2], lo[lo.length-1], p) <= 0) lo.pop(); lo.push(p); }
+  for (let i=pts.length-1;i>=0;i--){ const p = pts[i]; while (up.length>=2 && cr(up[up.length-2], up[up.length-1], p) <= 0) up.pop(); up.push(p); }
+  up.pop(); lo.pop(); return lo.concat(up);
+}
+function ellipsoid(c, r){ const out = []; for (let i=0;i<=12;i++){ const th = Math.PI*i/12; for (let j=0;j<24;j++){ const ph = 2*Math.PI*j/24;
+  out.push(proj([c[0]+r[0]*Math.sin(th)*Math.cos(ph), c[1]+r[1]*Math.cos(th), c[2]+r[2]*Math.sin(th)*Math.sin(ph)])); } } return out; }
+function fillPoly(pts, fill, stroke){ ctx.beginPath(); pts.forEach((p,i) => i ? ctx.lineTo(p[0],p[1]) : ctx.moveTo(p[0],p[1])); ctx.closePath();
+  ctx.fillStyle = fill; ctx.fill(); if (stroke){ ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.stroke(); } }
+function drawBody(){
+  fillPoly(hull([[BODYX-6,-40,-6],[BODYX+6,-40,-6],[BODYX+7,-62,-9],[BODYX-7,-62,-9]].map(proj)), '#1d3a55', '#2c4f6e');
+  fillPoly(hull(ellipsoid([BODYX,-12,-9],[13,30,13])), '#173049', '#2a4a66');
+  fillPoly(hull(ellipsoid([BODYX,22,-1],[10.5,11,10])), '#1a3854', '#2c4f6e');
+  fillPoly(hull([[BODYX-4,30,-1],[BODYX+4,30,-1],[BODYX,30,3],[BODYX,30,-5],[BODYX,68,-3]].map(proj)), '#3a2a26', '#5a4038');
+  for (const sx of [1,-1]){ const e = proj([BODYX+8.5*sx,25,2]); ctx.fillStyle = '#0b1420'; ctx.beginPath(); ctx.arc(e[0],e[1],2,0,7); ctx.fill(); }
+}
+function seg(a,b,color,w){ const A = proj(a), B = proj(b); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(A[0],A[1]); ctx.lineTo(B[0],B[1]); ctx.stroke(); }
+function dotp(a,r,color){ const A = proj(a); ctx.fillStyle = color; ctx.beginPath(); ctx.arc(A[0],A[1],r,0,7); ctx.fill(); }
+function plate(pts, color){ fillPoly(pts.map(proj), color.replace('1)', '.22)'), color); }
+const mir = v => [2*BODYX - v[0], v[1], v[2]];
+
+function drawWing(q, opt, mirrored){
+  const T = mirrored ? mir : (v => v), bad = !q.ok;
+  if (opt.feathers){
+    const quads = featherQuads(q).map(f => { const pts = f.pts.map(v => proj(T(v))); return {f, pts, d: pts.reduce((s,p) => s+p[2],0)/pts.length}; });
+    quads.sort((a,b) => b.d - a.d);
+    for (const {f, pts} of quads){
+      ctx.beginPath(); pts.forEach((p,i) => i ? ctx.lineTo(p[0],p[1]) : ctx.moveTo(p[0],p[1])); ctx.closePath();
+      ctx.fillStyle = f.kind === 'p' ? 'rgba(40,120,200,.40)' : 'rgba(52,160,186,.36)';
+      ctx.strokeStyle = f.kind === 'p' ? 'rgba(120,190,255,.55)' : 'rgba(120,220,220,.5)'; ctx.lineWidth = 0.8; ctx.fill(); ctx.stroke();
+    }
+  }
+  const O = [0,0,0];
+  if (opt.mech && !mirrored){
+    const bc = bad ? 'rgba(229,86,139,1)' : 'rgba(199,182,255,1)', rod = bad ? '#e5568b' : '#ffd166';
+    plate([q.G1, q.B1, q.B2], bc);                          // bellcrank 1 (on body)
+    plate([q.G2, q.B3, q.B4], bc);                          // bellcrank 2 (on humerus)
+    plate([O, q.E, q.H1], 'rgba(127,212,255,1)');          // humerus horn
+    plate([q.E, q.G2, add(q.E, mv(q.Rh,[2,0,0]))], 'rgba(127,212,255,1)'); // humerus bracket carrying bellcrank 2
+    plate([q.E, q.U, add(q.E, mv(q.Ru,[4,0,0]))], 'rgba(79,209,197,1)');   // ulna lever (olecranon-like)
+    plate([add(q.E, mv(q.Ru,[q.Ru ? 20 : 0,0,0])), q.C3, q.W], 'rgba(79,209,197,1)'); // ulna crank
+    plate([q.W, q.Q, q.CM], 'rgba(255,138,92,1)');         // hand lever
+    seg(q.H1, q.B1, rod, 2); seg(q.B2, q.U, rod, 2); seg(q.C3, q.B3, rod, 2); seg(q.B4, q.Q, rod, 2);
+    [q.H1,q.B1,q.B2,q.U,q.C3,q.B3,q.B4,q.Q].forEach(v => dotp(v, 2.2, rod));
+    dotp(q.G1, 3.2, '#c7b6ff'); dotp(q.G2, 3.2, '#c7b6ff');
+  }
+  seg(O, T(q.E), '#7fd4ff', 6);
+  seg(T(q.E), T(q.W), '#4fd1c5', 5);
+  seg(T(q.W), T(q.CM), '#ff8a5c', 4.5);
+  seg(T(q.CM), T(q.T), '#ff8a5c', 2.6);
+  dotp(O, 4.2, '#dce7f0'); dotp(T(q.E), 3.6, '#dce7f0'); dotp(T(q.W), 3.4, '#dce7f0');
+}
+function drawGrid(){
+  ctx.strokeStyle = '#132538'; ctx.lineWidth = 1;
+  for (let i=-6;i<=6;i++){
+    const a = proj([BODYX + i*15, -90, -32]), b = proj([BODYX + i*15, 90, -32]); ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+    const c = proj([BODYX - 90, i*15, -32]), d = proj([BODYX + 90, i*15, -32]); ctx.beginPath(); ctx.moveTo(c[0],c[1]); ctx.lineTo(d[0],d[1]); ctx.stroke();
+  }
+}
+function drawStage(q, pth){
+  ctx.clearRect(0,0,stage.width,stage.height); drawGrid();
+  const opt = {feathers:$('feathers').checked, mech:$('mech').checked};
+  const order = [{body:true, d:proj([BODYX,0,0])[2]}, {m:false, d:proj(q.W)[2]}];
+  if ($('mirror').checked) order.push({m:true, d:proj(mir(q.W))[2]});
+  order.sort((a,b) => b.d - a.d);
+  for (const o of order){ if (o.body) drawBody(); else drawWing(q, opt, o.m); }
+  if ($('trace').checked){ ctx.strokeStyle = 'rgba(220,231,240,.5)'; ctx.lineWidth = 1.2; ctx.beginPath();
+    pth.forEach((r,i) => { const P = proj(r.T); i ? ctx.lineTo(P[0],P[1]) : ctx.moveTo(P[0],P[1]); }); ctx.stroke(); }
+  ctx.fillStyle = '#7690a8'; ctx.font = '11px monospace'; const s = proj([0,0,0]); ctx.fillText('肩（モーター）', s[0]+8, s[1]-8);
+}
+
+// ---------------- plot ----------------
+const plot = $('plot'), pc = plot.getContext('2d');
+function drawPlot(pth, u, p){
+  const W = plot.width, H = plot.height, l = 44, r = 14, t = 14, b = 26;
+  pc.clearRect(0,0,W,H);
+  const X = x => l + (W-l-r)*x, Y = d => t + (H-t-b)*(1 - d/180);
+  pc.font = '10px monospace';
+  for (let d=0; d<=180; d+=30){ pc.strokeStyle = d===0 ? '#27435b' : '#16283a'; pc.beginPath(); pc.moveTo(l,Y(d)); pc.lineTo(W-r,Y(d)); pc.stroke(); pc.fillStyle = '#4c6379'; pc.fillText(d+'°', 8, Y(d)+3); }
+  [0,0.25,0.5,0.75,1].forEach(x => { pc.strokeStyle = '#16283a'; pc.beginPath(); pc.moveTo(X(x),t); pc.lineTo(X(x),H-b); pc.stroke(); });
+  pc.fillStyle = '#4c6379'; pc.fillText('広げた', l, H-8); pc.fillText('畳んだ', W-r-36, H-8);
+  const line = (f, color, dash, w) => { pc.strokeStyle = color; pc.setLineDash(dash); pc.lineWidth = w; pc.beginPath(); pth.forEach((q,i) => { const x = X(q.u), y = Y(f(q)); i ? pc.lineTo(x,y) : pc.moveTo(x,y); }); pc.stroke(); pc.setLineDash([]); };
+  line(q => TARGET.E0 + (TARGET.E1-TARGET.E0)*q.u, 'rgba(79,209,197,.55)', [5,4], 1.5);
+  line(q => TARGET.M0 + (TARGET.M1-TARGET.M0)*q.u, 'rgba(255,138,92,.55)', [5,4], 1.5);
+  line(q => p.ah0 - q.ah, 'rgba(127,212,255,.85)', [], 1.5);
+  line(q => q.Edeg, '#4fd1c5', [], 2.2);
+  line(q => q.Mdeg, '#ff8a5c', [], 2.2);
+  pc.strokeStyle = 'rgba(220,231,240,.6)'; pc.beginPath(); pc.moveTo(X(u),t); pc.lineTo(X(u),H-b); pc.stroke();
+}
+
+// ---------------- size table ----------------
+function sizeTable(p, q0){
+  const k = p.scale, f = v => (v*k).toFixed(1), pt = (a,b) => '('+f(a)+', '+f(b)+')';
+  const rows = [
+    ['g','骨（mm）'], ['上腕骨（肩→肘）', f(BONE.LH)], ['尺骨（肘→手首）', f(BONE.LU)], ['手（手首→指先）', f(BONE.LMAN)],
+    ['g','肘を曲げる系統（体側, mm）'], ['ベルクランク1 支点（体）', pt(p.G1x,p.G1y)], ['上腕骨ホーン（上腕座標）', pt(p.h1x,p.h1y)],
+    ['ロッド1', f(p.Lc1)], ['ベルクランク1 腕1 / 腕2', f(p.rb1)+' / '+pt(p.b2x,p.b2y)], ['ロッド2', f(p.L2)], ['尺骨レバー（尺骨座標）', pt(p.wx,p.wy)],
+    ['g','手首を曲げる系統（上腕骨側, mm）'], ['ベルクランク2 支点（上腕座標）', pt(p.G2x,p.G2y)], ['尺骨クランク（尺骨座標）', pt(p.h3x,p.h3y)],
+    ['ロッド3', f(p.Lc3)], ['ベルクランク2 腕1 / 腕2', f(p.rb3)+' / '+pt(p.b4x,p.b4y)], ['ロッド4', f(p.L4)], ['手レバー（手座標）', pt(p.qx,p.qy)],
+    ['g','モーター'], ['回転角（上腕骨）', Math.abs(p.ah0 - p.ah1).toFixed(1)+'°'], ['広げた時の骨格の張り出し', f(q0.T[0])+' mm']];
+  $('sizeTable').innerHTML = rows.map(r => r[0] === 'g' ? '<tr><td class="grp" colspan="2">'+r[1]+'</td></tr>' : '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>').join('');
+}
+
+// ---------------- UI ----------------
+const fmt = {fold:v => Math.round(v*100)+'%', dur:v => v.toFixed(2)+' s', scale:v => '×'+v.toFixed(1), tS:v => v+'°', tE:v => v+'°', tW:v => v+'°', ah0:v => v+'°', ah1:v => v+'°'};
+function syncOut(){ allIds.forEach(id => { const o = $('o'+id); if (o){ const v = parseFloat(el[id].value); o.textContent = fmt[id] ? fmt[id](v) : v.toFixed(1); } }); }
+allIds.forEach(id => el[id].addEventListener('input', () => { dirty = true; }));
+['feathers','mirror','mech','trace'].forEach(id => $(id).addEventListener('change', () => dirty = true));
+$('p2d').onclick = () => { setTilts({tS:0,tE:0,tW:0}); $('p2d').classList.add('on'); $('p3d').classList.remove('on'); dirty = true; };
+$('p3d').onclick = () => { setTilts(TILT3D); $('p3d').classList.add('on'); $('p2d').classList.remove('on'); dirty = true; };
+$('resetDims').onclick = () => { setDims(OPT); dirty = true; };
+let anim = null, looping = false;
+const ease = x => 0.5 - 0.5*Math.cos(Math.PI*x);
+const goTo = target => { anim = {from: parseFloat(el.fold.value), to: target, t0: performance.now()}; };
+const stopLoop = () => { looping = false; $('playBtn').textContent = '▶ 開閉を繰り返す'; };
+$('toOpen').onclick = () => { stopLoop(); goTo(0); };
+$('toClose').onclick = () => { stopLoop(); goTo(1); };
+$('playBtn').onclick = () => { looping = !looping; $('playBtn').textContent = looping ? '⏸ 止める' : '▶ 開閉を繰り返す'; if (looping) goTo(parseFloat(el.fold.value) > 0.5 ? 0 : 1); };
+el.fold.addEventListener('input', () => { anim = null; stopLoop(); });
+
+let dirty = true;
+function render(){
+  syncOut();
+  const p = params(), pth = path(p);
+  const u = p.fold, i = Math.min(NS, Math.round(u*NS));
+  const q = pose(p, p.ah0 + (p.ah1 - p.ah0)*u, pth[Math.max(0, i-1)]);
+  drawStage(q, pth); drawPlot(pth, u, p);
+  const allOk = pth.every(r => r.ok);
+  let tmin = 180; pth.forEach(r => r.trans.forEach(t => tmin = Math.min(tmin, t)));
+  $('rMotor').innerHTML = (p.ah0 - q.ah).toFixed(0) + '<span class="u">°</span>';
+  $('rE').innerHTML = q.Edeg.toFixed(0) + '<span class="u">°</span>';
+  $('rM').innerHTML = q.Mdeg.toFixed(0) + '<span class="u">°</span>';
+  $('rSpan').innerHTML = Math.round(100*q.T[0]/pth[0].T[0]) + '<span class="u">%</span>';
+  const st = $('status'), e = pth[0], f = pth[NS];
+  if (!allOk){ st.className = 'bad'; st.textContent = '⚠ 途中でロッドが届かない（または詰まる）区間があります。寸法か軸の傾きを戻してください。'; }
+  else { st.className = tmin < 30 ? 'bad' : '';
+    st.textContent = '全行程で動きます。最小伝達角 ' + tmin.toFixed(0) + '°（30°以上が目安）／ 肘 ' + e.Edeg.toFixed(0) + '°→' + f.Edeg.toFixed(0) + '°、手首 ' + e.Mdeg.toFixed(0) + '°→' + f.Mdeg.toFixed(0) + '°'; }
+  sizeTable(p, e);
+}
+function frame(ts){
+  requestAnimationFrame(frame);
+  if (anim){ const x = Math.min(1, (ts - anim.t0)/(parseFloat(el.dur.value)*1000)); el.fold.value = anim.from + (anim.to - anim.from)*ease(x); dirty = true;
+    if (x >= 1){ const done = anim.to; anim = null; if (looping) setTimeout(() => { if (looping) goTo(done > 0.5 ? 0 : 1); }, 350); } }
+  if (dirty){ dirty = false; render(); }
+}
+window.__wing = {pose, path, params, OPT, TILT3D, setTilts, setDims, INIT};
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

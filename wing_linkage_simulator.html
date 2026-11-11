@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>羽ばたき・畳み込み連動リンク</title>
+<style>
+  :root{
+    --bg:#0b1420; --panel:#101d2b; --line:#1c2f42; --grid:#16283a;
+    --ink:#dce7f0; --dim:#7690a8;
+    --arm:#4fd1c5; --hand:#ff8a5c; --link:#7f9bb3; --warn:#e5568b;
+    --mono:'JetBrains Mono','SF Mono','Consolas',monospace;
+    --sans:'Segoe UI','Hiragino Sans','Yu Gothic UI',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans)}
+  .wrap{max-width:1180px;margin:0 auto;padding:20px 16px 40px}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;
+    border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:16px}
+  header h1{font-size:18px;font-weight:600;margin:0;letter-spacing:.02em}
+  header .sub{font-size:12px;color:var(--dim);font-family:var(--mono)}
+  .layout{display:grid;grid-template-columns:1.35fr 1fr;gap:16px;align-items:start}
+  @media (max-width:900px){.layout{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px 16px}
+  .panel + .panel{margin-top:14px}
+  .panel h2{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--dim);
+    margin:0 0 12px;font-weight:600}
+  canvas{display:block;width:100%;height:auto;background:var(--bg);border:1px solid var(--line);border-radius:4px}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--dim);margin-top:8px;font-family:var(--mono)}
+  .legend i{display:inline-block;width:12px;height:3px;margin-right:5px;vertical-align:middle;border-radius:2px}
+  .row{display:grid;grid-template-columns:132px 1fr 52px;align-items:center;gap:10px;margin-bottom:9px;font-size:12px}
+  .row label{color:var(--dim);font-family:var(--mono)}
+  .row output{font-family:var(--mono);color:var(--arm);text-align:right}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:3px;background:var(--grid);border-radius:2px;outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+    background:var(--arm);border:2px solid var(--bg);cursor:pointer}
+  input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--arm);
+    border:2px solid var(--bg);cursor:pointer}
+  input[type=range]:focus-visible{outline:2px solid var(--arm);outline-offset:6px}
+  .bar{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+  button{font:12px var(--mono);padding:8px 12px;border-radius:4px;cursor:pointer;color:var(--ink);
+    background:var(--grid);border:1px solid var(--line)}
+  button:hover{border-color:var(--arm)}
+  button:focus-visible{outline:2px solid var(--arm);outline-offset:2px}
+  button.seg{flex:1;color:var(--dim);background:transparent}
+  button.seg.on{color:var(--arm);border-color:var(--arm);background:rgba(79,209,197,.12)}
+  .cells{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+  .cell{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:7px 9px}
+  .cell .k{font:10px var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+  .cell .v{font:17px var(--mono);margin-top:2px}
+  .cell.a .v{color:var(--arm)} .cell.b .v{color:var(--hand)}
+  .cell .u{font-size:11px;color:var(--dim)}
+  #status{font:11.5px var(--mono);margin-top:10px;color:var(--dim);line-height:1.5}
+  #status.bad{color:var(--warn)}
+  .note{font-size:11.5px;color:var(--dim);line-height:1.65;margin:10px 0 0}
+  .note b{color:var(--ink);font-weight:600}
+  table{width:100%;border-collapse:collapse;font:11.5px var(--mono);margin-top:4px}
+  td{padding:3px 0;color:var(--dim)} td:last-child{text-align:right;color:var(--ink)}
+  tr + tr td{border-top:1px solid var(--grid)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>羽ばたき・畳み込み 連動リンク</h1>
+    <div class="sub">single motor · flap + fold/unfold · front view</div>
+  </header>
+
+  <div class="layout">
+    <div>
+      <div class="panel">
+        <h2>front view — 正面から見た羽ばたき面</h2>
+        <canvas id="stage" width="720" height="460" aria-label="連動リンク機構の正面図"></canvas>
+        <div class="legend">
+          <span><i style="background:var(--arm)"></i>腕翼</span>
+          <span><i style="background:var(--hand)"></i>手翼</span>
+          <span><i style="background:var(--link)"></i>連動ロッド</span>
+          <span><i style="background:#dce7f0;opacity:.5"></i>翼端軌跡 (1周期)</span>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>angle vs. cycle — 1周期の角度</h2>
+        <canvas id="plot" width="720" height="220" aria-label="羽ばたき角と折り角の1周期波形"></canvas>
+        <div class="legend">
+          <span><i style="background:var(--arm)"></i>φ 羽ばたき角</span>
+          <span><i style="background:var(--hand)"></i>Δφ 折り角（腕翼に対する手翼）</span>
+          <span><i style="background:var(--hand);opacity:.55"></i>点線 = 目標波形（coupled時の比較用）</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h2>drive</h2>
+        <div class="bar">
+          <button id="modeCoupled" class="seg on">coupled：連動リンクで駆動</button>
+          <button id="modeManual" class="seg">manual：目標波形で駆動</button>
+        </div>
+        <div class="bar">
+          <button id="playBtn">⏸ 一時停止</button>
+        </div>
+        <div class="row"><label for="theta">サイクル位置 θ</label><input id="theta" type="range" min="0" max="359" step="1" value="0"><output id="otheta"></output></div>
+        <div class="cells">
+          <div class="cell a"><div class="k">φ 羽ばたき</div><div class="v" id="rFlap">0</div></div>
+          <div class="cell b"><div class="k">Δφ 折り</div><div class="v" id="rBend">0</div></div>
+          <div class="cell"><div class="k">折り 振れ幅</div><div class="v" id="rPP">0</div></div>
+        </div>
+        <div id="status"></div>
+      </div>
+
+      <div class="panel">
+        <h2>flap — モーター入力と翼寸法</h2>
+        <div class="row"><label for="freq">再生速度</label><input id="freq" type="range" min="0.1" max="3" step="0.05" value="0.6"><output id="ofreq"></output></div>
+        <div class="row"><label for="flapAmp">羽ばたき振幅</label><input id="flapAmp" type="range" min="10" max="80" step="1" value="55"><output id="oflapAmp"></output></div>
+        <div class="row"><label for="flapMean">中心角</label><input id="flapMean" type="range" min="-30" max="30" step="1" value="5"><output id="oflapMean"></output></div>
+        <div class="row"><label for="L1">L1 腕翼長</label><input id="L1" type="range" min="40" max="140" step="1" value="90"><output id="oL1"></output></div>
+        <div class="row"><label for="L2">L2 手翼長</label><input id="L2" type="range" min="30" max="140" step="1" value="80"><output id="oL2"></output></div>
+      </div>
+
+      <div class="panel">
+        <h2>coupling — 連動ロッドの幾何</h2>
+        <div class="row"><label for="Rx">R 固定点 x</label><input id="Rx" type="range" min="-90" max="90" step="1" value="-43"><output id="oRx"></output></div>
+        <div class="row"><label for="Ry">R 固定点 y</label><input id="Ry" type="range" min="-90" max="90" step="1" value="-31"><output id="oRy"></output></div>
+        <div class="row"><label for="Lr">Lr 手翼側クランク</label><input id="Lr" type="range" min="10" max="80" step="1" value="36"><output id="oLr"></output></div>
+        <div class="row"><label for="Lc">Lc ロッド長</label><input id="Lc" type="range" min="40" max="170" step="1" value="127"><output id="oLc"></output></div>
+        <div class="row"><label for="delta">クランク取付角 δ</label><input id="delta" type="range" min="-180" max="180" step="1" value="34"><output id="odelta"></output></div>
+        <div class="bar"><button id="branchBtn">組立モード A（押すと B）</button></div>
+        <p class="note">肩Sから腕翼（L1）、手首Wに手翼とクランク（Lr）が剛結され、クランク先端Qからロッド（Lc）が体側の固定点Rへ伸びる<b>4節リンク</b>です。モーターは羽ばたき（φ）だけを駆動し、折り角Δφはロッドの幾何から<b>機械的に決まります</b>。ゲイン係数は使っていません。</p>
+      </div>
+
+      <div class="panel">
+        <h2>target — 比較用の目標波形（manual）</h2>
+        <div class="row"><label for="bendMean">中心 Δφ₀</label><input id="bendMean" type="range" min="-90" max="40" step="1" value="-48"><output id="obendMean"></output></div>
+        <div class="row"><label for="bendAmp">振幅 Δφₐ</label><input id="bendAmp" type="range" min="0" max="90" step="1" value="46"><output id="obendAmp"></output></div>
+        <div class="row"><label for="bendPhase">畳みのピーク θ</label><input id="bendPhase" type="range" min="0" max="359" step="1" value="77"><output id="obendPhase"></output></div>
+        <p class="note">θ は羽ばたき1周期の位置で、90°が上死点、270°が下死点です。0〜90°と270〜360°がアップストロークです。先にmanualで「上げで畳み、下げで開く」理想の形を決めて、coupledの点線に重ねながらロッド寸法を追い込む使い方を想定しています。折り角が負のとき、手翼は腕翼に対して下側へ折れます。</p>
+      </div>
+
+      <div class="panel">
+        <h2>real size — 実寸換算（翼全長 R = 60 mm）</h2>
+        <table>
+          <tr><td>換算係数</td><td id="tScale"></td></tr>
+          <tr><td>L1 腕翼</td><td id="tL1"></td></tr>
+          <tr><td>L2 手翼</td><td id="tL2"></td></tr>
+          <tr><td>Lr 手翼側クランク</td><td id="tLr"></td></tr>
+          <tr><td>Lc ロッド</td><td id="tLc"></td></tr>
+          <tr><td>固定点R（肩Sから）</td><td id="tR"></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const D2R = Math.PI/180, TAU = 2*Math.PI;
+  const ids = ['freq','flapAmp','flapMean','L1','L2','bendAmp','bendPhase','bendMean','Rx','Ry','Lr','Lc','delta'];
+  const el = {}; ids.forEach(id => el[id] = $(id));
+  const out = {}; ids.forEach(id => out[id] = $('o'+id));
+  const unit = {freq:v=>v.toFixed(2)+' Hz', flapAmp:v=>v+'°', flapMean:v=>v+'°', bendAmp:v=>v+'°',
+                bendPhase:v=>v+'°', bendMean:v=>v+'°', delta:v=>v+'°'};
+
+  const stage = $('stage'), sctx = stage.getContext('2d');
+  const plot  = $('plot'),  pctx = plot.getContext('2d');
+
+  let mode = 'coupled', branch = 1, playing = true, scrubbing = false;
+  let theta = 0, last = 0;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) playing = false;
+  $('playBtn').textContent = playing ? '⏸ 一時停止' : '▶ 再生';
+
+  function params(){
+    const p = {};
+    ids.forEach(id => p[id] = parseFloat(el[id].value));
+    p.branch = branch;
+    return p;
+  }
+
+  // ---------- kinematics ----------
+  const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
+  const flapAt = (th,p) => (p.flapMean + p.flapAmp*Math.sin(th))*D2R;
+  const bendManual = (th,p) => (p.bendMean - p.bendAmp*Math.cos(th - p.bendPhase*D2R))*D2R;
+
+  // 4-bar: S(0,0) -L1- W -Lr (rigid with hand wing, offset delta)- Q -Lc- R(Rx,Ry). Math coords (y up).
+  function solveCoupled(phi, p){
+    const Wx = p.L1*Math.cos(phi), Wy = p.L1*Math.sin(phi);
+    const dx = p.Rx - Wx, dy = p.Ry - Wy;
+    const d0 = Math.hypot(dx, dy) || 1e-9;
+    const ux = dx/d0, uy = dy/d0;
+    const dmax = p.Lr + p.Lc, dmin = Math.abs(p.Lr - p.Lc), eps = 1e-6;
+    const margin = Math.min(dmax - d0, d0 - dmin);
+    const ok = margin > eps;
+    const d = Math.min(Math.max(d0, dmin+eps), dmax-eps);
+    const a = (p.Lr*p.Lr - p.Lc*p.Lc + d*d)/(2*d);
+    const h = Math.sqrt(Math.max(0, p.Lr*p.Lr - a*a));
+    const mx = Wx + a*ux, my = Wy + a*uy;
+    const Qx = mx + p.branch*h*(-uy), Qy = my + p.branch*h*ux;
+    const alpha = Math.atan2(Qy - Wy, Qx - Wx);
+    const bend = wrap(alpha + p.delta*D2R - phi);
+    return {bend, ok, margin, Wx, Wy, Qx, Qy};
+  }
+
+  // ---------- drawing ----------
+  const S = {x: 190, y: 250}, K = 1.45;
+  const sx = x => S.x + K*x, sy = y => S.y - K*y;
+
+  function line(c, x1,y1,x2,y2, color, w, cap){
+    c.strokeStyle = color; c.lineWidth = w; c.lineCap = cap || 'round';
+    c.beginPath(); c.moveTo(x1,y1); c.lineTo(x2,y2); c.stroke();
+  }
+  function dot(c, x,y,r,color){ c.fillStyle = color; c.beginPath(); c.arc(x,y,r,0,TAU); c.fill(); }
+
+  function drawStage(p, phi, bend, cs, tip){
+    const c = sctx, Wd = stage.width, Ht = stage.height;
+    c.clearRect(0,0,Wd,Ht);
+    c.strokeStyle = '#16283a'; c.lineWidth = 1;
+    for (let x=0;x<Wd;x+=30){ c.beginPath(); c.moveTo(x,0); c.lineTo(x,Ht); c.stroke(); }
+    for (let y=0;y<Ht;y+=30){ c.beginPath(); c.moveTo(0,y); c.lineTo(Wd,y); c.stroke(); }
+
+    // body
+    c.fillStyle = '#14263a'; c.strokeStyle = '#2a4258'; c.lineWidth = 1;
+    c.beginPath(); c.rect(S.x - K*85, S.y - K*28, K*85, K*100); c.fill(); c.stroke();
+    // horizontal reference through the shoulder
+    c.setLineDash([4,4]); line(c, S.x - K*85, S.y, S.x + K*185, S.y, '#1f3a52', 1, 'butt'); c.setLineDash([]);
+
+    // wingtip path over one full cycle
+    c.strokeStyle = 'rgba(220,231,240,.38)'; c.lineWidth = 1.3; c.beginPath();
+    for (let i=0;i<tip.length;i+=2){
+      const X = sx(tip[i]), Y = sy(tip[i+1]);
+      i===0 ? c.moveTo(X,Y) : c.lineTo(X,Y);
+    }
+    c.closePath(); c.stroke();
+
+    const Wx = p.L1*Math.cos(phi), Wy = p.L1*Math.sin(phi);
+    const beta = phi + bend;
+    const Hx = Wx + p.L2*Math.cos(beta), Hy = Wy + p.L2*Math.sin(beta);
+
+    if (mode === 'coupled' && cs){
+      const col = cs.ok ? '#7f9bb3' : '#e5568b';
+      // rigid hand-wing bracket W-Q-(point on hand wing)
+      const px = Wx + 0.4*p.L2*Math.cos(beta), py = Wy + 0.4*p.L2*Math.sin(beta);
+      c.fillStyle = 'rgba(255,138,92,.16)'; c.strokeStyle = 'rgba(255,138,92,.5)'; c.lineWidth = 1;
+      c.beginPath(); c.moveTo(sx(Wx),sy(Wy)); c.lineTo(sx(cs.Qx),sy(cs.Qy)); c.lineTo(sx(px),sy(py)); c.closePath(); c.fill(); c.stroke();
+      // rod Q-R
+      line(c, sx(cs.Qx),sy(cs.Qy), sx(p.Rx),sy(p.Ry), col, 2.2);
+      dot(c, sx(cs.Qx),sy(cs.Qy), 3.5, col);
+      // fixed pivot R
+      c.strokeStyle = col; c.lineWidth = 1.5; c.beginPath(); c.arc(sx(p.Rx),sy(p.Ry),6,0,TAU); c.stroke();
+      dot(c, sx(p.Rx),sy(p.Ry), 2.2, col);
+    }
+
+    line(c, S.x,S.y, sx(Wx),sy(Wy), '#4fd1c5', 7);
+    line(c, sx(Wx),sy(Wy), sx(Hx),sy(Hy), '#ff8a5c', 5);
+    dot(c, S.x,S.y, 5, '#dce7f0'); dot(c, sx(Wx),sy(Wy), 4.5, '#dce7f0'); dot(c, sx(Hx),sy(Hy), 3.2, '#ff8a5c');
+
+    c.fillStyle = '#7690a8'; c.font = '11px monospace';
+    c.fillText('S 肩', S.x - 26, S.y - 10);
+    c.fillText('W 手首', sx(Wx) + 8, sy(Wy) - 8);
+    if (mode === 'coupled') c.fillText('R 固定点', sx(p.Rx) - 56, sy(p.Ry) + 20);
+  }
+
+  function drawPlot(p, flapArr, bendArr, targetArr){
+    const c = pctx, Wd = plot.width, Ht = plot.height, mid = Ht/2, sc = (Ht/2 - 18)/120, N = flapArr.length;
+    c.clearRect(0,0,Wd,Ht);
+    // downstroke band: theta 90..270
+    c.fillStyle = 'rgba(79,209,197,.06)'; c.fillRect(Wd*0.25, 0, Wd*0.5, Ht);
+    c.fillStyle = '#7690a8'; c.font = '10px monospace';
+    c.fillText('上げ', 8, 13); c.fillText('下げ（翼を開く）', Wd*0.25 + 8, 13); c.fillText('上げ', Wd*0.75 + 8, 13);
+
+    c.lineWidth = 1;
+    [-90,-45,0,45,90].forEach(a => {
+      const y = mid - a*sc;
+      c.strokeStyle = a===0 ? '#27435b' : '#16283a';
+      c.beginPath(); c.moveTo(0,y); c.lineTo(Wd,y); c.stroke();
+      c.fillStyle = '#4c6379'; c.fillText(a+'°', Wd-34, y-3);
+    });
+    [0,90,180,270,360].forEach(a => {
+      const x = Wd*a/360;
+      c.strokeStyle = '#16283a'; c.beginPath(); c.moveTo(x,0); c.lineTo(x,Ht); c.stroke();
+      c.fillStyle = '#4c6379'; c.fillText('θ'+a, Math.min(x+3, Wd-26), Ht-4);
+    });
+
+    function series(arr, color, dash, alpha){
+      c.globalAlpha = alpha; c.strokeStyle = color; c.lineWidth = 2; c.setLineDash(dash); c.beginPath();
+      for (let i=0;i<=N;i++){
+        const v = arr[i % N]/D2R, x = Wd*i/N, y = mid - v*sc;
+        i===0 ? c.moveTo(x,y) : c.lineTo(x,y);
+      }
+      c.stroke(); c.setLineDash([]); c.globalAlpha = 1;
+    }
+    series(flapArr, '#4fd1c5', [], 1);
+    if (mode === 'coupled') series(targetArr, '#ff8a5c', [5,4], .55);
+    series(bendArr, '#ff8a5c', [], 1);
+
+    // cursor
+    const cx = Wd*theta/TAU;
+    c.strokeStyle = 'rgba(220,231,240,.55)'; c.lineWidth = 1; c.beginPath(); c.moveTo(cx,0); c.lineTo(cx,Ht); c.stroke();
+    const i = Math.floor(theta/TAU*N) % N;
+    dot(c, cx, mid - flapArr[i]/D2R*sc, 3.5, '#4fd1c5');
+    dot(c, cx, mid - bendArr[i]/D2R*sc, 3.5, '#ff8a5c');
+  }
+
+  // ---------- readouts ----------
+  function syncOut(){
+    ids.forEach(id => { const v = parseFloat(el[id].value); out[id].textContent = (unit[id] ? unit[id](v) : v); });
+    $('otheta').textContent = Math.round(theta/D2R) + '°';
+    const p = params(), s = 60/(p.L1 + p.L2);
+    $('tScale').textContent = '1 u = ' + s.toFixed(3) + ' mm';
+    $('tL1').textContent = (p.L1*s).toFixed(1) + ' mm';
+    $('tL2').textContent = (p.L2*s).toFixed(1) + ' mm';
+    $('tLr').textContent = (p.Lr*s).toFixed(1) + ' mm';
+    $('tLc').textContent = (p.Lc*s).toFixed(1) + ' mm';
+    $('tR').textContent = '(' + (p.Rx*s).toFixed(1) + ', ' + (p.Ry*s).toFixed(1) + ') mm';
+  }
+  ids.forEach(id => el[id].addEventListener('input', syncOut));
+
+  // ---------- controls ----------
+  function setMode(m){
+    mode = m;
+    $('modeCoupled').classList.toggle('on', m === 'coupled');
+    $('modeManual').classList.toggle('on', m === 'manual');
+  }
+  $('modeCoupled').onclick = () => setMode('coupled');
+  $('modeManual').onclick = () => setMode('manual');
+  $('playBtn').onclick = () => { playing = !playing; $('playBtn').textContent = playing ? '⏸ 一時停止' : '▶ 再生'; };
+  $('branchBtn').onclick = () => {
+    branch = -branch;
+    $('branchBtn').textContent = branch === 1 ? '組立モード A（押すと B）' : '組立モード B（押すと A）';
+  };
+  const th = $('theta');
+  th.addEventListener('input', () => { theta = parseFloat(th.value)*D2R; syncOut(); });
+  ['pointerdown','touchstart','mousedown'].forEach(e => th.addEventListener(e, () => { scrubbing = true; }));
+  ['pointerup','touchend','mouseup','blur'].forEach(e => th.addEventListener(e, () => { scrubbing = false; }));
+
+  // ---------- main loop ----------
+  const N = 240;
+  const flapArr = new Float64Array(N), bendC = new Float64Array(N), bendM = new Float64Array(N);
+
+  function draw(){
+    const p = params();
+    let allOk = true, minMargin = Infinity;
+    const tip = [];
+    const coupled = mode === 'coupled';
+    for (let i=0;i<N;i++){
+      const t = TAU*i/N, ph = flapAt(t,p);
+      flapArr[i] = ph; bendM[i] = bendManual(t,p);
+      if (coupled){
+        const s = solveCoupled(ph,p);
+        bendC[i] = s.bend; if (!s.ok) allOk = false; minMargin = Math.min(minMargin, s.margin);
+      }
+      const b = coupled ? bendC[i] : bendM[i], be = ph + b;
+      tip.push(p.L1*Math.cos(ph) + p.L2*Math.cos(be), p.L1*Math.sin(ph) + p.L2*Math.sin(be));
+    }
+    const bendArr = coupled ? bendC : bendM;
+
+    const phi = flapAt(theta,p);
+    let cs = null, bend;
+    if (coupled){ cs = solveCoupled(phi,p); bend = cs.bend; } else { bend = bendManual(theta,p); }
+
+    let mn = Infinity, mx = -Infinity, iMin = 0;
+    for (let i=0;i<N;i++){ if (bendArr[i] < mn){ mn = bendArr[i]; iMin = i; } if (bendArr[i] > mx) mx = bendArr[i]; }
+
+    drawStage(p, phi, bend, cs, tip);
+    drawPlot(p, flapArr, bendArr, bendM);
+
+    $('rFlap').innerHTML = (phi/D2R).toFixed(0) + '<span class="u">°</span>';
+    $('rBend').innerHTML = (bend/D2R).toFixed(0) + '<span class="u">°</span>';
+    $('rPP').innerHTML = ((mx-mn)/D2R).toFixed(0) + '<span class="u">°</span>';
+    if (!scrubbing) th.value = Math.round(theta/D2R) % 360;
+    $('otheta').textContent = (Math.round(theta/D2R) % 360) + '°';
+
+    const st = $('status');
+    if (coupled){
+      const peak = Math.round(iMin/N*360);
+      if (allOk){
+        st.className = ''; st.textContent = '機構は全周期で閉じています（ロック余裕 最小 ' + minMargin.toFixed(1) + ' u）／畳みのピーク θ=' + peak + '°';
+      } else {
+        st.className = 'bad'; st.textContent = '⚠ ロッドが届かない／詰まる区間があります。Lc・Lr・Rを調整するか、組立モードを切り替えてください。';
+      }
+    } else {
+      st.className = ''; st.textContent = '目標波形で駆動中（リンクは未使用）。coupledに切り替えると点線で比較できます。';
+    }
+  }
+
+  function frame(ts){
+    requestAnimationFrame(frame);
+    const dt = Math.min(0.05, Math.max(0, (ts - last)/1000)); last = ts;
+    if (playing && !scrubbing) theta = (theta + TAU*parseFloat(el.freq.value)*dt) % TAU;
+    draw();
+  }
+
+  window.__sim = {solveCoupled, flapAt, bendManual, params};
+  syncOut();
+  requestAnimationFrame(t => { last = t; frame(t); });
+})();
+</script>
+</body>
+</html>
