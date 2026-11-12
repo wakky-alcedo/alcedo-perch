@@ -74,6 +74,8 @@
   table{width:100%;border-collapse:collapse;font:11.5px var(--mono);margin-top:4px}
   td{padding:3px 0;color:var(--dim);vertical-align:top} td:last-child{text-align:right;color:var(--ink)}
   tr + tr td{border-top:1px solid var(--grid)}
+  .jR{display:inline-block;width:9px;height:9px;border:2px solid #ffd166;border-radius:50%;vertical-align:-1px}
+  .jS{display:inline-block;width:11px;height:11px;background:radial-gradient(circle at 35% 35%,#fff 0 18%,#ff9fd0 30%,#c2407e 100%);border-radius:50%;vertical-align:-2px}
   td.grp{color:var(--ink);padding-top:9px;text-align:left!important}
   label.chk{display:inline-flex;align-items:center;gap:6px;font:12px var(--mono);color:var(--dim);margin-right:14px;cursor:pointer}
   #verNote{font-size:11.5px;color:var(--dim);line-height:1.6;margin:0 0 12px;padding:8px 10px;border-left:2px solid var(--line)}
@@ -117,6 +119,8 @@
           <span><i style="background:var(--bc)"></i>ベルクランク</span>
           <span><i style="background:var(--rod)"></i>ロッド</span>
           <span><i style="background:var(--warn)"></i>翼・体からはみ出す部分</span>
+          <span><span class="jR" style="margin-right:5px"></span>ピン（1自由度）</span>
+          <span><span class="jS" style="margin-right:5px"></span>ボールジョイント</span>
         </div>
       </div>
       <div class="panel">
@@ -147,6 +151,7 @@
           <label class="chk"><input type="checkbox" id="mech" checked>駆動リンク</label>
           <label class="chk"><input type="checkbox" id="trace">翼端の軌跡</label>
         </div>
+        <div class="row" style="margin-top:8px"><label for="bodyA">体の不透明度</label><input id="bodyA" type="range" min="0" max="1" step="0.05" value="0.3"><output id="obodyA"></output></div>
         <div class="cells">
           <div class="cell"><div class="k">モーター</div><div class="v" id="rMotor">0</div></div>
           <div class="cell"><div class="k">肘</div><div class="v" id="rE" style="color:var(--uln)">0</div></div>
@@ -157,7 +162,15 @@
       </div>
 
       <div class="panel">
+        <h2>joints — 関節の種類</h2>
+        <table id="jointTable"></table>
+        <p class="note" id="jointNote"></p>
+      </div>
+
+      <div class="panel" id="tiltPanel">
         <h2>3D — 関節軸の傾き（0で平面リンク）</h2>
+        <p class="note" id="tiltNote" style="display:none;margin:0 0 4px"></p>
+        <div id="tiltBody">
         <div class="bar">
           <button id="p2d" class="on">2D（全軸が平行）</button>
           <button id="p3d">3D（推奨の傾き）</button>
@@ -166,6 +179,7 @@
         <div class="row"><label for="tE">肘軸の傾き</label><input id="tE" type="range" min="-40" max="40" step="1" value="0"><output id="otE"></output></div>
         <div class="row"><label for="tW">手首軸の傾き</label><input id="tW" type="range" min="-50" max="50" step="1" value="0"><output id="otW"></output></div>
         <p class="note">ロッドの両端を<b>ボールエンド（ロッドエンド）</b>にすれば、軸を傾けてもモーター1個のまま動きます。体側のベルクランクは肩軸と平行に取り付けます。肩軸を傾けると上腕骨が後ろへ引くにつれて下がり、手首軸を傾けると畳んだ手が尺骨の下へ潜ります。</p>
+        </div>
       </div>
 
       <div class="panel">
@@ -175,8 +189,8 @@
         <p class="note">骨の長さはヨーロッパカワセミ（<i>Alcedo atthis</i>）の実測値で、上腕骨25.7 mm、尺骨32.0 mm、手根中手骨13.3 mm です。指骨の7 mmと羽根の長さは推定値です。座標の原点は肩関節で、x は外側、y は前方です。骨の上の点は、その骨に沿った座標（骨方向, 前縁側が＋）で書いています。</p>
         <details>
           <summary>寸法を微調整する</summary>
-          <div class="row"><label for="ah0">上腕 広げた時</label><input id="ah0" type="range" min="-40" max="20" step="0.5" value="-15"><output id="oah0"></output></div>
-          <div class="row"><label for="ah1">上腕 畳んだ時</label><input id="ah1" type="range" min="-110" max="-40" step="0.5" value="-85"><output id="oah1"></output></div>
+          <div class="row"><label for="ah0">モーター角 広げた時</label><input id="ah0" type="range" min="-60" max="60" step="0.5" value="-15"><output id="oah0"></output></div>
+          <div class="row"><label for="ah1">モーター角 畳んだ時</label><input id="ah1" type="range" min="-140" max="140" step="0.5" value="-85"><output id="oah1"></output></div>
           <div id="dimSliders"></div>
           <div class="bar" style="margin-top:6px"><button id="resetDims">このバージョンの寸法に戻す</button></div>
         </details>
@@ -197,8 +211,10 @@ BONE.LMAN = BONE.LCMC + BONE.LDIG;
 // topo 'two': 10-bar (two-stage bellcrank chains for elbow and wrist). topo 'single': 6-bar (tendon rod + radius parallel bar).
 // __VERSIONS_START__
 const VERSIONS = [
-  {id:'v3', status:'current', date:'2026-11-12', title:'深く畳む＋リンクを翼の中へ', topo:'two', wristMount:'ulna',
-   why:'上腕骨を70°引き、肘19°・手首17°まで畳む（v2は25°・24°）。すべてのリンクが体・肩〜手首の膜（前翼膜）・上腕骨の後ろ・羽根の裏側に収まるという制約で寸法を決め直した。手首用ベルクランクを上腕骨から尺骨へ移している。肘の後ろの小さなレバー（肘頭に相当）だけが畳む途中で最大2 mm（等倍）出るが、実際の鳥でも肘頭がある位置で、三列風切で覆える。',
+  {"id": "v4", "status": "current", "date": "2026-11-12", "title": "畳んだ姿が体の輪郭に沿う3D版", "topo": "two3", "wristMount": "ulna", "elbowMount": "body", "why": "畳んだ翼が止まり木のカワセミの体の側面に沿うように、まず畳み姿勢を体の輪郭（楕円体）に合わせて決め、肩を「その姿勢へ1回転で運ぶ斜めの1軸」にした。モーターはこの軸を108°回すだけで、上腕骨は後ろへ引きながら下がってねじれ、翼面が水平→体側の縦向きに変わる。肘15°・手首17°まで畳む。肘系統のロッド2だけが立体的に振れるので両端ボール、他はすべてピン。体側の肘ベルクランク支点だけが、広げた時に背中側へ2 mm（等倍）出る（肩羽で覆える位置）。", "shoulder": {"axis": [-0.4869, 0.5764, -0.6563], "Ro": [[0.9659, 0.2588, 0.0], [-0.2588, 0.9659, -0.0], [-0.0, 0.0, 1.0]]}, "body": {"c": [-9, -18, -6], "r": [12, 32, 12]}, "target": {"AH0": 0, "AH1": 108.2, "E0": 150.0, "E1": 12.0, "M0": 160.0, "M1": 12.99}, "tilt3d": {"tS": 0, "tE": 0, "tW": 0}, "dims": {"G1x": -0.7498, "G1y": -11.9042, "G1z": 6.2401, "h1x": 16.3427, "h1y": 3.0351, "h1z": 2.705, "rb1": 11.5763, "Lc1": 10.3633, "b2x": 13.4182, "b2y": 3.4778, "b2z": -7.9714, "L2": 10.4043, "wx": -2.5616, "wy": -3.6994, "G2x": 12.6292, "G2y": 3.2116, "h3x": 20.5374, "h3y": -11.1229, "rb3": 14.0, "Lc3": 17.5193, "b4x": -7.8191, "b4y": 11.6131, "L4": 25.6444, "qx": 8.9536, "qy": 0.9998}},
+  {"id": "r4", "status": "rejected", "date": "2026-11-12", "title": "肘ベルクランクを上腕骨に載せた3D案", "topo": "twoB", "wristMount": "ulna", "elbowMount": "hum", "why": "v4と同じ畳み姿勢で、肘用ベルクランクを上腕骨の上に置き、体の中の固定点から両端ボールのロッドで引く案。リンクはほぼ完全に隠れる（はみ出し0.7 mm）が、尺骨レバーが3 mm台と短く特異点に近いため、寸法が0.1 mmずれるだけで畳んだ時の肘角が100°以上狂う。作れないので却下。", "shoulder": {"axis": [-0.4869, 0.5764, -0.6563], "Ro": [[0.9659, 0.2588, 0.0], [-0.2588, 0.9659, -0.0], [-0.0, 0.0, 1.0]]}, "body": {"c": [-9, -18, -6], "r": [12, 32, 12]}, "target": {"AH0": 0, "AH1": 108.2, "E0": 150.0, "E1": 12.0, "M0": 160.0, "M1": 12.99}, "tilt3d": {"tS": 0, "tE": 0, "tW": 0}, "dims": {"Ax": -10.4809, "Ay": 7.642, "Az": -8.4124, "G1x": 8.4296, "G1y": -6.3534, "rb1": 3.0883, "Lc1": 22.6188, "b2x": 7.2542, "b2y": -11.9328, "L2": 6.6796, "wx": -3.6844, "wy": 2.5553, "G2x": 12.6292, "G2y": 3.2116, "h3x": 20.5374, "h3y": -11.1229, "rb3": 14.0, "Lc3": 17.5193, "b4x": -7.8191, "b4y": 11.6131, "L4": 25.6444, "qx": 8.9536, "qy": 0.9998}},
+  {id:'v3', status:'superseded', date:'2026-11-12', title:'深く畳む＋リンクを翼の中へ', topo:'two', wristMount:'ulna',
+   why:'（v4で置き換え：畳んだ翼が体の外へ水平に張り出したままで、カワセミの畳み姿に見えない）上腕骨を70°引き、肘19°・手首17°まで畳む（v2は25°・24°）。すべてのリンクが体・肩〜手首の膜（前翼膜）・上腕骨の後ろ・羽根の裏側に収まるという制約で寸法を決め直した。手首用ベルクランクを上腕骨から尺骨へ移している。肘の後ろの小さなレバー（肘頭に相当）だけが畳む途中で最大2 mm（等倍）出るが、実際の鳥でも肘頭がある位置で、三列風切で覆える。',
    target:{AH0:-15, AH1:-85, E0:150, E1:18, M0:160, M1:15}, tilt3d:{tS:22, tE:-8, tW:-22},
    dims:{G1x:-12.925, G1y:-0.4828, h1x:12.1056, h1y:-10.4578, rb1:12.61, Lc1:15.01, b2x:7.5909, b2y:11.7565, L2:21.2869, wx:-4.4446, wy:-0.704,
          G2x:12.2373, G2y:1.9999, h3x:21.6194, h3y:-11.9989, rb3:14.0, Lc3:18.4, b4x:-6.7042, b4y:12.2901, L4:27.6707, qx:7.1603, qy:1.1366}},
@@ -233,19 +249,28 @@ const SCHEMA = {
         ['G2x','手首BC 支点 沿',0,45,0.1], ['G2y','手首BC 支点 前',-25,10,0.1], ['h3x','尺骨クランク 沿',0,34,0.1], ['h3y','尺骨クランク 前',-15,15,0.1],
         ['rb3','手首BC 腕1',4,25,0.05], ['Lc3','ロッド3',5,45,0.05], ['b4x','手首BC 腕2 x',-15,40,0.05], ['b4y','手首BC 腕2 y',-40,15,0.05],
         ['L4','ロッド4',5,65,0.05], ['qx','手レバー 沿',-10,25,0.05], ['qy','手レバー 前',-10,15,0.05]],
+  two3: null,
   single: [['Ax','腱ロッド 体側 x',-30,10,0.05], ['Ay','腱ロッド 体側 y',-30,30,0.05], ['s','尺骨取付 沿',-5,30,0.05], ['n','尺骨取付 前',-10,10,0.05],
            ['Lrod','腱ロッド長',4,70,0.01], ['px','橈骨 肘側 沿',-10,6,0.01], ['py','橈骨 肘側 前',-6,10,0.01],
            ['qx','橈骨 手首側 沿',-10,6,0.01], ['qy','橈骨 手首側 前',-6,10,0.01], ['Lr','橈骨長',15,50,0.01]]
 };
 
-let ver = VERSIONS[0], TARGET = ver.target;
-const fixedIds = ['tS','tE','tW','fold','dur','scale','ah0','ah1'];
+// torso model. Old versions: a 2D top-view ellipse (centre x -13). v4: an ellipsoid fitted so the folded wing rests on it.
+const BODY_OLD = {c:[-13,-12,-9], r:[13,30,13]};
+SCHEMA.twoB = [['Ax','体アンカー x',-25,10,0.1], ['Ay','体アンカー y',-45,15,0.1], ['Az','体アンカー z',-20,10,0.1],
+  ['G1x','肘BC 支点 沿（上腕）',-6,26,0.1], ['G1y','肘BC 支点 前（上腕）',-16,8,0.1], ['rb1','肘BC 腕1',3,16,0.05], ['Lc1','ロッド1',5,40,0.05],
+  ['b2x','肘BC 腕2 x',-20,20,0.05], ['b2y','肘BC 腕2 y',-20,20,0.05], ['L2','ロッド2',3,40,0.05], ['wx','尺骨レバー 沿',-12,10,0.05], ['wy','尺骨レバー 前',-12,8,0.05]]
+  .concat(SCHEMA.two.slice(11));
+SCHEMA.two3 = SCHEMA.two.slice(0,2).concat([['G1z','肘BC 支点 z（背側+）',-30,20,0.1]], SCHEMA.two.slice(2,4), [['h1z','上腕突起 上下',-10,10,0.05]],
+  SCHEMA.two.slice(4,8), [['b2z','肘BC 腕2 z（軸方向）',-25,25,0.05]], SCHEMA.two.slice(8));
+let ver = VERSIONS[0], TARGET = ver.target, BODY = ver.body || BODY_OLD, BODYX = BODY.c[0];
+const fixedIds = ['tS','tE','tW','fold','dur','scale','ah0','ah1','bodyA'];
 const el = {}; fixedIds.forEach(id => el[id] = $(id));
 let dimIds = [];
 function buildDimSliders(){
   const sch = SCHEMA[ver.topo];
   $('dimSliders').innerHTML = sch.map(([id,lab,mn,mx,st]) =>
-    `<div class="row"><label for="d_${id}">${lab}</label><input id="d_${id}" type="range" min="${mn}" max="${mx}" step="${st}" value="${ver.dims[id]}"><output id="od_${id}"></output></div>`).join('');
+    `<div class="row"><label for="d_${id}">${lab}</label><input id="d_${id}" type="range" min="${mn}" max="${mx}" step="any" data-step="${st}" value="${ver.dims[id]}"><output id="od_${id}"></output></div>`).join('');
   dimIds = sch.map(s => s[0]);
   dimIds.forEach(id => { el['d_'+id] = $('d_'+id); el['d_'+id].addEventListener('input', () => dirty = true); });
 }
@@ -285,12 +310,22 @@ function params(){
   const p = {}; fixedIds.forEach(id => p[id] = parseFloat(el[id].value)); dimIds.forEach(id => p[id] = parseFloat(el['d_'+id].value)); return p;
 }
 
+// frame whose z axis is the shoulder hinge axis (bellcrank 1 turns about an axis parallel to it)
+function hingeFrame(a){ let e1 = cross(a, [0,0,1]); const n = norm(e1); e1 = mul(e1, 1/n); const e2 = cross(a, e1);
+  return [[e1[0], e2[0], a[0]], [e1[1], e2[1], a[1]], [e1[2], e2[2], a[2]]]; }
 function poseTwo(p, ah, ref, pick){
   ref = ref || {}; pick = pick || [0,0,0,0];
-  const Rs = rotM([1,0,0], p.tS*D2R), Rh = mm(Rs, rotM(Z, ah*D2R)), E = mv(Rh, [BONE.LH,0,0]);
-  const G1 = mv(Rs, [p.G1x, p.G1y, 0]), H1 = mv(Rh, [p.h1x, p.h1y, 0]);
-  const r1 = loopRoots(Rs, G1, Z, [p.rb1,0,0], H1, p.Lc1), b1 = choose(r1, ref.s1, pick[0]);
-  const Rb1 = mm(Rs, rotM(Z, b1)), B1 = add(G1, mv(Rb1, [p.rb1,0,0])), B2 = add(G1, mv(Rb1, [p.b2x, p.b2y, 0]));
+  // shoulder: either the old planar hinge tilted by tS, or (v4) one hinge about a fixed oblique axis
+  const sh = ver.shoulder;
+  const Rs = sh ? hingeFrame(sh.axis) : rotM([1,0,0], p.tS*D2R);
+  const Rh = sh ? mm(rotM(sh.axis, ah*D2R), sh.Ro) : mm(Rs, rotM(Z, ah*D2R)), E = mv(Rh, [BONE.LH,0,0]);
+  // elbow chain stage 1. default: bellcrank 1 on the body, driven by a humerus point H1.
+  //   ver.elbowMount 'hum' (v4): bellcrank 1 on the humerus (pivot axis = wing-plane normal), driven by a rod from body point A.
+  const eHum = ver.elbowMount === 'hum', Fe = eHum ? Rh : Rs;
+  const G1 = eHum ? mv(Rh, [p.G1x, p.G1y, 0]) : sh ? [p.G1x, p.G1y, p.G1z] : mv(Rs, [p.G1x, p.G1y, 0]);
+  const H1 = eHum ? [p.Ax, p.Ay, p.Az] : mv(Rh, [p.h1x, p.h1y, p.h1z || 0]);
+  const r1 = loopRoots(Fe, G1, Z, [p.rb1,0,0], H1, p.Lc1), b1 = choose(r1, ref.s1, pick[0]);
+  const Rb1 = mm(Fe, rotM(Z, b1)), B1 = add(G1, mv(Rb1, [p.rb1,0,0])), B2 = add(G1, mv(Rb1, [p.b2x, p.b2y, p.b2z || 0]));
   const aE = tiltAxis(p.tE*D2R);
   const r2 = loopRoots(Rh, E, aE, [p.wx, p.wy, 0], B2, p.L2), pe = choose(r2, ref.s2, pick[1]);
   const Ru = mm(Rh, rotM(aE, pe)), U = add(E, mv(Ru, [p.wx, p.wy, 0])), W = add(E, mv(Ru, [BONE.LU,0,0]));
@@ -307,10 +342,11 @@ function poseTwo(p, ah, ref, pick){
   const q = finish({Rh, Ru, Rm, E, W, ah}, p);
   Object.assign(q, {ok: r1.ok && r2.ok && r3.ok && r4.ok, s1:b1, s2:pe, s3:b2, s4:ps,
     trans:[angTrans(H1,B1,G1), angTrans(B2,U,E), angTrans(C3,B3,G2), angTrans(B4,Q,W)],
-    mech:{plates:[[G1,B1,B2,'bc'],[G2,B3,B4,'bc'],[[0,0,0],E,H1,'hum'],[E,U,add(E,mv(Ru,[4,0,0])),'uln'],[W,Q,q.CM,'man']].concat(onUlna
+    mech:{plates:[[G1,B1,B2,'bc'],[G2,B3,B4,'bc'],eHum ? [mv(Rh,[Math.max(0,p.G1x-5),0,0]),G1,mv(Rh,[Math.min(BONE.LH,p.G1x+5),0,0]),'hum'] : [[0,0,0],E,H1,'hum'],[E,U,add(E,mv(Ru,[4,0,0])),'uln'],[W,Q,q.CM,'man']].concat(onUlna
             ? [[E,G2,add(E,mv(Ru,[Math.min(BONE.LU,Math.max(2,p.G2x+3)),0,0])),'uln'], [mv(Rh,[Math.max(0,p.h3x-6),0,0]),C3,E,'hum']]
             : [[E,G2,add(E,mv(Rh,[2,0,0])),'hum'], [add(E,mv(Ru,[Math.max(0,p.h3x-8),0,0])),C3,add(E,mv(Ru,[Math.min(BONE.LU,p.h3x+4),0,0])),'uln']]),
-          rods:[[H1,B1],[B2,U],[C3,B3],[B4,Q]], pivots:[G1,G2], joints:[H1,B1,B2,U,C3,B3,B4,Q]}});
+          rods:[[H1,B1],[B2,U],[C3,B3],[B4,Q]], pivots:[G1,G2], joints:[H1,B1,B2,U,C3,B3,B4,Q],
+          frames:[[eHum ? I3 : Rh, Rb1], [Rb1, Ru], [onUlna ? Rh : Ru, Rb2], [Rb2, Rm]]}, Rb1, Rb2});
   return q;
 }
 function poseSingle(p, ah, ref, pick){
@@ -324,7 +360,7 @@ function poseSingle(p, ah, ref, pick){
   const Rm = mm(Ru, rotM(aW, ps)), Q = add(W, mv(Rm, [p.qx, p.qy, 0]));
   const q = finish({Rh, Ru, Rm, E, W, ah}, p);
   Object.assign(q, {ok: r1.ok && r2.ok, s1:pe, s2:ps, trans:[angTrans(A,U,E), angTrans(P,Q,W)],
-    mech:{plates:[[E,U,add(E,mv(Ru,[4,0,0])),'uln'],[W,Q,q.CM,'man']], rods:[[A,U],[P,Q]], pivots:[A], joints:[U,P,Q]}});
+    mech:{plates:[[E,U,add(E,mv(Ru,[4,0,0])),'uln'],[W,Q,q.CM,'man']], rods:[[A,U],[P,Q]], pivots:[A], joints:[U,P,Q], frames:[[I3, Ru], [Rh, Rm]]}});
   return q;
 }
 function finish(q, p){
@@ -356,7 +392,8 @@ function path(p){
 // in the band just behind the humerus, or on the feather side of the ulna or hand.
 const rot2 = (t, x, y) => [Math.cos(t)*x - Math.sin(t)*y, Math.sin(t)*x + Math.cos(t)*y];
 function outsideDist(X, q){
-  let best = Math.max(0, (Math.hypot((X[0]+13)/13, (X[1]+12)/30) - 1)*13);
+  if (ver.shoulder) return outsideDist3(X, q);
+  let best = Math.max(0, (Math.hypot((X[0]-BODY.c[0])/BODY.r[0], (X[1]-BODY.c[1])/BODY.r[1]) - 1)*BODY.r[0]);
   const S = [0,0], E = [q.E[0],q.E[1]], W = [q.W[0],q.W[1]], T = [q.T[0],q.T[1]];
   const tri = [S,E,W], sg = Math.sign((E[0]-S[0])*(W[1]-S[1]) - (E[1]-S[1])*(W[0]-S[0])) || 1;
   let dmax = 0; for (let i=0;i<3;i++){ const a = tri[i], b = tri[(i+1)%3], ex = b[0]-a[0], ey = b[1]-a[1], L = Math.hypot(ex,ey)||1e-9;
@@ -367,6 +404,68 @@ function outsideDist(X, q){
     best = Math.min(best, Math.max(0, loc[1] - 1, ymin - loc[1], -2 - loc[0], loc[0] - L - 2));
   }
   return best;
+}
+// 3D: hidden if inside the torso ellipsoid, or within 4 mm of the wing plane and inside the wing region there
+const tr3 = (M,v) => [M[0][0]*v[0]+M[1][0]*v[1]+M[2][0]*v[2], M[0][1]*v[0]+M[1][1]*v[1]+M[2][1]*v[2], M[0][2]*v[0]+M[1][2]*v[1]+M[2][2]*v[2]];
+function bodySd(X){ return (Math.hypot((X[0]-BODY.c[0])/BODY.r[0], (X[1]-BODY.c[1])/BODY.r[1], (X[2]-BODY.c[2])/BODY.r[2]) - 1)*BODY.r[0]; }
+function outsideDist3(X, q){
+  const sd = bodySd(X); if (sd <= -0.5) return 0;
+  const L = tr3(q.Rh, X), We = tr3(q.Rh, q.W), Te = tr3(q.Rh, q.T);
+  if (Math.abs(L[2]) > 4) return Math.min(sd + 0.5, Math.abs(L[2]) - 4);
+  const S = [0,0], E = [BONE.LH,0], W = [We[0],We[1]], T = [Te[0],Te[1]];
+  const tri = [S,E,W], sg = Math.sign((E[0]-S[0])*(W[1]-S[1]) - (E[1]-S[1])*(W[0]-S[0])) || 1;
+  let dmax = 0; for (let i=0;i<3;i++){ const a = tri[i], b = tri[(i+1)%3], ex = b[0]-a[0], ey = b[1]-a[1], Ln = Math.hypot(ex,ey)||1e-9;
+    dmax = Math.max(dmax, -((L[0]-a[0])*(-ey) + (L[1]-a[1])*ex)*sg/Ln); }
+  let best = Math.max(0, dmax);
+  for (const [o, d, Lb, ymin] of [[S, E, BONE.LH, -12], [E, W, BONE.LU, -38], [W, T, BONE.LMAN, -45]]){
+    const ang = Math.atan2(d[1]-o[1], d[0]-o[0]), loc = rot2(-ang, L[0]-o[0], L[1]-o[1]);
+    best = Math.min(best, Math.max(0, loc[1] - 1, ymin - loc[1], -2 - loc[0], loc[0] - Lb - 2));
+  }
+  return Math.min(sd + 0.5, best);
+}
+// joint type of each rod: if both rod ends move in one common plane the loop is planar and plain pins work;
+// otherwise the rod needs ball joints (rod ends) at both ends.
+function smallestEig(C){
+  const p1 = C[0][1]**2 + C[0][2]**2 + C[1][2]**2, q = (C[0][0]+C[1][1]+C[2][2])/3;
+  const p2 = (C[0][0]-q)**2 + (C[1][1]-q)**2 + (C[2][2]-q)**2 + 2*p1, pp = Math.sqrt(p2/6) || 1e-12;
+  const B = C.map((r,i) => r.map((v,j) => (v - (i===j ? q : 0))/pp));
+  const detB = B[0][0]*(B[1][1]*B[2][2]-B[1][2]*B[2][1]) - B[0][1]*(B[1][0]*B[2][2]-B[1][2]*B[2][0]) + B[0][2]*(B[1][0]*B[2][1]-B[1][1]*B[2][0]);
+  const r = Math.max(-1, Math.min(1, detB/2)), phi = Math.acos(r)/3;
+  return q + 2*pp*Math.cos(phi + 2*Math.PI/3);
+}
+const I3 = [[1,0,0],[0,1,0],[0,0,1]];
+// A rod can hang on plain pins only if, seen from the link at each end, it swings in one plane (pin axis = that plane's
+// normal) and the two pin axes stay parallel in space. Otherwise it needs ball joints (rod ends).
+function rodTypes(pth){
+  const n = pth[0].mech.rods.length, out = [];
+  for (let i=0;i<n;i++){
+    let ok = true; const nrm = [];
+    for (const e of [0,1]){
+      const C = [[0,0,0],[0,0,0],[0,0,0]], ds = [];
+      pth.forEach((q,k) => { if (k % 4) return; const [a,b] = q.mech.rods[i], d0 = sub(b,a), d = mul(d0, 1/norm(d0)), F = q.mech.frames[i][e];
+        const l = tr3(F, d); ds.push([l, F]); for (let x=0;x<3;x++) for (let y=0;y<3;y++) C[x][y] += l[x]*l[y]/ds.length; });
+      const lam = smallestEig(C);
+      if (Math.sqrt(Math.max(0, lam)) > 3e-4) ok = false;
+      // eigenvector of lam: cross product of two rows of (C - lam I)
+      const M = C.map((r,x) => r.map((v,y) => v - (x===y ? lam : 0)));
+      let v = cross(M[0], M[1]); if (norm(v) < 1e-9) v = cross(M[0], M[2]); if (norm(v) < 1e-9) v = cross(M[1], M[2]);
+      nrm.push(ds.map(([l,F]) => mv(F, mul(v, 1/(norm(v)||1)))));
+    }
+    if (ok) for (let k=0;k<nrm[0].length;k++) if (Math.abs(dot(nrm[0][k], nrm[1][k])) < 0.9995){ ok = false; break; }
+    out.push(ok ? 'R' : 'S');
+  }
+  return out;
+}
+function rodTypesOld(pth){
+  const n = pth[0].mech.rods.length, out = [];
+  for (let i=0;i<n;i++){
+    const pts = []; pth.forEach((q,k) => { if (k % 4 === 0){ pts.push(q.mech.rods[i][0], q.mech.rods[i][1]); } });
+    const m = pts.reduce((a,v) => add(a,v), [0,0,0]).map(v => v/pts.length);
+    const C = [[0,0,0],[0,0,0],[0,0,0]];
+    pts.forEach(v => { const d = sub(v, m); for (let a=0;a<3;a++) for (let b=0;b<3;b++) C[a][b] += d[a]*d[b]/pts.length; });
+    out.push(Math.sqrt(Math.max(0, smallestEig(C))) < 0.02 ? 'R' : 'S');
+  }
+  return out;
 }
 function mechSamples(q){
   const pts = q.mech.joints.concat(q.mech.pivots);
@@ -401,7 +500,6 @@ let yaw = 0, pitch = 90*D2R, zoom = 3.3, panX = 0, panY = 0;
 function setView(name){ const [y,pc] = VIEWS[name]; yaw = y*D2R; pitch = pc*D2R; panX = panY = 0;
   document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === name)); dirty = true; }
 document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => setView(b.dataset.view));
-const BODYX = -13;
 function proj(v){
   const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
   const x0 = v[0] - BODYX, x = x0*cy - v[1]*sy, y = x0*sy + v[1]*cy, z = v[2];
@@ -424,16 +522,24 @@ function hull(pts){ pts = pts.slice().sort((a,b) => a[0]-b[0] || a[1]-b[1]); con
 function ellipsoid(c, r){ const out = []; for (let i=0;i<=12;i++){ const th = Math.PI*i/12; for (let j=0;j<24;j++){ const ph = 2*Math.PI*j/24;
   out.push(proj([c[0]+r[0]*Math.sin(th)*Math.cos(ph), c[1]+r[1]*Math.cos(th), c[2]+r[2]*Math.sin(th)*Math.sin(ph)])); } } return out; }
 function fillPoly(pts, fill, stroke){ ctx.beginPath(); pts.forEach((p,i) => i ? ctx.lineTo(p[0],p[1]) : ctx.moveTo(p[0],p[1])); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); if (stroke){ ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.stroke(); } }
+// body: drawn translucent (slider) so the mechanism inside stays visible. Outlines stay opaque.
 function drawBody(){
-  fillPoly(hull([[BODYX-6,-40,-6],[BODYX+6,-40,-6],[BODYX+7,-62,-9],[BODYX-7,-62,-9]].map(proj)), '#1d3a55', '#2c4f6e');
-  fillPoly(hull(ellipsoid([BODYX,-12,-9],[13,30,13])), '#173049', '#2a4a66');
-  fillPoly(hull(ellipsoid([BODYX,22,-1],[10.5,11,10])), '#1a3854', '#2c4f6e');
-  fillPoly(hull([[BODYX-4,30,-1],[BODYX+4,30,-1],[BODYX,30,3],[BODYX,30,-5],[BODYX,68,-3]].map(proj)), '#3a2a26', '#5a4038');
-  for (const sx of [1,-1]){ const e = proj([BODYX+8.5*sx,25,2]); ctx.fillStyle = '#0b1420'; ctx.beginPath(); ctx.arc(e[0],e[1],2,0,7); ctx.fill(); }
+  const a = parseFloat(el.bodyA.value), [cx, cy, cz] = BODY.c, [rx, ry, rz] = BODY.r, front = cy + ry, back = cy - ry;
+  const fill = (r,g,b) => `rgba(${r},${g},${b},${a})`, line = 'rgba(80,130,170,.75)';
+  fillPoly(hull([[cx-6,back+10,cz+3],[cx+6,back+10,cz+3],[cx+7,back-22,cz],[cx-7,back-22,cz]].map(proj)), fill(29,58,85), line);
+  fillPoly(hull(ellipsoid([cx,cy,cz],[rx,ry,rz])), fill(23,48,73), line);
+  fillPoly(hull(ellipsoid([cx,front+4,cz+8],[10.5,11,10])), fill(26,56,84), line);
+  fillPoly(hull([[cx-4,front+12,cz+8],[cx+4,front+12,cz+8],[cx,front+12,cz+12],[cx,front+12,cz+4],[cx,front+50,cz+6]].map(proj)), fill(58,42,38), 'rgba(140,100,90,.8)');
+  for (const sx of [1,-1]){ const e = proj([cx+8.5*sx,front+7,cz+11]); ctx.fillStyle = `rgba(11,20,32,${Math.max(0.35,a)})`; ctx.beginPath(); ctx.arc(e[0],e[1],2,0,7); ctx.fill(); }
 }
+// joint markers: ring = plain pin (1 DOF revolute), shaded ball = ball joint (spherical rod end)
+function pinMark(v, color){ const A = proj(v); ctx.strokeStyle = color; ctx.lineWidth = 1.8; ctx.fillStyle = '#0a1622'; ctx.beginPath(); ctx.arc(A[0],A[1],2.8,0,7); ctx.fill(); ctx.stroke(); }
+function ballMark(v){ const A = proj(v), g = ctx.createRadialGradient(A[0]-1.2,A[1]-1.2,0.3,A[0],A[1],4);
+  g.addColorStop(0,'#fff'); g.addColorStop(0.35,'#ff9fd0'); g.addColorStop(1,'#c2407e'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(A[0],A[1],4,0,7); ctx.fill(); }
 function seg(a,b,color,w){ const A = proj(a), B = proj(b); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(A[0],A[1]); ctx.lineTo(B[0],B[1]); ctx.stroke(); }
 function dotp(a,r,color){ const A = proj(a); ctx.fillStyle = color; ctx.beginPath(); ctx.arc(A[0],A[1],r,0,7); ctx.fill(); }
 const mir = v => [2*BODYX - v[0], v[1], v[2]];
+let ROD_T = [];   // 'R' or 'S' for each rod, recomputed from the whole path
 const PLATE = {bc:['rgba(199,182,255,.22)','#c7b6ff'], hum:['rgba(127,212,255,.2)','#7fd4ff'], uln:['rgba(79,209,197,.2)','#4fd1c5'], man:['rgba(255,138,92,.2)','#ff8a5c']};
 
 function drawWing(q, opt, mirrored){
@@ -453,8 +559,8 @@ function drawWing(q, opt, mirrored){
     for (const pl of q.mech.plates){ const c = bad ? ['rgba(229,86,139,.2)','#e5568b'] : PLATE[pl[3]]; fillPoly(pl.slice(0,3).map(v => proj(T(v))), c[0], c[1]); }
     const rodC = bad ? '#e5568b' : '#ffd166';
     q.mech.rods.forEach(([a,b]) => seg(T(a), T(b), rodC, 2));
-    q.mech.joints.forEach(v => dotp(T(v), 2.2, rodC));
-    q.mech.pivots.forEach(v => dotp(T(v), 3.2, '#c7b6ff'));
+    q.mech.rods.forEach(([a,b],i) => { for (const v of [a,b]) (ROD_T[i] === 'S' ? ballMark(T(v)) : pinMark(T(v), rodC)); });
+    q.mech.pivots.forEach(v => pinMark(T(v), '#c7b6ff'));
     // mark every part that sticks out of the wing / body
     mechSamples(q).forEach(X => { if (outsideDist(X, q) > 0.5) dotp(T(X), 3.4, '#e5568b'); });
   }
@@ -462,7 +568,8 @@ function drawWing(q, opt, mirrored){
   seg(T(q.E), T(q.W), '#4fd1c5', 5);
   seg(T(q.W), T(q.CM), '#ff8a5c', 4.5);
   seg(T(q.CM), T(q.T), '#ff8a5c', 2.6);
-  dotp(T(O), 4.2, '#dce7f0'); dotp(T(q.E), 3.6, '#dce7f0'); dotp(T(q.W), 3.4, '#dce7f0');
+  [O, q.E, q.W].forEach(v => pinMark(T(v), '#dce7f0'));
+  if (ver.shoulder && !mirrored){ const a = ver.shoulder.axis; seg(mul(a,-9), mul(a,9), 'rgba(220,231,240,.55)', 1.2); }
 }
 function drawGrid(){
   ctx.strokeStyle = '#132538'; ctx.lineWidth = 1;
@@ -496,7 +603,7 @@ function drawPlot(pth, u, p){
   const line = (f, color, dash, w) => { pc.strokeStyle = color; pc.setLineDash(dash); pc.lineWidth = w; pc.beginPath(); pth.forEach((q,i) => { const x = X(q.u), y = Y(f(q)); i ? pc.lineTo(x,y) : pc.moveTo(x,y); }); pc.stroke(); pc.setLineDash([]); };
   line(q => TARGET.E0 + (TARGET.E1-TARGET.E0)*q.u, 'rgba(79,209,197,.55)', [5,4], 1.5);
   line(q => TARGET.M0 + (TARGET.M1-TARGET.M0)*q.u, 'rgba(255,138,92,.55)', [5,4], 1.5);
-  line(q => p.ah0 - q.ah, 'rgba(127,212,255,.85)', [], 1.5);
+  line(q => Math.abs(p.ah0 - q.ah), 'rgba(127,212,255,.85)', [], 1.5);
   line(q => q.Edeg, '#4fd1c5', [], 2.2);
   line(q => q.Mdeg, '#ff8a5c', [], 2.2);
   pc.strokeStyle = 'rgba(220,231,240,.6)'; pc.beginPath(); pc.moveTo(X(u),t); pc.lineTo(X(u),H-b); pc.stroke();
@@ -506,9 +613,15 @@ function drawPlot(pth, u, p){
 function sizeTable(p, q0){
   const k = p.scale, f = v => (v*k).toFixed(1), pt = (a,b) => '('+f(a)+', '+f(b)+')';
   let rows = [['g','骨（mm）'], ['上腕骨（肩→肘）', f(BONE.LH)], ['尺骨（肘→手首）', f(BONE.LU)], ['手（手首→指先）', f(BONE.LMAN)]];
-  if (ver.topo === 'two') rows = rows.concat([
-    ['g','肘を曲げる系統（体側, mm）'], ['ベルクランク1 支点（体）', pt(p.G1x,p.G1y)], ['上腕骨の突起（上腕座標）', pt(p.h1x,p.h1y)],
-    ['ロッド1', f(p.Lc1)], ['ベルクランク1 腕1 / 腕2', f(p.rb1)+' / '+pt(p.b2x,p.b2y)], ['ロッド2', f(p.L2)], ['尺骨レバー（尺骨座標）', pt(p.wx,p.wy)],
+  const p3 = (a,b,c) => '('+f(a)+', '+f(b)+', '+f(c)+')', is3 = ver.topo === 'two3';
+  if (ver.topo === 'twoB') rows = rows.concat([
+    ['g','肘を曲げる系統（上腕骨側, mm）'], ['体アンカー（肩原点, x外 y前 z背）', p3(p.Ax,p.Ay,p.Az)], ['ロッド1（両端ボール）', f(p.Lc1)],
+    ['ベルクランク1 支点（上腕座標）', pt(p.G1x,p.G1y)], ['ベルクランク1 腕1 / 腕2', f(p.rb1)+' / '+pt(p.b2x,p.b2y)], ['ロッド2', f(p.L2)], ['尺骨レバー（尺骨座標）', pt(p.wx,p.wy)],
+    ['g','手首を曲げる系統（尺骨側, mm）'], ['ベルクランク2 支点（尺骨座標, 肘から）', pt(p.G2x,p.G2y)], ['上腕骨クランク（上腕座標）', pt(p.h3x,p.h3y)],
+    ['ロッド3', f(p.Lc3)], ['ベルクランク2 腕1 / 腕2', f(p.rb3)+' / '+pt(p.b4x,p.b4y)], ['ロッド4', f(p.L4)], ['手レバー（手座標）', pt(p.qx,p.qy)]]);
+  else if (ver.topo !== 'single') rows = rows.concat([
+    ['g','肘を曲げる系統（体側, mm）'], ['ベルクランク1 支点（体, 肩原点）', is3 ? p3(p.G1x,p.G1y,p.G1z) : pt(p.G1x,p.G1y)], ['上腕骨の突起（上腕座標）', is3 ? p3(p.h1x,p.h1y,p.h1z) : pt(p.h1x,p.h1y)],
+    ['ロッド1', f(p.Lc1)], ['ベルクランク1 腕1 / 腕2', f(p.rb1)+' / '+(is3 ? p3(p.b2x,p.b2y,p.b2z) : pt(p.b2x,p.b2y))], ['ロッド2', f(p.L2)], ['尺骨レバー（尺骨座標）', pt(p.wx,p.wy)],
     ...(ver.wristMount === 'ulna'
       ? [['g','手首を曲げる系統（尺骨側, mm）'], ['ベルクランク2 支点（尺骨座標, 肘から）', pt(p.G2x,p.G2y)], ['上腕骨クランク（上腕座標）', pt(p.h3x,p.h3y)]]
       : [['g','手首を曲げる系統（上腕骨側, mm）'], ['ベルクランク2 支点（上腕座標）', pt(p.G2x,p.G2y)], ['尺骨クランク（尺骨座標）', pt(p.h3x,p.h3y)]]),
@@ -516,8 +629,26 @@ function sizeTable(p, q0){
   else rows = rows.concat([
     ['g','腱ロッドと橈骨（mm）'], ['腱ロッド 体側支点', pt(p.Ax,p.Ay)], ['腱ロッド 尺骨取付（尺骨座標）', pt(p.s,p.n)], ['腱ロッド長', f(p.Lrod)],
     ['橈骨 肘側（上腕座標, 肘から）', pt(p.px,p.py)], ['橈骨 手首側（手座標）', pt(p.qx,p.qy)], ['橈骨長', f(p.Lr)]]);
-  rows = rows.concat([['g','モーター'], ['回転角（上腕骨）', Math.abs(p.ah0 - p.ah1).toFixed(1)+'°'], ['広げた時の骨格の張り出し', f(q0.T[0])+' mm']]);
+  rows = rows.concat([['g','モーター'], ['回転角（上腕骨）', Math.abs(p.ah0 - p.ah1).toFixed(1)+'°']].concat(ver.shoulder
+    ? [['肩の回転軸（x外, y前, z背）', '('+ver.shoulder.axis.map(v => v.toFixed(3)).join(', ')+')']] : []).concat([['広げた時の骨格の張り出し', f(q0.T[0])+' mm']]));
   $('sizeTable').innerHTML = rows.map(r => r[0] === 'g' ? '<tr><td class="grp" colspan="2">'+r[1]+'</td></tr>' : '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>').join('');
+}
+
+// ---------------- joint table ----------------
+function jointTable(pth){
+  ROD_T = rodTypes(pth);
+  const R = '<span class="jR"></span> ピン（1自由度）', S = '<span class="jS"></span> ボール（3自由度）';
+  const rodNames = ver.topo === 'single' ? ['腱ロッド（体↔尺骨）', '橈骨ロッド（上腕↔手）'] : [ver.elbowMount === 'hum' ? 'ロッド1（体アンカー↔BC1）' : 'ロッド1（上腕突起↔BC1）', 'ロッド2（BC1↔尺骨レバー）', 'ロッド3（上腕クランク↔BC2）', 'ロッド4（BC2↔手レバー）'];
+  const rows = [['g','骨の関節'], [ver.shoulder ? '肩（モーター軸・斜め1軸）' : '肩（モーター軸）', R], ['肘', R], ['手首', R]];
+  if (ver.topo !== 'single') rows.push(['g','ベルクランクの支点'], ['BC1（'+(ver.elbowMount === 'hum' ? '上腕骨' : '体')+'）', R], ['BC2（'+(ver.wristMount === 'hum' ? '上腕骨' : '尺骨')+'）', R]);
+  rows.push(['g','ロッドの両端']); rodNames.forEach((n,i) => rows.push([n, ROD_T[i] === 'S' ? S : R]));
+  $('jointTable').innerHTML = rows.map(r => r[0] === 'g' ? '<tr><td class="grp" colspan="2">'+r[1]+'</td></tr>' : '<tr><td>'+r[0]+'</td><td style="text-align:left">'+r[1]+'</td></tr>').join('');
+  const nS = ROD_T.filter(t => t === 'S').length;
+  $('jointNote').innerHTML = (nS === 0
+    ? '全部ピン。すべての軸が平行な平面リンクなので、ボールジョイントは要りません。'
+    : `ボールが要るのは${ROD_T.map((t,i) => t === 'S' ? rodNames[i].split('（')[0] : null).filter(Boolean).join('・')}の両端だけです（付け根の部品から見てロッドが面の外へ振れるため）。それ以外は軸が互いに平行な平面ループなのでピンで足ります。`) +
+    ' 判定は自動計算です：ロッドの両端それぞれについて、その端が付く部品から見てロッドが1枚の平面内でしか振れず、しかも両端のピン軸が常に平行ならピン、そうでなければボールとしています。' +
+    (ver.shoulder ? ' 本物の鳥の肩は球関節、肘・手首も純粋な蝶番ではありませんが、この機構では肩を「斜めに傾けた1本の軸」に置き換えています。' : '');
 }
 
 // ---------------- metrics & version panel ----------------
@@ -551,7 +682,10 @@ $('verBtn').onclick = e => { e.stopPropagation(); togglePanel(); };
 document.addEventListener('click', e => { if (!$('verPanel').contains(e.target) && e.target !== $('verBtn')) togglePanel(false); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') togglePanel(false); });
 function loadVersion(id){
-  ver = VERSIONS.find(v => v.id === id); TARGET = ver.target;
+  ver = VERSIONS.find(v => v.id === id); TARGET = ver.target; BODY = ver.body || BODY_OLD; BODYX = BODY.c[0];
+  const fixedTilt = !!ver.shoulder;
+  $('tiltBody').style.display = fixedTilt ? 'none' : ''; $('tiltNote').style.display = fixedTilt ? '' : 'none';
+  $('tiltNote').innerHTML = '<b>'+ver.id+'</b> は最初から3Dで設計しています。肩は斜めに傾けた1本の軸（向きは寸法表の最後）で、畳むと上腕骨が後ろへ引きながら下がってねじれ、翼が体の側面に沿います。肘系統はロッド2だけが立体的に振れ、手首系統は翼の面内の平面リンクです。';
   buildDimSliders(); setDims(); setTilts({tS:0,tE:0,tW:0}); $('p2d').classList.add('on'); $('p3d').classList.remove('on');
   const [cls, lab] = STAT[ver.status];
   $('verLabel').textContent = ver.id; $('verTag').className = 'tag ' + cls; $('verTag').textContent = lab;
@@ -566,6 +700,7 @@ function syncOut(){
   dimIds.forEach(id => { const o = $('od_'+id); if (o) o.textContent = parseFloat(el['d_'+id].value).toFixed(2); });
 }
 fixedIds.forEach(id => el[id].addEventListener('input', () => { dirty = true; }));
+const fmtA = v => Math.round(v*100)+'%'; fmt.bodyA = fmtA;
 ['feathers','mirror','mech','trace'].forEach(id => $(id).addEventListener('change', () => dirty = true));
 $('p2d').onclick = () => { setTilts({tS:0,tE:0,tW:0}); $('p2d').classList.add('on'); $('p3d').classList.remove('on'); dirty = true; };
 $('p3d').onclick = () => { setTilts(ver.tilt3d); $('p3d').classList.add('on'); $('p2d').classList.remove('on'); dirty = true; };
@@ -583,10 +718,11 @@ let dirty = true;
 function render(){
   syncOut();
   const p = params(), m = metrics(p), pth = m.pth;
+  jointTable(pth);
   const u = p.fold, i = Math.min(NS, Math.round(u*NS));
   const q = i === 0 && u === 0 ? pth[0] : poseFn()(p, p.ah0 + (p.ah1 - p.ah0)*u, pth[Math.max(0, i-1)]);
   drawStage(q, pth); drawPlot(pth, u, p);
-  $('rMotor').innerHTML = (p.ah0 - q.ah).toFixed(0) + '<span class="u">°</span>';
+  $('rMotor').innerHTML = Math.abs(p.ah0 - q.ah).toFixed(0) + '<span class="u">°</span>';
   $('rE').innerHTML = q.Edeg.toFixed(0) + '<span class="u">°</span>';
   $('rM').innerHTML = q.Mdeg.toFixed(0) + '<span class="u">°</span>';
   $('rSpan').innerHTML = Math.round(100*q.T[0]/pth[0].T[0]) + '<span class="u">%</span>';
@@ -604,7 +740,7 @@ function frame(ts){
     if (x >= 1){ const done = anim.to; anim = null; if (looping) setTimeout(() => { if (looping) goTo(done > 0.5 ? 0 : 1); }, 350); } }
   if (dirty){ dirty = false; render(); }
 }
-window.__wing = {path, params, metrics, protrusion, outsideDist, mechSamples, VERSIONS, loadVersion, setTilts, get ver(){ return ver; }};
+window.__wing = {path, params, metrics, protrusion, outsideDist, mechSamples, rodTypes, VERSIONS, loadVersion, setTilts, get ver(){ return ver; }};
 loadVersion(VERSIONS[0].id);
 requestAnimationFrame(frame);
 })();
