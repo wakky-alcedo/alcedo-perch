@@ -103,7 +103,7 @@
   <div class="layout">
     <div>
       <div class="panel">
-        <h2>3D view — ドラッグで回転、Shift＋ドラッグで移動、ホイールで拡大</h2>
+        <h2>3D view — ドラッグで回転・右ドラッグで移動・ホイールで拡大・ダブルクリックで戻す</h2>
         <canvas id="stage" width="760" height="560" aria-label="翼の骨格リンク機構の3D表示"></canvas>
         <div class="bar" style="margin:8px 0 0">
           <button data-view="top" class="on">上から</button>
@@ -494,25 +494,60 @@ function featherQuads(q){
 }
 
 // ---------------- camera ----------------
+// Turntable orbit around the bird (z = dorsal is always "up"), mild perspective, grab-style dragging:
+//   left drag = orbit (the part under the cursor follows it), right / middle / Shift drag = pan,
+//   wheel / pinch = zoom toward the cursor, double-click = back to the current preset view.
 const stage = $('stage'), ctx = stage.getContext('2d');
 const VIEWS = {top:[0,90], front:[180,0], back:[0,0], side:[90,0], iso:[-35,32]};
-let yaw = 0, pitch = 90*D2R, zoom = 3.3, panX = 0, panY = 0;
-function setView(name){ const [y,pc] = VIEWS[name]; yaw = y*D2R; pitch = pc*D2R; panX = panY = 0;
+let yaw = 0, pitch = 90*D2R, zoom = 3.3, panX = 0, panY = 0, camAnim = null, lastView = 'top';
+const CAMD = 420;                 // camera distance (mm) for the perspective; large = nearly orthographic
+const camTarget = () => [BODYX, -12, -6];
+function clampP(p){ return Math.max(-Math.PI/2, Math.min(Math.PI/2, p)); }
+function setView(name, instant){
+  const [y,pc] = VIEWS[name]; lastView = name;
+  let ty = y*D2R; ty = yaw + Math.atan2(Math.sin(ty - yaw), Math.cos(ty - yaw));    // shortest way round
+  const to = {yaw:ty, pitch:pc*D2R, zoom:3.3, panX:0, panY:0};
+  if (instant){ yaw = to.yaw; pitch = to.pitch; zoom = to.zoom; panX = panY = 0; camAnim = null; }
+  else camAnim = {from:{yaw, pitch, zoom, panX, panY}, to, t0:performance.now()};
   document.querySelectorAll('[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === name)); dirty = true; }
+function stepCam(ts){ if (!camAnim) return; const x = Math.min(1, (ts - camAnim.t0)/350), k = 1 - Math.pow(1 - x, 3), f = camAnim.from, t = camAnim.to;
+  yaw = f.yaw + (t.yaw - f.yaw)*k; pitch = f.pitch + (t.pitch - f.pitch)*k; zoom = f.zoom + (t.zoom - f.zoom)*k;
+  panX = f.panX + (t.panX - f.panX)*k; panY = f.panY + (t.panY - f.panY)*k; dirty = true; if (x >= 1) camAnim = null; }
 document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => setView(b.dataset.view));
+// direction from the target toward the camera (world)
+function camDir(){ const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch); return [-sy*cp, -cy*cp, sp]; }
 function proj(v){
-  const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
-  const x0 = v[0] - BODYX, x = x0*cy - v[1]*sy, y = x0*sy + v[1]*cy, z = v[2];
-  return [stage.width/2 + panX + x*zoom, stage.height*0.5 + panY - (z*cp + y*sp)*zoom, y*cp - z*sp];
+  const cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch), T = camTarget();
+  const x0 = v[0] - T[0], y0 = v[1] - T[1], z = v[2] - T[2];
+  const x = x0*cy - y0*sy, y = x0*sy + y0*cy, d = y*cp - z*sp, k = zoom*CAMD/(CAMD + d);
+  return [stage.width/2 + panX + x*k, stage.height*0.5 + panY - (z*cp + y*sp)*k, d];
 }
-let drag = null;
-stage.addEventListener('pointerdown', e => { drag = {x:e.clientX, y:e.clientY, yaw, pitch, shift:e.shiftKey, panX, panY}; stage.setPointerCapture(e.pointerId); });
-stage.addEventListener('pointermove', e => { if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
-  if (drag.shift){ panX = drag.panX + dx; panY = drag.panY + dy; }
-  else { yaw = drag.yaw - dx*0.008; pitch = Math.max(-1.5, Math.min(1.5, drag.pitch + dy*0.008)); document.querySelectorAll('[data-view]').forEach(b => b.classList.remove('on')); }
-  dirty = true; });
-stage.addEventListener('pointerup', () => drag = null);
-stage.addEventListener('wheel', e => { e.preventDefault(); zoom = Math.max(1.2, Math.min(10, zoom*Math.exp(-e.deltaY*0.001))); dirty = true; }, {passive:false});
+const unView = () => document.querySelectorAll('[data-view]').forEach(b => b.classList.remove('on'));
+const ptrs = new Map(); let drag = null, pinch = null;
+const cssScale = () => stage.width / stage.getBoundingClientRect().width;
+function zoomAt(cx, cy, f){ const nz = Math.max(1.2, Math.min(14, zoom*f)), r = nz/zoom, C = [stage.width/2, stage.height/2];
+  panX = (cx - C[0]) - (cx - C[0] - panX)*r; panY = (cy - C[1]) - (cy - C[1] - panY)*r; zoom = nz; dirty = true; }
+stage.addEventListener('contextmenu', e => e.preventDefault());
+stage.addEventListener('pointerdown', e => {
+  stage.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, [e.clientX, e.clientY]); camAnim = null;
+  if (ptrs.size === 2){ const [a,b] = [...ptrs.values()]; pinch = {d:Math.hypot(a[0]-b[0], a[1]-b[1]), m:[(a[0]+b[0])/2, (a[1]+b[1])/2]}; drag = null; return; }
+  drag = {x:e.clientX, y:e.clientY, yaw, pitch, panX, panY, pan: e.shiftKey || e.button === 1 || e.button === 2};
+  stage.style.cursor = drag.pan ? 'move' : 'grabbing'; });
+stage.addEventListener('pointermove', e => {
+  if (!ptrs.has(e.pointerId)) return; ptrs.set(e.pointerId, [e.clientX, e.clientY]); const s = cssScale();
+  if (pinch && ptrs.size === 2){ const [a,b] = [...ptrs.values()], d = Math.hypot(a[0]-b[0], a[1]-b[1]), m = [(a[0]+b[0])/2, (a[1]+b[1])/2];
+    const R = stage.getBoundingClientRect(); panX += (m[0]-pinch.m[0])*s; panY += (m[1]-pinch.m[1])*s;
+    zoomAt((m[0]-R.left)*s, (m[1]-R.top)*s, d/(pinch.d||d)); pinch = {d, m}; unView(); return; }
+  if (!drag) return; const dx = (e.clientX - drag.x)*s, dy = (e.clientY - drag.y)*s;
+  if (drag.pan){ panX = drag.panX + dx; panY = drag.panY + dy; }
+  else { yaw = drag.yaw + dx/s*0.008; pitch = clampP(drag.pitch + dy/s*0.008); }   // 0.46°/CSS px
+  unView(); dirty = true; });
+const endPtr = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (!ptrs.size){ drag = null; stage.style.cursor = 'grab'; } };
+stage.addEventListener('pointerup', endPtr); stage.addEventListener('pointercancel', endPtr);
+stage.addEventListener('dblclick', () => setView(lastView));
+stage.style.cursor = 'grab'; stage.style.touchAction = 'none';
+stage.addEventListener('wheel', e => { e.preventDefault(); const R = stage.getBoundingClientRect(), s = cssScale();
+  zoomAt((e.clientX - R.left)*s, (e.clientY - R.top)*s, Math.exp(-e.deltaY*0.0015)); unView(); }, {passive:false});
 
 // ---------------- drawing ----------------
 function hull(pts){ pts = pts.slice().sort((a,b) => a[0]-b[0] || a[1]-b[1]); const cr = (o,a,b) => (a[0]-o[0])*(b[1]-o[1]) - (a[1]-o[1])*(b[0]-o[0]); const lo = [], up = [];
@@ -542,52 +577,91 @@ const mir = v => [2*BODYX - v[0], v[1], v[2]];
 let ROD_T = [];   // 'R' or 'S' for each rod, recomputed from the whole path
 const PLATE = {bc:['rgba(199,182,255,.22)','#c7b6ff'], hum:['rgba(127,212,255,.2)','#7fd4ff'], uln:['rgba(79,209,197,.2)','#4fd1c5'], man:['rgba(255,138,92,.2)','#ff8a5c']};
 
-function drawWing(q, opt, mirrored){
-  const T = mirrored ? mir : (v => v), bad = !q.ok;
-  if (opt.feathers){
-    const quads = featherQuads(q).map(f => { const pts = f.pts.map(v => proj(T(v))); return {f, pts, d: pts.reduce((s,p) => s+p[2],0)/pts.length}; });
-    quads.sort((a,b) => b.d - a.d);
-    for (const {f, pts} of quads){
-      ctx.beginPath(); pts.forEach((p,i) => i ? ctx.lineTo(p[0],p[1]) : ctx.moveTo(p[0],p[1])); ctx.closePath();
-      ctx.fillStyle = f.kind === 'p' ? 'rgba(40,120,200,.40)' : 'rgba(52,160,186,.36)';
-      ctx.strokeStyle = f.kind === 'p' ? 'rgba(120,190,255,.55)' : 'rgba(120,220,220,.5)'; ctx.lineWidth = 0.8; ctx.fill(); ctx.stroke();
-    }
-  }
-  const O = [0,0,0];
-  if (opt.mech){
-    // the same mechanism on both wings (the left one is a mirror image)
-    for (const pl of q.mech.plates){ const c = bad ? ['rgba(229,86,139,.2)','#e5568b'] : PLATE[pl[3]]; fillPoly(pl.slice(0,3).map(v => proj(T(v))), c[0], c[1]); }
-    const rodC = bad ? '#e5568b' : '#ffd166';
-    q.mech.rods.forEach(([a,b]) => seg(T(a), T(b), rodC, 2));
-    q.mech.rods.forEach(([a,b],i) => { for (const v of [a,b]) (ROD_T[i] === 'S' ? ballMark(T(v)) : pinMark(T(v), rodC)); });
-    q.mech.pivots.forEach(v => pinMark(T(v), '#c7b6ff'));
-    // mark every part that sticks out of the wing / body
-    mechSamples(q).forEach(X => { if (outsideDist(X, q) > 0.5) dotp(T(X), 3.4, '#e5568b'); });
-  }
-  seg(O, T(q.E), '#7fd4ff', 6);
-  seg(T(q.E), T(q.W), '#4fd1c5', 5);
-  seg(T(q.W), T(q.CM), '#ff8a5c', 4.5);
-  seg(T(q.CM), T(q.T), '#ff8a5c', 2.6);
-  [O, q.E, q.W].forEach(v => pinMark(T(v), '#dce7f0'));
-  if (ver.shoulder && !mirrored){ const a = ver.shoulder.axis; seg(mul(a,-9), mul(a,9), 'rgba(220,231,240,.55)', 1.2); }
+// Everything in the 3D view goes into one list and is painted far-to-near. The torso is one translucent layer:
+// a primitive whose line of sight to the camera passes through the torso is painted before it, the rest after it.
+function behindBody(P){
+  const c = camDir(), o = [0,1,2].map(i => (P[i] - BODY.c[i])/BODY.r[i]), d = [0,1,2].map(i => c[i]/BODY.r[i]);
+  const A = d[0]*d[0]+d[1]*d[1]+d[2]*d[2], B = 2*(o[0]*d[0]+o[1]*d[1]+o[2]*d[2]), C = o[0]*o[0]+o[1]*o[1]+o[2]*o[2] - 1;
+  if (C < 0) return true; const disc = B*B - 4*A*C; if (disc < 0) return false; return (-B + Math.sqrt(disc)) > 0 && (-B - Math.sqrt(disc)) > 0;
 }
-function drawGrid(){
-  ctx.strokeStyle = '#132538'; ctx.lineWidth = 1;
-  for (let i=-6;i<=6;i++){
-    const a = proj([BODYX + i*15, -90, -32]), b = proj([BODYX + i*15, 90, -32]); ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
-    const c = proj([BODYX - 90, i*15, -32]), d = proj([BODYX + 90, i*15, -32]); ctx.beginPath(); ctx.moveTo(c[0],c[1]); ctx.lineTo(d[0],d[1]); ctx.stroke();
+function collectWing(L, q, opt, mirrored){
+  const T = mirrored ? mir : (v => v), bad = !q.ok, O = [0,0,0];
+  const poly = (pts, fill, stroke, lw) => L.push({k:'poly', pts:pts.map(T), fill, stroke, lw});
+  const line = (a, b, color, w) => L.push({k:'seg', pts:[T(a), T(b)], color, w});
+  const mark = (v, kind, color) => L.push({k:kind, pts:[T(v)], color, bias:-0.6});
+  if (opt.feathers) featherQuads(q).forEach(f => poly(f.pts, f.kind === 'p' ? 'rgba(40,120,200,.42)' : 'rgba(52,160,186,.38)', f.kind === 'p' ? 'rgba(120,190,255,.55)' : 'rgba(120,220,220,.5)', 0.8));
+  if (opt.mech){
+    for (const pl of q.mech.plates){ const c = bad ? ['rgba(229,86,139,.2)','#e5568b'] : PLATE[pl[3]]; poly(pl.slice(0,3), c[0], c[1], 1); }
+    const rodC = bad ? '#e5568b' : '#ffd166';
+    q.mech.rods.forEach(([a,b],i) => { line(a, b, rodC, 2); for (const v of [a,b]) mark(v, ROD_T[i] === 'S' ? 'ball' : 'pin', rodC); });
+    q.mech.pivots.forEach(v => mark(v, 'pin', '#c7b6ff'));
+    mechSamples(q).forEach(X => { if (outsideDist(X, q) > 0.5) L.push({k:'warn', pts:[T(X)], bias:-1}); });
   }
+  line(O, q.E, '#7fd4ff', 6); line(q.E, q.W, '#4fd1c5', 5); line(q.W, q.CM, '#ff8a5c', 4.5); line(q.CM, q.T, '#ff8a5c', 2.6);
+  [O, q.E, q.W].forEach(v => mark(v, 'pin', '#dce7f0'));
+  if (ver.shoulder && !mirrored){ const a = ver.shoulder.axis; line(mul(a,-9), mul(a,9), 'rgba(220,231,240,.55)', 1.2); }
+}
+function paint(o){
+  const P = o.P;
+  if (o.k === 'poly'){ ctx.beginPath(); P.forEach((p,i) => i ? ctx.lineTo(p[0],p[1]) : ctx.moveTo(p[0],p[1])); ctx.closePath();
+    ctx.fillStyle = o.fill; ctx.fill(); if (o.stroke){ ctx.strokeStyle = o.stroke; ctx.lineWidth = o.lw || 1; ctx.stroke(); } return; }
+  if (o.k === 'seg'){ const k = zoom/3.3; ctx.strokeStyle = o.color; ctx.lineWidth = Math.max(1, o.w*Math.sqrt(k)); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(P[0][0],P[0][1]); ctx.lineTo(P[1][0],P[1][1]); ctx.stroke(); return; }
+  const A = P[0];
+  if (o.k === 'pin'){ ctx.strokeStyle = o.color; ctx.lineWidth = 1.8; ctx.fillStyle = '#0a1622'; ctx.beginPath(); ctx.arc(A[0],A[1],2.8,0,7); ctx.fill(); ctx.stroke(); return; }
+  if (o.k === 'ball'){ const g = ctx.createRadialGradient(A[0]-1.2,A[1]-1.2,0.3,A[0],A[1],4);
+    g.addColorStop(0,'#fff'); g.addColorStop(0.35,'#ff9fd0'); g.addColorStop(1,'#c2407e'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(A[0],A[1],4,0,7); ctx.fill(); return; }
+  if (o.k === 'warn'){ ctx.fillStyle = '#e5568b'; ctx.beginPath(); ctx.arc(A[0],A[1],3.4,0,7); ctx.fill(); }
+}
+const GROUND = -32;
+function drawGrid(){
+  const T = camTarget(), s = 15, n = 7;
+  ctx.lineWidth = 1;
+  for (let i=-n;i<=n;i++){
+    ctx.strokeStyle = i === 0 ? '#1d3650' : '#132538';
+    let a = proj([T[0] + i*s, T[1] - n*s, GROUND]), b = proj([T[0] + i*s, T[1] + n*s, GROUND]); ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+    a = proj([T[0] - n*s, T[1] + i*s, GROUND]); b = proj([T[0] + n*s, T[1] + i*s, GROUND]); ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+  }
+  // "前" marker on the floor so the heading is readable from any angle
+  const f = proj([T[0], T[1] + n*s + 6, GROUND]); ctx.fillStyle = '#3d5a75'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('前 ▲', f[0], f[1]); ctx.textAlign = 'left';
+}
+// soft shadow straight down onto the floor: the strongest cue for "how high / which side"
+function drawShadow(L){
+  if (pitch < -0.05) return;
+  // one path, filled once, so overlapping feathers don't stack into black
+  const fl = v => proj([v[0], v[1], GROUND]), path = new Path2D(), add2 = P => P.forEach((p,i) => i ? path.lineTo(p[0],p[1]) : path.moveTo(p[0],p[1]));
+  add2(hull(ellipsoid([BODY.c[0], BODY.c[1], GROUND], [BODY.r[0], BODY.r[1], 0.01]))); path.closePath();
+  for (const o of L){ if (o.k === 'poly' && (o.fill.indexOf('40,120') >= 0 || o.fill.indexOf('52,160') >= 0)){ add2(o.pts.map(fl)); path.closePath(); } }
+  ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fill(path, 'nonzero');
+  ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineCap = 'round'; ctx.beginPath();
+  for (const o of L) if (o.k === 'seg' && o.w >= 4){ const P = o.pts.map(fl); ctx.moveTo(P[0][0],P[0][1]); ctx.lineTo(P[1][0],P[1][1]); }
+  ctx.lineWidth = 3; ctx.stroke();
+}
+// orientation gizmo (bottom-left): 外 = right wing outward, 前 = beak, 背 = up
+function drawGizmo(){
+  const ox = 42, oy = stage.height - 42, R = 26, cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+  const ax = [[[1,0,0],'外','#ff8a5c'], [[0,1,0],'前','#4fd1c5'], [[0,0,1],'背','#7fd4ff']].map(([v,l,c]) => {
+    const x = v[0]*cy - v[1]*sy, y = v[0]*sy + v[1]*cy, z = v[2]; return {sx: x*R, sy: -(z*cp + y*sp)*R, d: y*cp - z*sp, l, c}; });
+  ctx.fillStyle = 'rgba(10,22,34,.7)'; ctx.beginPath(); ctx.arc(ox, oy, R + 12, 0, 7); ctx.fill();
+  ax.sort((a,b) => b.d - a.d).forEach(a => { ctx.globalAlpha = a.d > 0.2 ? 0.45 : 1; ctx.strokeStyle = a.c; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ox + a.sx, oy + a.sy); ctx.stroke();
+    ctx.fillStyle = a.c; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(a.l, ox + a.sx*1.25, oy + a.sy*1.25 + 4); });
+  ctx.globalAlpha = 1; ctx.textAlign = 'left';
 }
 function drawStage(q, pth){
   ctx.clearRect(0,0,stage.width,stage.height); drawGrid();
-  const opt = {feathers:$('feathers').checked, mech:$('mech').checked};
-  const order = [{body:true, d:proj([BODYX,0,0])[2]}, {m:false, d:proj(q.W)[2]}];
-  if ($('mirror').checked) order.push({m:true, d:proj(mir(q.W))[2]});
-  order.sort((a,b) => b.d - a.d);
-  for (const o of order){ if (o.body) drawBody(); else drawWing(q, opt, o.m); }
+  const opt = {feathers:$('feathers').checked, mech:$('mech').checked}, L = [];
+  collectWing(L, q, opt, false); if ($('mirror').checked) collectWing(L, q, opt, true);
+  drawShadow(L);
+  for (const o of L){ o.P = o.pts.map(proj); o.d = o.P.reduce((s,p) => s + p[2], 0)/o.P.length + (o.bias || 0);
+    const c = o.pts.reduce((a,v) => add(a,v), [0,0,0]).map(v => v/o.pts.length); o.back = behindBody(c); }
+  const byDepth = (a,b) => b.d - a.d;
+  L.filter(o => o.back).sort(byDepth).forEach(paint);
+  drawBody();
+  L.filter(o => !o.back).sort(byDepth).forEach(paint);
   if ($('trace').checked){ ctx.strokeStyle = 'rgba(220,231,240,.5)'; ctx.lineWidth = 1.2; ctx.beginPath();
     pth.forEach((r,i) => { const P = proj(r.T); i ? ctx.lineTo(P[0],P[1]) : ctx.moveTo(P[0],P[1]); }); ctx.stroke(); }
   ctx.fillStyle = '#7690a8'; ctx.font = '11px monospace'; const s = proj([0,0,0]); ctx.fillText('肩（モーター）', s[0]+8, s[1]-8);
+  drawGizmo();
 }
 
 // ---------------- plot ----------------
@@ -735,12 +809,12 @@ function render(){
   sizeTable(p, pth[0]);
 }
 function frame(ts){
-  requestAnimationFrame(frame);
+  requestAnimationFrame(frame); stepCam(ts);
   if (anim){ const x = Math.min(1, (ts - anim.t0)/(parseFloat(el.dur.value)*1000)); el.fold.value = anim.from + (anim.to - anim.from)*ease(x); dirty = true;
     if (x >= 1){ const done = anim.to; anim = null; if (looping) setTimeout(() => { if (looping) goTo(done > 0.5 ? 0 : 1); }, 350); } }
   if (dirty){ dirty = false; render(); }
 }
-window.__wing = {path, params, metrics, protrusion, outsideDist, mechSamples, rodTypes, VERSIONS, loadVersion, setTilts, get ver(){ return ver; }};
+window.__wing = {proj, setView, get cam(){ return {yaw, pitch, zoom, panX, panY}; }, path, params, metrics, protrusion, outsideDist, mechSamples, rodTypes, VERSIONS, loadVersion, setTilts, get ver(){ return ver; }};
 loadVersion(VERSIONS[0].id);
 requestAnimationFrame(frame);
 })();
