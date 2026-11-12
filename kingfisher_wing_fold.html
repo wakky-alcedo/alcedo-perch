@@ -346,7 +346,10 @@ function poseTwo(p, ah, ref, pick){
             ? [[E,G2,add(E,mv(Ru,[Math.min(BONE.LU,Math.max(2,p.G2x+3)),0,0])),'uln'], [mv(Rh,[Math.max(0,p.h3x-6),0,0]),C3,E,'hum']]
             : [[E,G2,add(E,mv(Rh,[2,0,0])),'hum'], [add(E,mv(Ru,[Math.max(0,p.h3x-8),0,0])),C3,add(E,mv(Ru,[Math.min(BONE.LU,p.h3x+4),0,0])),'uln']]),
           rods:[[H1,B1],[B2,U],[C3,B3],[B4,Q]], pivots:[G1,G2], joints:[H1,B1,B2,U,C3,B3,B4,Q],
-          frames:[[eHum ? I3 : Rh, Rb1], [Rb1, Ru], [onUlna ? Rh : Ru, Rb2], [Rb2, Rm]]}, Rb1, Rb2});
+          frames:[[eHum ? I3 : Rh, Rb1], [Rb1, Ru], [onUlna ? Rh : Ru, Rb2], [Rb2, Rm]],
+          // pin axes (world): a pinned rod end turns about an axis parallel to the bellcrank it hangs on
+          rodAxes:[mv(Fe,Z), mv(Fe,Z), mv(Fb,Z), mv(Fb,Z)], pivotAxes:[mv(Fe,Z), mv(Fb,Z)]},
+    boneAxes:[sh ? sh.axis : mv(Rs,Z), mv(Rh,aE), mv(Ru,aW)], Rb1, Rb2});
   return q;
 }
 function poseSingle(p, ah, ref, pick){
@@ -360,7 +363,8 @@ function poseSingle(p, ah, ref, pick){
   const Rm = mm(Ru, rotM(aW, ps)), Q = add(W, mv(Rm, [p.qx, p.qy, 0]));
   const q = finish({Rh, Ru, Rm, E, W, ah}, p);
   Object.assign(q, {ok: r1.ok && r2.ok, s1:pe, s2:ps, trans:[angTrans(A,U,E), angTrans(P,Q,W)],
-    mech:{plates:[[E,U,add(E,mv(Ru,[4,0,0])),'uln'],[W,Q,q.CM,'man']], rods:[[A,U],[P,Q]], pivots:[A], joints:[U,P,Q], frames:[[I3, Ru], [Rh, Rm]]}});
+    mech:{plates:[[E,U,add(E,mv(Ru,[4,0,0])),'uln'],[W,Q,q.CM,'man']], rods:[[A,U],[P,Q]], pivots:[A], joints:[U,P,Q], frames:[[I3, Ru], [Rh, Rm]],
+          rodAxes:[mv(Rh,aE), mv(Ru,aW)], pivotAxes:[mv(Rh,aE)]}, boneAxes:[mv(Rs,Z), mv(Rh,aE), mv(Ru,aW)]});
   return q;
 }
 function finish(q, p){
@@ -589,22 +593,26 @@ function collectWing(L, q, opt, mirrored){
   const poly = (pts, fill, stroke, lw) => L.push({k:'poly', pts:pts.map(T), fill, stroke, lw});
   const line = (a, b, color, w) => L.push({k:'seg', pts:[T(a), T(b)], color, w});
   const mark = (v, kind, color) => L.push({k:kind, pts:[T(v)], color, bias:-0.6});
+  // a pin also shows its axis: a short line (±5 mm) in a paler version of the pin colour
+  const pin = (v, ax, color) => { if (ax){ const h = mul(ax, 5/(norm(ax)||1)); L.push({k:'axis', pts:[T(sub(v,h)), T(add(v,h))], color:pale(color), w:1.6, bias:-0.3}); } mark(v, 'pin', color); };
   if (opt.feathers) featherQuads(q).forEach(f => poly(f.pts, f.kind === 'p' ? 'rgba(40,120,200,.42)' : 'rgba(52,160,186,.38)', f.kind === 'p' ? 'rgba(120,190,255,.55)' : 'rgba(120,220,220,.5)', 0.8));
   if (opt.mech){
     for (const pl of q.mech.plates){ const c = bad ? ['rgba(229,86,139,.2)','#e5568b'] : PLATE[pl[3]]; poly(pl.slice(0,3), c[0], c[1], 1); }
     const rodC = bad ? '#e5568b' : '#ffd166';
-    q.mech.rods.forEach(([a,b],i) => { line(a, b, rodC, 2); for (const v of [a,b]) mark(v, ROD_T[i] === 'S' ? 'ball' : 'pin', rodC); });
-    q.mech.pivots.forEach(v => mark(v, 'pin', '#c7b6ff'));
+    q.mech.rods.forEach(([a,b],i) => { line(a, b, rodC, 2); for (const v of [a,b]) ROD_T[i] === 'S' ? mark(v, 'ball', rodC) : pin(v, q.mech.rodAxes && q.mech.rodAxes[i], rodC); });
+    q.mech.pivots.forEach((v,i) => pin(v, q.mech.pivotAxes && q.mech.pivotAxes[i], '#c7b6ff'));
     mechSamples(q).forEach(X => { if (outsideDist(X, q) > 0.5) L.push({k:'warn', pts:[T(X)], bias:-1}); });
   }
   line(O, q.E, '#7fd4ff', 6); line(q.E, q.W, '#4fd1c5', 5); line(q.W, q.CM, '#ff8a5c', 4.5); line(q.CM, q.T, '#ff8a5c', 2.6);
-  [O, q.E, q.W].forEach(v => mark(v, 'pin', '#dce7f0'));
-  if (ver.shoulder && !mirrored){ const a = ver.shoulder.axis; line(mul(a,-9), mul(a,9), 'rgba(220,231,240,.55)', 1.2); }
+  [O, q.E, q.W].forEach((v,i) => pin(v, q.boneAxes && q.boneAxes[i], '#dce7f0'));
 }
+function pale(hex){ const n = parseInt(hex.slice(1), 16); return `rgba(${n>>16},${(n>>8)&255},${n&255},.5)`; }
 function paint(o){
   const P = o.P;
   if (o.k === 'poly'){ ctx.beginPath(); P.forEach((p,i) => i ? ctx.lineTo(p[0],p[1]) : ctx.moveTo(p[0],p[1])); ctx.closePath();
     ctx.fillStyle = o.fill; ctx.fill(); if (o.stroke){ ctx.strokeStyle = o.stroke; ctx.lineWidth = o.lw || 1; ctx.stroke(); } return; }
+  if (o.k === 'axis'){ ctx.strokeStyle = o.color; ctx.lineWidth = o.w; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(P[0][0],P[0][1]); ctx.lineTo(P[1][0],P[1][1]); ctx.stroke(); return; }
   if (o.k === 'seg'){ const k = zoom/3.3; ctx.strokeStyle = o.color; ctx.lineWidth = Math.max(1, o.w*Math.sqrt(k)); ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(P[0][0],P[0][1]); ctx.lineTo(P[1][0],P[1][1]); ctx.stroke(); return; }
   const A = P[0];
