@@ -1,0 +1,272 @@
+// ---------------- drawing ----------------
+function hull(pts){ pts = pts.slice().sort((a,b) => a[0]-b[0] || a[1]-b[1]); const cr = (o,a,b) => (a[0]-o[0])*(b[1]-o[1]) - (a[1]-o[1])*(b[0]-o[0]); const lo = [], up = [];
+  for (const p of pts){ while (lo.length>=2 && cr(lo[lo.length-2], lo[lo.length-1], p) <= 0) lo.pop(); lo.push(p); }
+  for (let i=pts.length-1;i>=0;i--){ const p = pts[i]; while (up.length>=2 && cr(up[up.length-2], up[up.length-1], p) <= 0) up.pop(); up.push(p); }
+  up.pop(); lo.pop(); return lo.concat(up); }
+function ellipsoid(c, r){ const out = []; for (let i=0;i<=12;i++){ const th = Math.PI*i/12; for (let j=0;j<24;j++){ const ph = 2*Math.PI*j/24;
+  out.push(proj([c[0]+r[0]*Math.sin(th)*Math.cos(ph), c[1]+r[1]*Math.cos(th), c[2]+r[2]*Math.sin(th)*Math.sin(ph)])); } } return out; }
+function fillPoly(pts, fill, stroke){ ctx.beginPath(); pts.forEach((p,i) => i ? ctx.lineTo(p[0],p[1]) : ctx.moveTo(p[0],p[1])); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); if (stroke){ ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.stroke(); } }
+// body: drawn translucent (slider) so the mechanism inside stays visible. Outlines stay opaque.
+function drawBody(){
+  const a = parseFloat(el.bodyA.value), [cx, cy, cz] = BODY.c, [rx, ry, rz] = BODY.r, front = cy + ry, back = cy - ry;
+  const fill = (r,g,b) => `rgba(${r},${g},${b},${a})`, line = 'rgba(80,130,170,.75)';
+  fillPoly(hull([[cx-6,back+10,cz+3],[cx+6,back+10,cz+3],[cx+7,back-22,cz],[cx-7,back-22,cz]].map(proj)), fill(29,58,85), line);
+  fillPoly(hull(ellipsoid([cx,cy,cz],[rx,ry,rz])), fill(23,48,73), line);
+  fillPoly(hull(ellipsoid([cx,front+4,cz+8],[10.5,11,10])), fill(26,56,84), line);
+  fillPoly(hull([[cx-4,front+12,cz+8],[cx+4,front+12,cz+8],[cx,front+12,cz+12],[cx,front+12,cz+4],[cx,front+50,cz+6]].map(proj)), fill(58,42,38), 'rgba(140,100,90,.8)');
+  for (const sx of [1,-1]){ const e = proj([cx+8.5*sx,front+7,cz+11]); ctx.fillStyle = `rgba(11,20,32,${Math.max(0.35,a)})`; ctx.beginPath(); ctx.arc(e[0],e[1],2,0,7); ctx.fill(); }
+}
+// joint markers: ring = plain pin (1 DOF revolute), shaded ball = ball joint (spherical rod end)
+function pinMark(v, color){ const A = proj(v); ctx.strokeStyle = color; ctx.lineWidth = 1.8; ctx.fillStyle = '#0a1622'; ctx.beginPath(); ctx.arc(A[0],A[1],2.8,0,7); ctx.fill(); ctx.stroke(); }
+function ballMark(v){ const A = proj(v), g = ctx.createRadialGradient(A[0]-1.2,A[1]-1.2,0.3,A[0],A[1],4);
+  g.addColorStop(0,'#fff'); g.addColorStop(0.35,'#ff9fd0'); g.addColorStop(1,'#c2407e'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(A[0],A[1],4,0,7); ctx.fill(); }
+function seg(a,b,color,w){ const A = proj(a), B = proj(b); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(A[0],A[1]); ctx.lineTo(B[0],B[1]); ctx.stroke(); }
+function dotp(a,r,color){ const A = proj(a); ctx.fillStyle = color; ctx.beginPath(); ctx.arc(A[0],A[1],r,0,7); ctx.fill(); }
+const mir = v => [2*BODYX - v[0], v[1], v[2]];
+let ROD_T = [];   // 'R' or 'S' for each rod, recomputed from the whole path
+const PLATE = {bc:['rgba(199,182,255,.22)','#c7b6ff'], hum:['rgba(127,212,255,.2)','#7fd4ff'], uln:['rgba(79,209,197,.2)','#4fd1c5'], man:['rgba(255,138,92,.2)','#ff8a5c']};
+
+// Everything in the 3D view goes into one list and is painted far-to-near. The torso is one translucent layer:
+// a primitive whose line of sight to the camera passes through the torso is painted before it, the rest after it.
+function behindBody(P){
+  const c = camDir(), o = [0,1,2].map(i => (P[i] - BODY.c[i])/BODY.r[i]), d = [0,1,2].map(i => c[i]/BODY.r[i]);
+  const A = d[0]*d[0]+d[1]*d[1]+d[2]*d[2], B = 2*(o[0]*d[0]+o[1]*d[1]+o[2]*d[2]), C = o[0]*o[0]+o[1]*o[1]+o[2]*o[2] - 1;
+  if (C < 0) return true; const disc = B*B - 4*A*C; if (disc < 0) return false; return (-B + Math.sqrt(disc)) > 0 && (-B - Math.sqrt(disc)) > 0;
+}
+function collectWing(L, q, opt, mirrored){
+  const T = mirrored ? mir : (v => v), bad = !q.ok, O = [0,0,0];
+  const poly = (pts, fill, stroke, lw) => L.push({k:'poly', pts:pts.map(T), fill, stroke, lw});
+  const line = (a, b, color, w) => L.push({k:'seg', pts:[T(a), T(b)], color, w});
+  const mark = (v, kind, color) => L.push({k:kind, pts:[T(v)], color, bias:-0.6});
+  if (opt.feathers) featherQuads(q).forEach(f => poly(f.pts, f.kind === 'p' ? 'rgba(40,120,200,.42)' : 'rgba(52,160,186,.38)', f.kind === 'p' ? 'rgba(120,190,255,.55)' : 'rgba(120,220,220,.5)', 0.8));
+  if (opt.mech){
+    for (const pl of q.mech.plates){ const c = bad ? ['rgba(229,86,139,.2)','#e5568b'] : PLATE[pl[3]]; poly(pl.slice(0,3), c[0], c[1], 1); }
+    const rodC = bad ? '#e5568b' : '#ffd166';
+    q.mech.rods.forEach(([a,b],i) => { line(a, b, rodC, 2); for (const v of [a,b]) mark(v, ROD_T[i] === 'S' ? 'ball' : 'pin', rodC); });
+    q.mech.pivots.forEach(v => mark(v, 'pin', '#c7b6ff'));
+    mechSamples(q).forEach(X => { if (outsideDist(X, q) > 0.5) L.push({k:'warn', pts:[T(X)], bias:-1}); });
+  }
+  line(O, q.E, '#7fd4ff', 6); line(q.E, q.W, '#4fd1c5', 5); line(q.W, q.CM, '#ff8a5c', 4.5); line(q.CM, q.T, '#ff8a5c', 2.6);
+  [O, q.E, q.W].forEach(v => mark(v, 'pin', '#dce7f0'));
+  if (ver.shoulder && !mirrored){ const a = ver.shoulder.axis; line(mul(a,-9), mul(a,9), 'rgba(220,231,240,.55)', 1.2); }
+}
+function paint(o){
+  const P = o.P;
+  if (o.k === 'poly'){ ctx.beginPath(); P.forEach((p,i) => i ? ctx.lineTo(p[0],p[1]) : ctx.moveTo(p[0],p[1])); ctx.closePath();
+    ctx.fillStyle = o.fill; ctx.fill(); if (o.stroke){ ctx.strokeStyle = o.stroke; ctx.lineWidth = o.lw || 1; ctx.stroke(); } return; }
+  if (o.k === 'seg'){ const k = zoom/3.3; ctx.strokeStyle = o.color; ctx.lineWidth = Math.max(1, o.w*Math.sqrt(k)); ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(P[0][0],P[0][1]); ctx.lineTo(P[1][0],P[1][1]); ctx.stroke(); return; }
+  const A = P[0];
+  if (o.k === 'pin'){ ctx.strokeStyle = o.color; ctx.lineWidth = 1.8; ctx.fillStyle = '#0a1622'; ctx.beginPath(); ctx.arc(A[0],A[1],2.8,0,7); ctx.fill(); ctx.stroke(); return; }
+  if (o.k === 'ball'){ const g = ctx.createRadialGradient(A[0]-1.2,A[1]-1.2,0.3,A[0],A[1],4);
+    g.addColorStop(0,'#fff'); g.addColorStop(0.35,'#ff9fd0'); g.addColorStop(1,'#c2407e'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(A[0],A[1],4,0,7); ctx.fill(); return; }
+  if (o.k === 'warn'){ ctx.fillStyle = '#e5568b'; ctx.beginPath(); ctx.arc(A[0],A[1],3.4,0,7); ctx.fill(); }
+}
+const GROUND = -32;
+function drawGrid(){
+  const T = camTarget(), s = 15, n = 7;
+  ctx.lineWidth = 1;
+  for (let i=-n;i<=n;i++){
+    ctx.strokeStyle = i === 0 ? '#1d3650' : '#132538';
+    let a = proj([T[0] + i*s, T[1] - n*s, GROUND]), b = proj([T[0] + i*s, T[1] + n*s, GROUND]); ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+    a = proj([T[0] - n*s, T[1] + i*s, GROUND]); b = proj([T[0] + n*s, T[1] + i*s, GROUND]); ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+  }
+  // "前" marker on the floor so the heading is readable from any angle
+  const f = proj([T[0], T[1] + n*s + 6, GROUND]); ctx.fillStyle = '#3d5a75'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('前 ▲', f[0], f[1]); ctx.textAlign = 'left';
+}
+// soft shadow straight down onto the floor: the strongest cue for "how high / which side"
+function drawShadow(L){
+  if (pitch < -0.05) return;
+  // one path, filled once, so overlapping feathers don't stack into black
+  const fl = v => proj([v[0], v[1], GROUND]), path = new Path2D(), add2 = P => P.forEach((p,i) => i ? path.lineTo(p[0],p[1]) : path.moveTo(p[0],p[1]));
+  add2(hull(ellipsoid([BODY.c[0], BODY.c[1], GROUND], [BODY.r[0], BODY.r[1], 0.01]))); path.closePath();
+  for (const o of L){ if (o.k === 'poly' && (o.fill.indexOf('40,120') >= 0 || o.fill.indexOf('52,160') >= 0)){ add2(o.pts.map(fl)); path.closePath(); } }
+  ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fill(path, 'nonzero');
+  ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineCap = 'round'; ctx.beginPath();
+  for (const o of L) if (o.k === 'seg' && o.w >= 4){ const P = o.pts.map(fl); ctx.moveTo(P[0][0],P[0][1]); ctx.lineTo(P[1][0],P[1][1]); }
+  ctx.lineWidth = 3; ctx.stroke();
+}
+// orientation gizmo (bottom-left): 外 = right wing outward, 前 = beak, 背 = up
+function drawGizmo(){
+  const ox = 42, oy = stage.height - 42, R = 26, cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+  const ax = [[[1,0,0],'外','#ff8a5c'], [[0,1,0],'前','#4fd1c5'], [[0,0,1],'背','#7fd4ff']].map(([v,l,c]) => {
+    const x = v[0]*cy - v[1]*sy, y = v[0]*sy + v[1]*cy, z = v[2]; return {sx: x*R, sy: -(z*cp + y*sp)*R, d: y*cp - z*sp, l, c}; });
+  ctx.fillStyle = 'rgba(10,22,34,.7)'; ctx.beginPath(); ctx.arc(ox, oy, R + 12, 0, 7); ctx.fill();
+  ax.sort((a,b) => b.d - a.d).forEach(a => { ctx.globalAlpha = a.d > 0.2 ? 0.45 : 1; ctx.strokeStyle = a.c; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ox + a.sx, oy + a.sy); ctx.stroke();
+    ctx.fillStyle = a.c; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(a.l, ox + a.sx*1.25, oy + a.sy*1.25 + 4); });
+  ctx.globalAlpha = 1; ctx.textAlign = 'left';
+}
+function drawStage(q, pth){
+  ctx.clearRect(0,0,stage.width,stage.height); drawGrid();
+  const opt = {feathers:$('feathers').checked, mech:$('mech').checked}, L = [];
+  collectWing(L, q, opt, false); if ($('mirror').checked) collectWing(L, q, opt, true);
+  drawShadow(L);
+  for (const o of L){ o.P = o.pts.map(proj); o.d = o.P.reduce((s,p) => s + p[2], 0)/o.P.length + (o.bias || 0);
+    const c = o.pts.reduce((a,v) => add(a,v), [0,0,0]).map(v => v/o.pts.length); o.back = behindBody(c); }
+  const byDepth = (a,b) => b.d - a.d;
+  L.filter(o => o.back).sort(byDepth).forEach(paint);
+  drawBody();
+  L.filter(o => !o.back).sort(byDepth).forEach(paint);
+  if ($('trace').checked){ ctx.strokeStyle = 'rgba(220,231,240,.5)'; ctx.lineWidth = 1.2; ctx.beginPath();
+    pth.forEach((r,i) => { const P = proj(r.T); i ? ctx.lineTo(P[0],P[1]) : ctx.moveTo(P[0],P[1]); }); ctx.stroke(); }
+  ctx.fillStyle = '#7690a8'; ctx.font = '11px monospace'; const s = proj([0,0,0]); ctx.fillText('肩（モーター）', s[0]+8, s[1]-8);
+  drawGizmo();
+}
+
+// ---------------- plot ----------------
+const plot = $('plot'), pc = plot.getContext('2d');
+function drawPlot(pth, u, p){
+  const W = plot.width, H = plot.height, l = 44, r = 14, t = 14, b = 26;
+  pc.clearRect(0,0,W,H);
+  const X = x => l + (W-l-r)*x, Y = d => t + (H-t-b)*(1 - d/180);
+  pc.font = '10px monospace';
+  for (let d=0; d<=180; d+=30){ pc.strokeStyle = d===0 ? '#27435b' : '#16283a'; pc.beginPath(); pc.moveTo(l,Y(d)); pc.lineTo(W-r,Y(d)); pc.stroke(); pc.fillStyle = '#4c6379'; pc.fillText(d+'°', 8, Y(d)+3); }
+  [0,0.25,0.5,0.75,1].forEach(x => { pc.strokeStyle = '#16283a'; pc.beginPath(); pc.moveTo(X(x),t); pc.lineTo(X(x),H-b); pc.stroke(); });
+  pc.fillStyle = '#4c6379'; pc.fillText('広げた', l, H-8); pc.fillText('畳んだ', W-r-36, H-8);
+  const line = (f, color, dash, w) => { pc.strokeStyle = color; pc.setLineDash(dash); pc.lineWidth = w; pc.beginPath(); pth.forEach((q,i) => { const x = X(q.u), y = Y(f(q)); i ? pc.lineTo(x,y) : pc.moveTo(x,y); }); pc.stroke(); pc.setLineDash([]); };
+  line(q => TARGET.E0 + (TARGET.E1-TARGET.E0)*q.u, 'rgba(79,209,197,.55)', [5,4], 1.5);
+  line(q => TARGET.M0 + (TARGET.M1-TARGET.M0)*q.u, 'rgba(255,138,92,.55)', [5,4], 1.5);
+  line(q => Math.abs(p.ah0 - q.ah), 'rgba(127,212,255,.85)', [], 1.5);
+  line(q => q.Edeg, '#4fd1c5', [], 2.2);
+  line(q => q.Mdeg, '#ff8a5c', [], 2.2);
+  pc.strokeStyle = 'rgba(220,231,240,.6)'; pc.beginPath(); pc.moveTo(X(u),t); pc.lineTo(X(u),H-b); pc.stroke();
+}
+
+// ---------------- size table ----------------
+function sizeTable(p, q0){
+  const k = p.scale, f = v => (v*k).toFixed(1), pt = (a,b) => '('+f(a)+', '+f(b)+')';
+  let rows = [['g','骨（mm）'], ['上腕骨（肩→肘）', f(BONE.LH)], ['尺骨（肘→手首）', f(BONE.LU)], ['手（手首→指先）', f(BONE.LMAN)]];
+  const p3 = (a,b,c) => '('+f(a)+', '+f(b)+', '+f(c)+')', is3 = ver.topo === 'two3';
+  if (ver.topo === 'twoB') rows = rows.concat([
+    ['g','肘を曲げる系統（上腕骨側, mm）'], ['体アンカー（肩原点, x外 y前 z背）', p3(p.Ax,p.Ay,p.Az)], ['ロッド1（両端ボール）', f(p.Lc1)],
+    ['ベルクランク1 支点（上腕座標）', pt(p.G1x,p.G1y)], ['ベルクランク1 腕1 / 腕2', f(p.rb1)+' / '+pt(p.b2x,p.b2y)], ['ロッド2', f(p.L2)], ['尺骨レバー（尺骨座標）', pt(p.wx,p.wy)],
+    ['g','手首を曲げる系統（尺骨側, mm）'], ['ベルクランク2 支点（尺骨座標, 肘から）', pt(p.G2x,p.G2y)], ['上腕骨クランク（上腕座標）', pt(p.h3x,p.h3y)],
+    ['ロッド3', f(p.Lc3)], ['ベルクランク2 腕1 / 腕2', f(p.rb3)+' / '+pt(p.b4x,p.b4y)], ['ロッド4', f(p.L4)], ['手レバー（手座標）', pt(p.qx,p.qy)]]);
+  else if (ver.topo !== 'single') rows = rows.concat([
+    ['g','肘を曲げる系統（体側, mm）'], ['ベルクランク1 支点（体, 肩原点）', is3 ? p3(p.G1x,p.G1y,p.G1z) : pt(p.G1x,p.G1y)], ['上腕骨の突起（上腕座標）', is3 ? p3(p.h1x,p.h1y,p.h1z) : pt(p.h1x,p.h1y)],
+    ['ロッド1', f(p.Lc1)], ['ベルクランク1 腕1 / 腕2', f(p.rb1)+' / '+(is3 ? p3(p.b2x,p.b2y,p.b2z) : pt(p.b2x,p.b2y))], ['ロッド2', f(p.L2)], ['尺骨レバー（尺骨座標）', pt(p.wx,p.wy)],
+    ...(ver.wristMount === 'ulna'
+      ? [['g','手首を曲げる系統（尺骨側, mm）'], ['ベルクランク2 支点（尺骨座標, 肘から）', pt(p.G2x,p.G2y)], ['上腕骨クランク（上腕座標）', pt(p.h3x,p.h3y)]]
+      : [['g','手首を曲げる系統（上腕骨側, mm）'], ['ベルクランク2 支点（上腕座標）', pt(p.G2x,p.G2y)], ['尺骨クランク（尺骨座標）', pt(p.h3x,p.h3y)]]),
+    ['ロッド3', f(p.Lc3)], ['ベルクランク2 腕1 / 腕2', f(p.rb3)+' / '+pt(p.b4x,p.b4y)], ['ロッド4', f(p.L4)], ['手レバー（手座標）', pt(p.qx,p.qy)]]);
+  else rows = rows.concat([
+    ['g','腱ロッドと橈骨（mm）'], ['腱ロッド 体側支点', pt(p.Ax,p.Ay)], ['腱ロッド 尺骨取付（尺骨座標）', pt(p.s,p.n)], ['腱ロッド長', f(p.Lrod)],
+    ['橈骨 肘側（上腕座標, 肘から）', pt(p.px,p.py)], ['橈骨 手首側（手座標）', pt(p.qx,p.qy)], ['橈骨長', f(p.Lr)]]);
+  rows = rows.concat([['g','モーター'], ['回転角（上腕骨）', Math.abs(p.ah0 - p.ah1).toFixed(1)+'°']].concat(ver.shoulder
+    ? [['肩の回転軸（x外, y前, z背）', '('+ver.shoulder.axis.map(v => v.toFixed(3)).join(', ')+')']] : []).concat([['広げた時の骨格の張り出し', f(q0.T[0])+' mm']]));
+  $('sizeTable').innerHTML = rows.map(r => r[0] === 'g' ? '<tr><td class="grp" colspan="2">'+r[1]+'</td></tr>' : '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td></tr>').join('');
+}
+
+// ---------------- joint table ----------------
+function jointTable(pth){
+  ROD_T = rodTypes(pth);
+  const R = '<span class="jR"></span> ピン（1自由度）', S = '<span class="jS"></span> ボール（3自由度）';
+  const rodNames = ver.topo === 'single' ? ['腱ロッド（体↔尺骨）', '橈骨ロッド（上腕↔手）'] : [ver.elbowMount === 'hum' ? 'ロッド1（体アンカー↔BC1）' : 'ロッド1（上腕突起↔BC1）', 'ロッド2（BC1↔尺骨レバー）', 'ロッド3（上腕クランク↔BC2）', 'ロッド4（BC2↔手レバー）'];
+  const rows = [['g','骨の関節'], [ver.shoulder ? '肩（モーター軸・斜め1軸）' : '肩（モーター軸）', R], ['肘', R], ['手首', R]];
+  if (ver.topo !== 'single') rows.push(['g','ベルクランクの支点'], ['BC1（'+(ver.elbowMount === 'hum' ? '上腕骨' : '体')+'）', R], ['BC2（'+(ver.wristMount === 'hum' ? '上腕骨' : '尺骨')+'）', R]);
+  rows.push(['g','ロッドの両端']); rodNames.forEach((n,i) => rows.push([n, ROD_T[i] === 'S' ? S : R]));
+  $('jointTable').innerHTML = rows.map(r => r[0] === 'g' ? '<tr><td class="grp" colspan="2">'+r[1]+'</td></tr>' : '<tr><td>'+r[0]+'</td><td style="text-align:left">'+r[1]+'</td></tr>').join('');
+  const nS = ROD_T.filter(t => t === 'S').length;
+  $('jointNote').innerHTML = (nS === 0
+    ? '全部ピン。すべての軸が平行な平面リンクなので、ボールジョイントは要りません。'
+    : `ボールが要るのは${ROD_T.map((t,i) => t === 'S' ? rodNames[i].split('（')[0] : null).filter(Boolean).join('・')}の両端だけです（付け根の部品から見てロッドが面の外へ振れるため）。それ以外は軸が互いに平行な平面ループなのでピンで足ります。`) +
+    ' 判定は自動計算です：ロッドの両端それぞれについて、その端が付く部品から見てロッドが1枚の平面内でしか振れず、しかも両端のピン軸が常に平行ならピン、そうでなければボールとしています。' +
+    (ver.shoulder ? ' 本物の鳥の肩は球関節、肘・手首も純粋な蝶番ではありませんが、この機構では肩を「斜めに傾けた1本の軸」に置き換えています。' : '');
+}
+
+// ---------------- metrics & version panel ----------------
+function metrics(p){
+  const pth = path(p); let tmin = 180, prot = 0;
+  pth.forEach((q,i) => { q.trans.forEach(t => tmin = Math.min(tmin, t)); if (i % 8 === 0) prot = Math.max(prot, protrusion(q)); });
+  return {pth, ok: pth.every(q => q.ok), tmin, prot, E0: pth[0].Edeg, E1: pth[NS].Edeg, M0: pth[0].Mdeg, M1: pth[NS].Mdeg, fold: pth[NS].T[0]/pth[0].T[0]};
+}
+const STAT = {current:['current','採用中'], superseded:['superseded','置き換え済み'], rejected:['rejected','却下']};
+function versionParams(v){
+  const p = {tS:0, tE:0, tW:0, fold:0, dur:1, scale:1, ah0:v.target.AH0, ah1:v.target.AH1}; Object.assign(p, v.dims); return p;
+}
+function renderVersionList(){
+  const prevVer = ver, prevT = TARGET;
+  $('verList').innerHTML = VERSIONS.map(v => {
+    const [cls, lab] = STAT[v.status];
+    let met = '';
+    if (v.topo){ ver = v; TARGET = v.target; const m = metrics(versionParams(v));
+      met = `<div class="met"><span>肘 <b>${m.E0.toFixed(0)}→${m.E1.toFixed(0)}°</b></span><span>手首 <b>${m.M0.toFixed(0)}→${m.M1.toFixed(0)}°</b></span>`+
+            `<span>最小伝達角 <b>${m.tmin.toFixed(0)}°</b></span><span>はみ出し（等倍） <b>${m.prot.toFixed(1)} mm</b></span></div>`; }
+    else met = `<div class="met"><span>別ファイル: <b>${v.file}</b></span></div>`;
+    const inner = `<div class="top"><span class="vid">${v.id}</span><span class="tag ${cls}">${lab}</span><span class="ttl">${v.title}</span><span class="date">${v.date}</span></div><div class="why">${v.why}</div>${met}`;
+    return v.topo ? `<button class="vcard${v === prevVer ? ' active' : ''}" data-ver="${v.id}">${inner}</button>` : `<div class="vcard">${inner}</div>`;
+  }).join('');
+  ver = prevVer; TARGET = prevT;
+  document.querySelectorAll('[data-ver]').forEach(b => b.onclick = () => { loadVersion(b.dataset.ver); togglePanel(false); });
+}
+function togglePanel(open){ const P = $('verPanel'); open = open === undefined ? !P.classList.contains('open') : open;
+  P.classList.toggle('open', open); $('verBtn').setAttribute('aria-expanded', open); if (open) renderVersionList(); }
+$('verBtn').onclick = e => { e.stopPropagation(); togglePanel(); };
+document.addEventListener('click', e => { if (!$('verPanel').contains(e.target) && e.target !== $('verBtn')) togglePanel(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') togglePanel(false); });
+function loadVersion(id){
+  ver = VERSIONS.find(v => v.id === id); TARGET = ver.target; BODY = ver.body || BODY_OLD; BODYX = BODY.c[0];
+  const fixedTilt = !!ver.shoulder;
+  $('tiltBody').style.display = fixedTilt ? 'none' : ''; $('tiltNote').style.display = fixedTilt ? '' : 'none';
+  $('tiltNote').innerHTML = '<b>'+ver.id+'</b> は最初から3Dで設計しています。肩は斜めに傾けた1本の軸（向きは寸法表の最後）で、畳むと上腕骨が後ろへ引きながら下がってねじれ、翼が体の側面に沿います。肘系統はロッド2だけが立体的に振れ、手首系統は翼の面内の平面リンクです。';
+  buildDimSliders(); setDims(); setTilts({tS:0,tE:0,tW:0}); $('p2d').classList.add('on'); $('p3d').classList.remove('on');
+  const [cls, lab] = STAT[ver.status];
+  $('verLabel').textContent = ver.id; $('verTag').className = 'tag ' + cls; $('verTag').textContent = lab;
+  $('verNote').className = cls; $('verNote').innerHTML = `<b style="color:var(--ink)">${ver.id}　${ver.title}</b>（${lab}）— ${ver.why}`;
+  el.fold.value = 0; dirty = true;
+}
+
+// ---------------- UI ----------------
+const fmt = {fold:v => Math.round(v*100)+'%', dur:v => v.toFixed(2)+' s', scale:v => '×'+v.toFixed(1), tS:v => v+'°', tE:v => v+'°', tW:v => v+'°', ah0:v => v+'°', ah1:v => v+'°'};
+function syncOut(){
+  fixedIds.forEach(id => { const o = $('o'+id); if (o){ const v = parseFloat(el[id].value); o.textContent = fmt[id] ? fmt[id](v) : v.toFixed(1); } });
+  dimIds.forEach(id => { const o = $('od_'+id); if (o) o.textContent = parseFloat(el['d_'+id].value).toFixed(2); });
+}
+fixedIds.forEach(id => el[id].addEventListener('input', () => { dirty = true; }));
+const fmtA = v => Math.round(v*100)+'%'; fmt.bodyA = fmtA;
+['feathers','mirror','mech','trace'].forEach(id => $(id).addEventListener('change', () => dirty = true));
+$('p2d').onclick = () => { setTilts({tS:0,tE:0,tW:0}); $('p2d').classList.add('on'); $('p3d').classList.remove('on'); dirty = true; };
+$('p3d').onclick = () => { setTilts(ver.tilt3d); $('p3d').classList.add('on'); $('p2d').classList.remove('on'); dirty = true; };
+$('resetDims').onclick = () => { setDims(); dirty = true; };
+let anim = null, looping = false;
+const ease = x => 0.5 - 0.5*Math.cos(Math.PI*x);
+const goTo = target => { anim = {from: parseFloat(el.fold.value), to: target, t0: performance.now()}; };
+const stopLoop = () => { looping = false; $('playBtn').textContent = '▶ 開閉を繰り返す'; };
+$('toOpen').onclick = () => { stopLoop(); goTo(0); };
+$('toClose').onclick = () => { stopLoop(); goTo(1); };
+$('playBtn').onclick = () => { looping = !looping; $('playBtn').textContent = looping ? '⏸ 止める' : '▶ 開閉を繰り返す'; if (looping) goTo(parseFloat(el.fold.value) > 0.5 ? 0 : 1); };
+el.fold.addEventListener('input', () => { anim = null; stopLoop(); });
+
+let dirty = true;
+function render(){
+  syncOut();
+  const p = params(), m = metrics(p), pth = m.pth;
+  jointTable(pth);
+  const u = p.fold, i = Math.min(NS, Math.round(u*NS));
+  const q = i === 0 && u === 0 ? pth[0] : poseFn()(p, p.ah0 + (p.ah1 - p.ah0)*u, pth[Math.max(0, i-1)]);
+  drawStage(q, pth); drawPlot(pth, u, p);
+  $('rMotor').innerHTML = Math.abs(p.ah0 - q.ah).toFixed(0) + '<span class="u">°</span>';
+  $('rE').innerHTML = q.Edeg.toFixed(0) + '<span class="u">°</span>';
+  $('rM').innerHTML = q.Mdeg.toFixed(0) + '<span class="u">°</span>';
+  $('rSpan').innerHTML = Math.round(100*q.T[0]/pth[0].T[0]) + '<span class="u">%</span>';
+  const bits = [];
+  if (!m.ok) bits.push('<span class="bad">⚠ 途中でロッドが届かない（または詰まる）区間があります</span>');
+  else bits.push((m.tmin < 30 ? '<span class="bad">' : '<span>') + '最小伝達角 ' + m.tmin.toFixed(0) + '°（30°以上が目安）</span>');
+  bits.push('肘 ' + m.E0.toFixed(0) + '°→' + m.E1.toFixed(0) + '°、手首 ' + m.M0.toFixed(0) + '°→' + m.M1.toFixed(0) + '°');
+  bits.push((m.prot > 0.5 ? '<span class="bad">' : '<span>') + '翼・体からのはみ出し 最大 ' + (m.prot*p.scale).toFixed(1) + ' mm（実寸）</span>');
+  $('status').innerHTML = bits.join(' ／ ');
+  sizeTable(p, pth[0]);
+}
+function frame(ts){
+  requestAnimationFrame(frame); stepCam(ts);
+  if (anim){ const x = Math.min(1, (ts - anim.t0)/(parseFloat(el.dur.value)*1000)); el.fold.value = anim.from + (anim.to - anim.from)*ease(x); dirty = true;
+    if (x >= 1){ const done = anim.to; anim = null; if (looping) setTimeout(() => { if (looping) goTo(done > 0.5 ? 0 : 1); }, 350); } }
+  if (dirty){ dirty = false; render(); }
+}
+window.__wing = {proj, setView, get cam(){ return {yaw, pitch, zoom, panX, panY}; }, path, params, metrics, protrusion, outsideDist, mechSamples, rodTypes, VERSIONS, loadVersion, setTilts, get ver(){ return ver; }};
+loadVersion(VERSIONS[0].id);
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

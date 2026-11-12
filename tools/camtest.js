@@ -1,0 +1,21 @@
+const { chromium } = require('playwright');
+(async () => {
+  const b = await chromium.launch(); const pg = await b.newPage({ viewport: { width: 1280, height: 1000 } });
+  const errs = []; pg.on('pageerror', e => errs.push(e.message));
+  await pg.goto('file://' + __dirname + '/test.html'); await pg.waitForTimeout(500);
+  const box = await (await pg.$('#stage')).boundingBox(); const cx = box.x + box.width/2, cy = box.y + box.height/2;
+  const P = () => pg.evaluate(() => { const w = window.__wing; return {near: w.proj([-9,-70,-6]).map(v=>+v.toFixed(0)), far: w.proj([-9,50,-6]).map(v=>+v.toFixed(0)), top: w.proj([-9,-18,20]).map(v=>+v.toFixed(0)), cam: w.cam}; });
+  await pg.evaluate(() => window.__wing.setView('back', true)); await pg.waitForTimeout(100);
+  console.log('back before', JSON.stringify(await P()));
+  await pg.mouse.move(cx, cy); await pg.mouse.down(); await pg.mouse.move(cx + 60, cy, {steps: 5}); await pg.mouse.up(); await pg.waitForTimeout(100);
+  console.log('after drag right', JSON.stringify(await P()));
+  await pg.evaluate(() => window.__wing.setView('back', true));
+  await pg.mouse.move(cx, cy); await pg.mouse.down(); await pg.mouse.move(cx, cy + 60, {steps: 5}); await pg.mouse.up(); await pg.waitForTimeout(100);
+  console.log('after drag down', JSON.stringify(await P()));
+  await pg.evaluate(() => window.__wing.setView('top', true));
+  await pg.mouse.move(cx, cy); await pg.mouse.down(); await pg.mouse.move(cx, cy + 5, {steps: 2}); await pg.mouse.up();
+  console.log('top small drag pitch', JSON.stringify((await P()).cam));
+  await pg.mouse.move(cx + 100, cy + 50); await pg.mouse.wheel(0, -300); await pg.waitForTimeout(100);
+  console.log('after zoom', JSON.stringify((await P()).cam));
+  console.log('errors', JSON.stringify(errs)); await b.close();
+})();
