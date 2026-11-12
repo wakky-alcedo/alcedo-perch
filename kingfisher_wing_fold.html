@@ -124,19 +124,6 @@
         </div>
       </div>
       <div class="panel">
-        <h2>joint angles vs. fold — 畳み具合と関節角</h2>
-        <canvas id="plot" width="760" height="230" aria-label="畳み具合に対する肘角と手首角"></canvas>
-        <div class="legend">
-          <span><i style="background:var(--uln)"></i>肘角</span>
-          <span><i style="background:var(--man)"></i>手首角</span>
-          <span><i style="background:var(--hum)"></i>上腕骨の後退量</span>
-          <span><i style="background:#dce7f0;opacity:.45"></i>点線 = 目標</span>
-        </div>
-      </div>
-    </div>
-
-    <div>
-      <div class="panel">
         <h2>motion</h2>
         <div class="row"><label for="fold">畳み具合</label><input id="fold" type="range" min="0" max="1" step="0.001" value="0"><output id="ofold"></output></div>
         <div class="bar">
@@ -159,6 +146,20 @@
           <div class="cell"><div class="k">骨格の張り出し</div><div class="v" id="rSpan">0</div></div>
         </div>
         <div id="status"></div>
+      </div>
+
+    </div>
+
+    <div>
+      <div class="panel">
+        <h2>joint angles vs. fold — 畳み具合と関節角</h2>
+        <canvas id="plot" width="500" height="250" aria-label="畳み具合に対する肘角と手首角"></canvas>
+        <div class="legend">
+          <span><i style="background:var(--uln)"></i>肘角</span>
+          <span><i style="background:var(--man)"></i>手首角</span>
+          <span><i style="background:var(--hum)"></i>上腕骨の後退量</span>
+          <span><i style="background:#dce7f0;opacity:.45"></i>点線 = 目標</span>
+        </div>
       </div>
 
       <div class="panel">
