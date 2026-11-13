@@ -23,7 +23,7 @@ def cost(X):
     return c
 
 
-B = [(-3.3, 3.3)] * 3 + [(10, 25), (10, 25), (0, 6)]
+B = [(-3.3, 3.3)] * 3 + [(10, 25), (10, 50), (0, 3)]
 r = differential_evolution(lambda x: cost(x)[0], B, seed=seed, maxiter=300, popsize=25, tol=1e-10, polish=True, vectorized=False)
 X = r.x[None]; d = pose_d(X); fit, fx = ev.fold_fit(d); sw = ev.sweep(d)
 row = dict(width=width, seed=seed, cost=float(r.fun), x=r.x.round(2).tolist(), fit=float(fit[0]), sweep=float(sw[0]), theta=float(np.degrees(d['th'][0])),

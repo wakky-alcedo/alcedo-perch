@@ -7,7 +7,7 @@ import numpy as np
 from kin import *
 
 # ---------------------------------------------------------------- design-variable layout
-POSE_VARS = [('rx', -3.3, 3.3), ('ry', -3.3, 3.3), ('rz', -3.3, 3.3), ('E1', 10, 25), ('M1', 10, 30), ('fz', 0, 6)]   # rotation vector (rad) Ro -> folded
+POSE_VARS = [('rx', -3.3, 3.3), ('ry', -3.3, 3.3), ('rz', -3.3, 3.3), ('E1', 10, 25), ('M1', 10, 50), ('fz', 0, 3)]   # rotation vector (rad) Ro -> folded
 ELBOW_VARS = {
     'body': [('g1', -40, 40), ('g2', -40, 40), ('h1x', -6, 26), ('h1y', -14, 8), ('h1z', -6, 6), ('rb1', 4, 16), ('Lc1', 4, 40),
              ('wx', -12, 10), ('wy', -12, 8), ('br1', 0, 1)],

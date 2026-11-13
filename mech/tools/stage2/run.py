@@ -29,7 +29,8 @@ def main(ec, wc, seed, gens=300, pop=300, width=45):
     rng = np.random.default_rng(seed); xl, xu = prob.xl, prob.xu
     X0 = xl + (xu - xl) * rng.random((pop, len(xl)))
     import json
-    pj = json.load(open(ROOT / 'results' / 'stage2' / 'pose_only' / f'w{int(width)}_s0.json'))['x']
+    cands = [json.load(open(f)) for f in (ROOT / 'results' / 'stage2' / 'pose_only').glob(f'w{int(width)}_s*.json') if 'nosweep' not in f.name]
+    pj = min(cands, key=lambda r: r['cost'])['x']           # best pose-only solution over its seeds
     half = pop // 2
     X0[:half, :6] = np.clip(np.array(pj) + rng.normal(0, 1, (half, 6)) * np.array([0.08, 0.08, 0.08, 1.5, 1.5, 0.5]), xl[:6], xu[:6])
     algo = NSGA3(ref_dirs=ref, pop_size=pop, sampling=X0, eliminate_duplicates=True)

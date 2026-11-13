@@ -8,20 +8,26 @@ Objectives (minimise):
                      joint clearance (radial 0.01 mm per pin -> rod length +-0.02 mm) plus motor quantisation (0.5 deg steps),
                      linearised (Jacobian), max over motion (deg)
   f5 fold fit      : how well the folded wing lies on the body (feathers buried / floating, bones, wing tip, covering the
-                     CG's folded wing, wrist position) (mm-like score)
+                     CG's folded wing, wrist position, and the folded elbow / wrist / hand direction measured on the
+                     Alcedo cristata CT (ct_frame.py; dead band 3 mm / 10 deg for the CT's uncertainty)) (mm-like score)
   f6 part size     : largest bellcrank / lever dimension (mm)
 Constraints (<= 0):
   all loops close along the whole motion; dead-point margin (rod-length change that breaks a loop) >= 0.3 mm;
-  every lever / bellcrank arm / crank radius >= LMIN (4 mm, 1:1); rods 4..40 mm; ball-joint swivel half-angle <= SWIVEL (25 deg);
+  every lever / bellcrank arm / crank radius >= LMIN (8 mm, 1:1; was 4); rods 4..40 mm; ball-joint swivel half-angle <= SWIVEL (25 deg);
+  minimum transmission angle >= TMIN_MIN (35 deg);
   joint-angle gain |dE/dmotor|, |dM/dmotor| <= 2.5 deg/deg everywhere (controllability);
   feathers never sweep > 4 mm into the body during the motion; fold-fit <= 16 (prunes hopeless poses); fitted last-rod residual <= 0.3 mm.
 """
-import numpy as np
+import json, pathlib, numpy as np
 from pymoo.core.problem import Problem
 from mech import *
 from body import Body
 
-LMIN, SWIVEL, MARGIN_MIN, SWEEP_MIN, FIT_MAX = 4.0, 25.0, 0.3, -4.0, 16.0
+LMIN, SWIVEL, MARGIN_MIN, SWEEP_MIN, FIT_MAX = 8.0, 25.0, 0.3, -4.0, 20.0
+TMIN_MIN = 35.0
+CT = json.load(open(pathlib.Path(__file__).resolve().parents[2] / 'results' / 'stage2' / 'ct_target.json'))['target']
+CT_E, CT_W, CT_H = (np.array(CT[k]) for k in ('elbow', 'wrist', 'hand_dir'))
+CT_HAND_W = 0.0                       # hand-direction term off: a planar wing cannot follow the CT hand (43 deg out of the arm plane)
 GAIN_MAX = 2.5                        # max joint-angle change per degree of motor rotation (deg/deg), anywhere in the motion
 SIG_MOTOR = 0.5 / np.sqrt(12)         # motor commanded in 0.5 deg steps -> uniform quantisation error, sigma (deg)
 SIG_DIM = 0.05 / np.sqrt(3); CLEAR = 0.01; SIG_CL = 2 * CLEAR / np.sqrt(3)
@@ -61,9 +67,13 @@ class Evaluator:
         cen = feath.mean(1); ax_pt = np.array([-9.0, 0, -5.0]); outward = unit(cen - np.c_[ax_pt[0] + 0 * cen[:, 0], cen[:, 1], ax_pt[2] + 0 * cen[:, 0]])
         dors = np.sum(d['Rf'][:, :, 2] * outward, -1)
         flip = 10 * np.maximum(0, 0.3 - dors)
-        parts = np.c_[np.sqrt((bury ** 2).mean(1)), np.sqrt((flt ** 2).mean(1)), np.sqrt((bone ** 2).mean(1)), np.maximum(0, tipd - 4), cover, wr, flip]
+        # CT: folded elbow / wrist positions and hand direction (Alcedo cristata, scaled to the ulna)
+        ce = np.sqrt((nrm(fw['E'] - CT_E) ** 2 + nrm(fw['W'] - CT_W) ** 2) / 2)
+        ch = np.degrees(np.arccos(np.clip(np.sum(unit(fw['T'] - fw['W']) * CT_H, -1), -1, 1)))
+        ct = np.maximum(0, ce - 3) + CT_HAND_W * np.maximum(0, ch - 10) / 5
+        parts = np.c_[np.sqrt((bury ** 2).mean(1)), np.sqrt((flt ** 2).mean(1)), np.sqrt((bone ** 2).mean(1)), np.maximum(0, tipd - 4), cover, wr, flip, ct]
         F = parts.sum(1)
-        return F, dict(parts=parts, dorsal=dors, tip=tip, tipd=tipd, bury_max=bury.max(1), float_max=flt.max(1), cover=cover, W=W, feath_sd_min=s.min(1))
+        return F, dict(parts=parts, ct_pos=ce, ct_hand=ch, dorsal=dors, tip=tip, tipd=tipd, bury_max=bury.max(1), float_max=flt.max(1), cover=cover, W=W, feath_sd_min=s.min(1))
 
     def sweep(self, d):
         pts = wing_along_path(d['axis'], d['th'], Ro, d['E1'][:, None] * 0 + d['E1'][:, None] if False else d['E1'], d['M1'], (0.2, 0.4, 0.6, 0.8)) \
@@ -164,7 +174,7 @@ class Evaluator:
         F = np.where(valid[:, None] & np.isfinite(F), F, BIG)
         G = np.c_[np.where(valid, 0, 1) * BIG + 0 * err,
                   MARGIN_MIN - marg, LMIN - lev, 4 - rods.min(0), rods.max(0) - 40, swiv - SWIVEL, SWEEP_MIN - sweep, fit - FIT_MAX,
-                  np.maximum(info['res_e'], info['res_w']) - 0.3, gmax - GAIN_MAX]
+                  np.maximum(info['res_e'], info['res_w']) - 0.3, gmax - GAIN_MAX, TMIN_MIN - tmin]
         G = np.where(np.isfinite(G), G, BIG)
         if not extra: return F, G
         return F, G, dict(d=d, f=f, err=err, tmin=tmin, marg=marg, prot=prot, sens=sens, fit=fit, part=part, lev=lev, swivel=swiv,
@@ -177,7 +187,7 @@ class LinkProblem(Problem):
     def __init__(self, ec, wc, width=45):
         self.ev = Evaluator(ec, wc, width)
         xl = np.array([v[1] for v in self.ev.vars], float); xu = np.array([v[2] for v in self.ev.vars], float)
-        super().__init__(n_var=len(xl), n_obj=6, n_ieq_constr=10, xl=xl, xu=xu)
+        super().__init__(n_var=len(xl), n_obj=6, n_ieq_constr=11, xl=xl, xu=xu)
 
     def _evaluate(self, X, out, *args, **kwargs):
         F, G = self.ev(X); out['F'] = F; out['G'] = G

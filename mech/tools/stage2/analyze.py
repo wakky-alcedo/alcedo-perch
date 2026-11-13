@@ -109,7 +109,7 @@ def main():
     for c in cfgs:
         m = np.where(C == '/'.join(c))[0]
         if len(m): cand.append(('best-' + '/'.join(c), m[np.argmin(s[m])]))
-    ok = np.where(np.max(z, 1) <= 1.6)[0]
+    ok = np.where(s <= max(1.6, 1.5 * s.min()))[0]                       # "reasonable" relative to the best compromise
     for k, nm in [(4, 'best-fit'), (3, 'best-sens'), (1, 'best-tmin'), (0, 'best-err')]:
         if len(ok): cand.append((nm, ok[np.argmin(F[ok, k])]))
     seen, uniq = set(), []

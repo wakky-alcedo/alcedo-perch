@@ -12,13 +12,18 @@ LOCAL = ROOT / 'results' / 'local'
 CK_WIDTH = 57.7          # feathered torso width of the CG as scaled by wing length (stage 1)
 PITCH = 0.5
 LO, HI = np.array([-60.0, -110.0, -55.0]), np.array([45.0, 50.0, 40.0])
+# shoulder placement rule. 'ct': measured on the DigiMorph Alcedo cristata CT (ct_frame.py, scaled x1.47 by the ulna):
+# SX 12.7 mm lateral, DY 8.7 mm caudal of the carpal edge, DZ 2.8 mm below the (wet) skin + ~2 mm assumed dry back plumage = 5.0.
+# 'old': the stage-1 estimate (9, 4, 7).
+RULES = {'ct': dict(SX=12.7, DY=8.7, DZ=5.0), 'old': dict(SX=9.0, DY=4.0, DZ=7.0)}
+TAG = 'ct'
 
 
-def build(width):
+def build(width, tag=TAG):
     import trimesh
     from ck_align import transform, aligned_parts
     k = width / CK_WIDTH
-    tr = transform(kx=k, kz=k); A = aligned_parts(tr)
+    tr = transform(kx=k, kz=k, **RULES[tag]); A = aligned_parts(tr)
     shape = np.ceil((HI - LO) / PITCH).astype(int) + 1
     inside = np.zeros(shape, bool)
     for name in ('torso', 'head', 'tail'):
@@ -40,14 +45,14 @@ def build(width):
     s = trimesh.proximity.signed_distance(A['torso'], c)
     vis = c[s < -0.3]
     tip = W.vertices[np.argmin(W.vertices[:, 1])]
-    np.savez_compressed(LOCAL / f'body_w{int(width)}.npz', sdf=sdf, sdf_t=sdf_t, lo=LO, pitch=PITCH, vis=vis, tip=tip, width=width,
+    np.savez_compressed(LOCAL / f'body_w{int(width)}{"" if tag == "old" else "_" + tag}.npz', sdf=sdf, sdf_t=sdf_t, lo=LO, pitch=PITCH, vis=vis, tip=tip, width=width,
                         shoulder_body=np.array(tr['shoulder_body']))
     print(f'width {width}: grid {shape}, inside voxels {inside.sum()}, visible wing pts {len(vis)}, CG tip {np.round(tip, 1)}')
 
 
 class Body:
-    def __init__(self, width=45):
-        d = np.load(LOCAL / f'body_w{int(width)}.npz')
+    def __init__(self, width=45, tag=TAG):
+        d = np.load(LOCAL / f'body_w{int(width)}{"" if tag == "old" else "_" + tag}.npz')
         self.sdf, self.sdf_t, self.lo, self.pitch = d['sdf'], d['sdf_t'], d['lo'], float(d['pitch'])
         self.vis, self.tip, self.width = d['vis'], d['tip'], float(d['width'])
         self.shape = np.array(self.sdf.shape)

@@ -40,15 +40,7 @@ def entry(c, mesh):
                 tilt3d=dict(tS=0, tE=0, tW=0), dims=dims), e
 
 
-def main():
-    cands = json.load(open(ROOT / 'results' / 'stage2' / 'candidates.json', encoding='utf-8'))
-    import re
-    mtxt = (ROOT / 'ref' / 'derived' / 'ck_mesh.js').read_text(encoding='utf-8')
-    mesh = json.loads(mtxt[mtxt.index('=') + 1:].strip().rstrip(';'))
-    entries, ex = [], {}
-    for c in cands:
-        en, e = entry(c, mesh); entries.append(en); ex[c['id']] = e
-    p1 = (TOOLS / 'part1.html').read_text(encoding='utf-8')
+def write(p1, entries):
     block = '// __STAGE2_START__\n' + ''.join('  ' + json.dumps(en, ensure_ascii=False) + ',\n' for en in entries) + '  // __STAGE2_END__\n'
     if '// __STAGE2_START__' in p1:
         a = p1.index('// __STAGE2_START__'); b = p1.index('// __STAGE2_END__\n') + len('// __STAGE2_END__\n')
@@ -56,18 +48,41 @@ def main():
     else:
         p1 = p1.replace('const VERSIONS = [\n', 'const VERSIONS = [\n  ' + block, 1)
     (TOOLS / 'part1.html').write_text(p1, encoding='utf-8')
-    html = p1 + (TOOLS / 'part2.html').read_text(encoding='utf-8')
-    (ROOT / 'kingfisher_wing_fold.html').write_text(html, encoding='utf-8')
-    # verification against the simulator
+    (ROOT / 'kingfisher_wing_fold.html').write_text(p1 + (TOOLS / 'part2.html').read_text(encoding='utf-8'), encoding='utf-8')
+
+
+def compare(c, e):
+    out = ROOT / 'results' / 'local' / f"sim_{c['id']}.json"
+    subprocess.run(['node', str(TOOLS / 'stage1' / 'dump_path.js'), c['id'], str(out)], cwd=TOOLS, check=True, capture_output=True)
+    s = json.load(open(out)); Es = np.array([q['Edeg'] for q in s['steps']]); Ms = np.array([q['Mdeg'] for q in s['steps']])
+    u = np.array([q['u'] for q in s['steps']]); f = e['f']
+    dE, dM = np.abs(Es - np.interp(u, U, f['E'][0])).max(), np.abs(Ms - np.interp(u, U, f['M'][0])).max()
+    return s, dE, dM
+
+
+def main():
+    cands = json.load(open(ROOT / 'results' / 'stage2' / 'candidates.json', encoding='utf-8'))
+    mtxt = (ROOT / 'ref' / 'derived' / 'ck_mesh.js').read_text(encoding='utf-8')
+    mesh = json.loads(mtxt[mtxt.index('=') + 1:].strip().rstrip(';'))
+    entries, ex = [], {}
     for c in cands:
-        out = ROOT / 'results' / 'local' / f"sim_{c['id']}.json"
-        subprocess.run(['node', str(TOOLS / 'stage1' / 'dump_path.js'), c['id'], str(out)], cwd=TOOLS, check=True, capture_output=True)
-        s = json.load(open(out)); Es = np.array([q['Edeg'] for q in s['steps']]); Ms = np.array([q['Mdeg'] for q in s['steps']])
-        u = np.array([q['u'] for q in s['steps']])
-        f = ex[c['id']]['f']
-        Ep, Mp = np.interp(u, U, f['E'][0]), np.interp(u, U, f['M'][0])
+        en, e = entry(c, mesh); entries.append(en); ex[c['id']] = e
+    p1 = (TOOLS / 'part1.html').read_text(encoding='utf-8')
+    write(p1, entries)
+    # verification against the simulator. The simulator picks the open-pose assembly branch closest to the target angles; when two
+    # branches are both close it can pick another one than the Python model -> then fix the branch explicitly (ver.pick).
+    for c, en in zip(cands, entries):
+        s, dE, dM = compare(c, ex[c['id']])
+        if max(dE, dM) > 1.0:
+            best = None
+            for m in range(16):
+                en['pick'] = [(m >> i) & 1 for i in range(4)]; write(p1, entries)
+                r = compare(c, ex[c['id']])
+                if best is None or max(r[1], r[2]) < best[0]: best = (max(r[1], r[2]), en['pick'], r)
+            en['pick'] = best[1]; write(p1, entries); s, dE, dM = best[2]
+            print(c['id'], 'open-pose branch fixed to', best[1])
         print(c['id'], c['ec'], c['wc'], 'sim vs python: max |dE| %.3f |dM| %.3f, rodTypes %s, sim prot (ellipsoid) %.2f' % (
-            np.abs(Es - Ep).max(), np.abs(Ms - Mp).max(), ''.join(s['rodTypes']), max(max(q['prot']) for q in s['steps'])))
+            dE, dM, ''.join(s['rodTypes']), max(max(q['prot']) for q in s['steps'])))
 
 
 if __name__ == '__main__':
