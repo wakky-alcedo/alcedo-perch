@@ -113,6 +113,13 @@ def trans_angle(rod, vel):
     return np.degrees(np.arcsin(np.clip(np.abs(np.sum(unit(rod) * unit(vel), -1)), 0, 1)))
 
 
+def rod_end_tilt(d):
+    """d (...,N,3) unit rod directions seen from one link -> misalignment (deg) a rod-end bearing must allow, with its stud along the
+    best axis (normal of the best-fit plane of the directions): the rod turns freely about the stud, only the tilt out of that plane counts"""
+    C = np.einsum('...ni,...nj->...ij', d, d); w, v = np.linalg.eigh(C); s_ = v[..., :, 0]
+    return np.degrees(np.arcsin(np.clip(np.abs(np.sum(d * s_[..., None, :], -1)), 0, 1))).max(-1)
+
+
 def cone_half_angle(d):
     """d (...,N,3) unit directions -> half-angle (deg) of the cone around their mean (ball-joint swivel needed)"""
     m = unit(d.mean(-2)); return np.degrees(np.arccos(np.clip(np.sum(d * m[..., None, :], -1), -1, 1))).max(-1)
@@ -182,17 +189,57 @@ def feather_local(spread, per=5):
 SEC_F, PRI_F = feather_local(0.0)
 TIP_IDX = None
 
+# ---------------------------------------------------------------- tilted wrist (design B)
+# The wrist hinge axis is tilted about the ulna's long axis by tw: a = (0, -sin tw, cos tw) in the ulna frame (same as the
+# simulator's tiltAxis). The open hand is planar as before (Rm = Ru Rz(psi0)); folding turns it about the tilted axis by
+# psi - psi0, so the folded hand leaves the arm plane (as in the CT) while the open wing stays flat.
+# Primaries hang on a feather frame Rp = Rm Rx(phi) (fixed root twist phi) and their folded angles are shifted by dl (deg).
+PSI0 = -(np.pi - M0 * D)
 
-def folded_wing(Rf, E1, M1, fz=None):
-    """folded pose (P,...) -> dict of world points. fz (P,): feather standoff on the dorsal side of the bone plane (mm)"""
+
+def rx3(t):
+    c, s = np.cos(t), np.sin(t); z, o = np.zeros_like(t), np.ones_like(t)
+    return np.stack([np.stack([o, z, z], -1), np.stack([z, c, -s], -1), np.stack([z, s, c], -1)], -2)
+
+
+def wrist_axis(tw):
+    return np.stack([0 * tw, -np.sin(tw), np.cos(tw)], -1)
+
+
+def hand_rot(psi, tw=None):
+    """rotation of the hand relative to the ulna frame (...,3,3); psi (P,...) hinge angle, tw (P,) tilt (rad) or None (planar)"""
+    if tw is None: return rz3(psi)
+    a = wrist_axis(tw).reshape(tw.shape + (1,) * (psi.ndim - 1) + (3,))
+    return rodrigues(np.broadcast_to(a, psi.shape + (3,)), psi - PSI0) @ rz3(np.full(psi.shape, PSI0))
+
+
+def pri_local(spread, dl, per=5):
+    """primary sample points in the feather frame (P,n,3); spread scalar (0 folded, 1 open), dl (P,) deg added to the folded angles"""
+    dl = np.asarray(dl, float); out = []
+    for i, (f, L, a0, a1) in enumerate(PRIM):
+        a = np.radians((a1 + dl) + (a0 - a1 - dl) * spread)
+        d = np.stack([np.cos(a), np.sin(a), 0 * a], -1); sd = np.stack([-np.sin(a), np.cos(a), 0 * a], -1)
+        base = np.array([LMAN * f, 0, -0.35 * (2 + i * 0.25)])
+        out += [base + d * L * t for t in np.linspace(0.15, 1, per)] + [base + d * L * 0.82 + sd * 3.5, base + d * L * 0.82 - sd * 3.5]
+    return np.stack(out, -2)
+
+
+def folded_wing(Rf, E1, M1, fz=None, wt=None):
+    """folded pose (P,...) -> dict of world points. fz (P,): feather standoff on the dorsal side of the bone plane (mm).
+    wt: None (planar wing) or dict(tw=rad, phi=rad, dl=deg) for the tilted wrist (design B)"""
     pe, psi = np.pi - E1 * D, -(np.pi - M1 * D)
-    Ru = Rf @ rz3(pe); Rm = Ru @ rz3(psi)
+    Ru = Rf @ rz3(pe); Rm = Ru @ hand_rot(psi, None if wt is None else wt['tw'])
     E = mv(Rf, np.array([LH, 0, 0])); W = E + mv(Ru, np.array([LU, 0, 0])); T = W + mv(Rm, np.array([LMAN, 0, 0]))
     off = np.zeros((len(E1), 1, 3)) if fz is None else np.stack([0 * fz, 0 * fz, fz], -1)[:, None]
-    sec = E[:, None] + np.einsum('pij,pnj->pni', Ru, SEC_F[None] + off); pri = W[:, None] + np.einsum('pij,pnj->pni', Rm, PRI_F[None] + off)
+    sec = E[:, None] + np.einsum('pij,pnj->pni', Ru, SEC_F[None] + off)
+    if wt is None:
+        Rp, PL = Rm, PRI_F[None]
+    else:
+        Rp, PL = Rm @ rx3(wt['phi']), pri_local(0.0, wt['dl'])
+    pri = W[:, None] + np.einsum('pij,pnj->pni', Rp, PL + off)
     t = np.linspace(0, 1, 6)[None, :, None]
     bones = np.concatenate([E[:, None] * t[:, 2:], E[:, None] + (W - E)[:, None] * t, W[:, None] + (T - W)[:, None] * t], 1)
-    return dict(E=E, W=W, T=T, Ru=Ru, Rm=Rm, sec=sec, pri=pri, bones=bones)
+    return dict(E=E, W=W, T=T, Ru=Ru, Rm=Rm, Rp=Rp, sec=sec, pri=pri, bones=bones)
 
 
 def wing_along_path(axis, th, Ro_, E1, M1, us):

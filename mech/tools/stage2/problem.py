@@ -28,6 +28,7 @@ TMIN_MIN = 35.0
 CT = json.load(open(pathlib.Path(__file__).resolve().parents[2] / 'results' / 'stage2' / 'ct_target.json'))['target']
 CT_E, CT_W, CT_H = (np.array(CT[k]) for k in ('elbow', 'wrist', 'hand_dir'))
 CT_HAND_W = 0.0                       # hand-direction term off: a planar wing cannot follow the CT hand (43 deg out of the arm plane)
+CT_HAND_W_TILT = 1.0                  # design B (tilted wrist): hand direction counts, 1 per 5 deg beyond the 10 deg dead band
 GAIN_MAX = 2.5                        # max joint-angle change per degree of motor rotation (deg/deg), anywhere in the motion
 SIG_MOTOR = 0.5 / np.sqrt(12)         # motor commanded in 0.5 deg steps -> uniform quantisation error, sigma (deg)
 SIG_DIM = 0.05 / np.sqrt(3); CLEAR = 0.01; SIG_CL = 2 * CLEAR / np.sqrt(3)
@@ -35,13 +36,13 @@ U = np.linspace(0, 1, 41); SUB = np.arange(0, 41, 4)
 
 
 class Evaluator:
-    def __init__(self, ec, wc, width=45, nvis=100):
-        self.ec, self.wc = ec, wc
+    def __init__(self, ec, wc, width=45, nvis=100, tilt=False):
+        self.ec, self.wc, self.tilt = ec, wc, tilt
         self.body = Body(width)
         rng = np.random.default_rng(0)
         v = self.body.vis; self.vis = v[rng.choice(len(v), min(nvis, len(v)), replace=False)]
-        self.vars = var_list(ec, wc)
-        self.dims = dim_list(ec)
+        self.vars = var_list(ec, wc, tilt)
+        self.dims = dim_list(ec, tilt)
         sig = []
         for k, n in self.dims:
             s = SIG_DIM ** 2 + (SIG_CL ** 2 if k in RODS else 0); sig += [np.sqrt(s)] * n
@@ -50,7 +51,8 @@ class Evaluator:
     # ------------------------------------------------------------ pieces
     def fold_fit(self, d):
         b = self.body
-        fw = folded_wing(d['Rf'], d['E1'], d['M1'], d.get('fz'))
+        wt = dict(tw=d['tw'], phi=d['phi'], dl=d['dl']) if d.get('tilt') else None
+        fw = folded_wing(d['Rf'], d['E1'], d['M1'], d.get('fz'), wt)
         feath = np.concatenate([fw['sec'], fw['pri']], 1)
         s = b.sd(feath)
         bury, flt = np.maximum(0, -1 - s), np.maximum(0, s - 4)
@@ -70,7 +72,7 @@ class Evaluator:
         # CT: folded elbow / wrist positions and hand direction (Alcedo cristata, scaled to the ulna)
         ce = np.sqrt((nrm(fw['E'] - CT_E) ** 2 + nrm(fw['W'] - CT_W) ** 2) / 2)
         ch = np.degrees(np.arccos(np.clip(np.sum(unit(fw['T'] - fw['W']) * CT_H, -1), -1, 1)))
-        ct = np.maximum(0, ce - 3) + CT_HAND_W * np.maximum(0, ch - 10) / 5
+        ct = np.maximum(0, ce - 3) + (CT_HAND_W_TILT if d.get('tilt') else CT_HAND_W) * np.maximum(0, ch - 10) / 5
         parts = np.c_[np.sqrt((bury ** 2).mean(1)), np.sqrt((flt ** 2).mean(1)), np.sqrt((bone ** 2).mean(1)), np.maximum(0, tipd - 4), cover, wr, flip, ct]
         F = parts.sum(1)
         return F, dict(parts=parts, ct_pos=ce, ct_hand=ch, dorsal=dors, tip=tip, tipd=tipd, bury_max=bury.max(1), float_max=flt.max(1), cover=cover, W=W, feath_sd_min=s.min(1))
@@ -83,11 +85,12 @@ class Evaluator:
             Rh = rodrigues(d['axis'], d['th'] * u) @ Ro
             E = E0 + (d['E1'] - E0) * u; M = M0 + (d['M1'] - M0) * u
             pe, psi = np.pi - E * D, -(np.pi - M * D)
-            Ru = Rh @ rz3(pe); Rm = Ru @ rz3(psi)
+            Ru = Rh @ rz3(pe); Rm = Ru @ hand_rot(psi, d['tw'] if d.get('tilt') else None)
             Ep = mv(Rh, np.array([LH, 0, 0])); W = Ep + mv(Ru, np.array([LU, 0, 0]))
-            s_, p_ = feather_local(1 - u, per=3)
+            s_, p_ = feather_local(1 - u, per=3); p_ = p_[None]
+            if d.get('tilt'): Rm = Rm @ rx3(d['phi']); p_ = pri_local(1 - u, d['dl'], per=3)
             off = np.stack([0 * d['fz'], 0 * d['fz'], d['fz']], -1)[:, None] if 'fz' in d else 0
-            pts = np.concatenate([Ep[:, None] + np.einsum('pij,pnj->pni', Ru, s_[None] + off), W[:, None] + np.einsum('pij,pnj->pni', Rm, p_[None] + off)], 1)
+            pts = np.concatenate([Ep[:, None] + np.einsum('pij,pnj->pni', Ru, s_[None] + off), W[:, None] + np.einsum('pij,pnj->pni', Rm, p_ + off)], 1)
             out = np.minimum(out, self.body.sd(pts).min(1))
         return out
 
@@ -109,16 +112,17 @@ class Evaluator:
             L += [nrm(d['h3'] - np.array([LH, 0]))]; part += [np.abs(d['h3'][:, 1])]
         else:
             L += [nrm(d['h3'])]; part += [np.abs(d['h3'][:, 1])]
-        part += [np.maximum.reduce([d['rb3'], nrm(d['b4']), nrm(d['b4'] - np.c_[d['rb3'], 0 * d['rb3']])]), nrm(d['q'])]
+        e3 = np.zeros_like(d['b4']); e3[:, 0] = d['rb3']
+        part += [np.maximum.reduce([d['rb3'], nrm(d['b4']), nrm(d['b4'] - e3)]), nrm(d['q'])]
         return np.min(np.stack(L), 0), np.max(np.stack(part), 0)
 
     def sensitivity(self, d, f):
         """Jacobian of E(u), M(u) w.r.t. every manufactured dimension at the SUB steps"""
-        P = len(d['E1']); flat = flatten(d, self.ec); Dn = flat.shape[1]; h = 1e-3
+        P = len(d['E1']); flat = flatten(d, self.ec, self.tilt); Dn = flat.shape[1]; h = 1e-3
         Pert = np.repeat(flat, Dn, 0) + h * np.tile(np.eye(Dn), (P, 1))
         rep = lambda a: np.repeat(a, Dn, 0)
         dd = {k: (rep(v) if isinstance(v, np.ndarray) and v.shape[:1] == (P,) else v) for k, v in d.items()}
-        dd = unflatten(Pert, self.ec, dd)
+        dd = unflatten(Pert, self.ec, dd, self.tilt)
         ref = dict(pe=rep(f['pe'][:, SUB]), psi=rep(f['psi'][:, SUB]), b3=rep(f['b3'][:, SUB]))
         if f.get('b1') is not None: ref['b1'] = rep(f['b1'][:, SUB])
         Rh = humerus_frames(dd['axis'], dd['th'], U[SUB])
@@ -144,8 +148,12 @@ class Evaluator:
     def protrusion(self, d, f):
         X = np.stack(f['pts'], 2)[:, SUB]                     # (P,n,k,3)
         Rh = f['Rh'][:, SUB]
-        Xh = np.einsum('pnji,pnkj->pnki', Rh, X)
-        wr = wing_region_dist(Xh, f['pe'][:, SUB, None], f['psi'][:, SUB, None], d['fz'][:, None, None])
+        if d.get('tilt'):
+            Rp = f['Rm'][:, SUB] @ rx3(d['phi'])[:, None]
+            wr = wing_region_tilt(X, Rh, f['pe'][:, SUB, None], f['psi'][:, SUB, None], Rp, f['W_w'][:, SUB], d['fz'][:, None, None])
+        else:
+            Xh = np.einsum('pnji,pnkj->pnki', Rh, X)
+            wr = wing_region_dist(Xh, f['pe'][:, SUB, None], f['psi'][:, SUB, None], d['fz'][:, None, None])
         sd = self.body.sd(X)
         o = np.where(sd <= -0.5, 0, np.minimum(np.maximum(0, sd + 0.5), wr))
         return o.max((1, 2))
@@ -154,7 +162,7 @@ class Evaluator:
     def __call__(self, X, extra=False):
         P = X.shape[0]
         BIG = 1e3
-        d, ref, info = synthesise(self.ec, self.wc, X, U)
+        d, ref, info = synthesise(self.ec, self.wc, X, U, self.tilt)
         with np.errstate(all='ignore'):
             f = forward(d, ref, U, Rh=info['Rh'], detail=True)
             Et = E0 + (d['E1'][:, None] - E0) * U; Mt = M0 + (d['M1'][:, None] - M0) * U
@@ -184,8 +192,8 @@ class Evaluator:
 
 
 class LinkProblem(Problem):
-    def __init__(self, ec, wc, width=45):
-        self.ev = Evaluator(ec, wc, width)
+    def __init__(self, ec, wc, width=45, tilt=False):
+        self.ev = Evaluator(ec, wc, width, tilt=tilt)
         xl = np.array([v[1] for v in self.ev.vars], float); xu = np.array([v[2] for v in self.ev.vars], float)
         super().__init__(n_var=len(xl), n_obj=6, n_ieq_constr=11, xl=xl, xu=xu)
 

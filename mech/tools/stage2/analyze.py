@@ -1,5 +1,5 @@
 """Merge the NSGA-III runs, report seed-to-seed variation, pick candidates, verify them (Monte Carlo, body width 40/50),
-and write tables + figures.  usage: analyze.py [width]
+and write tables + figures.  usage: analyze.py [width] [tilt]   (tilt: design B, runs_tilt/ -> results/stage2/tilt/)
 Outputs: results/stage2/summary.json, candidates.json, seeds.csv, pareto.png, seeds.png (no CG content -> git);
          results/local/cand_*.png (CG body drawn -> not in git)."""
 import os
@@ -11,7 +11,9 @@ from problem import Evaluator, U, SIG_DIM, CLEAR
 from mech import *
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-OUT = ROOT / 'results' / 'stage2'; LOCAL = ROOT / 'results' / 'local'
+TILT = 'tilt' in sys.argv; sys.argv = [v for v in sys.argv if v != 'tilt']
+RUNS = ROOT / 'results' / 'stage2' / ('runs_tilt' if TILT else 'runs')
+OUT = ROOT / 'results' / 'stage2' / ('tilt' if TILT else ''); OUT.mkdir(exist_ok=True); LOCAL = ROOT / 'results' / 'local'
 WIDTH = int(sys.argv[1]) if len(sys.argv) > 1 else 45
 OBJ = ['joint error (deg)', 'min transmission (deg)', 'protrusion (mm)', 'sensitivity 2σ (deg)', 'fold fit', 'max part (mm)']
 CFG_JA = {('body', 'ulna'): '肘BC:体（スティーブンソン型・空間）／手首BC:尺骨', ('hum', 'ulna'): '肘BC:上腕骨（ワット型）／手首BC:尺骨',
@@ -28,7 +30,7 @@ def cheb(F):
 
 def load():
     runs = []
-    for f in sorted(glob.glob(str(OUT / 'runs' / f'*_w{WIDTH}_s*.npz'))):
+    for f in sorted(glob.glob(str(RUNS / f'*_w{WIDTH}_s*.npz'))):
         name = pathlib.Path(f).stem; ec, wc, w, s = name.split('_')
         d = np.load(f)
         runs.append(dict(ec=ec, wc=wc, seed=int(s[1:]), X=d['X'], F=d['F'], G=d['G'], log=d['log'], time=float(d['time'])))
@@ -38,7 +40,7 @@ def load():
 def monte_carlo(ev, x, n=400, amp=0.05, clear=CLEAR, seed=0):
     """nonlinear MC: every manufactured dimension uniform +-amp, every rod length additionally +-2*clear. Max joint-angle deviation per sample."""
     F0, G0, ex = ev(x[None], extra=True); d, f = ex['d'], ex['f']
-    flat = flatten(d, ev.ec); D_ = flat.shape[1]
+    flat = flatten(d, ev.ec, ev.tilt); D_ = flat.shape[1]
     rng = np.random.default_rng(seed)
     pert = rng.uniform(-amp, amp, (n, D_))
     names = [k for k, m in ev.dims for _ in range(m)]
@@ -46,7 +48,7 @@ def monte_carlo(ev, x, n=400, amp=0.05, clear=CLEAR, seed=0):
         if k in ('Lc1', 'L2', 'Lc3', 'L4'): pert[:, i] += rng.uniform(-2 * clear, 2 * clear, n)
     rep = lambda a: np.repeat(a, n, 0)
     dd = {k: (rep(v) if isinstance(v, np.ndarray) and v.shape[:1] == (1,) else v) for k, v in d.items()}
-    dd = unflatten(np.repeat(flat, n, 0) + pert, ev.ec, dd)
+    dd = unflatten(np.repeat(flat, n, 0) + pert, ev.ec, dd, ev.tilt)
     ref = dict(pe=rep(f['pe']), psi=rep(f['psi']), b3=rep(f['b3']))
     if f.get('b1') is not None: ref['b1'] = rep(f['b1'])
     with np.errstate(all='ignore'):
@@ -67,7 +69,8 @@ def describe(ev, x):
              rodforce_N_per_Nmm=float(e['rodforce'][0]), gain_max=float(e['gain'][0]), worst_lin_005=float(e['worst005'][0]), sweep=float(e['sweep'][0]),
              fit_parts=e['fitx']['parts'][0].round(2).tolist(), tip_off=float(e['fitx']['tipd'][0]), theta=float(np.degrees(d['th'][0])),
              axis=d['axis'][0].round(4).tolist(), E1=float(d['E1'][0]), M1=float(d['M1'][0]), fz=float(d['fz'][0]),
-             res=[float(e['res_e'][0]), float(e['res_w'][0])])
+             res=[float(e['res_e'][0]), float(e['res_w'][0])], ct_pos=float(e['fitx']['ct_pos'][0]), ct_hand=float(e['fitx']['ct_hand'][0]), tilt=bool(d['tilt']))
+    if d['tilt']: r.update(tw=float(np.degrees(d['tw'][0])), phi=float(np.degrees(d['phi'][0])), dl=float(d['dl'][0]))
     return r, e
 
 
@@ -119,12 +122,12 @@ def main():
     out = []
     for j, (nm, i) in enumerate(uniq):
         ec, wc = C[i].split('/')
-        ev = Evaluator(ec, wc, WIDTH)
+        ev = Evaluator(ec, wc, WIDTH, tilt=TILT)
         r, e = describe(ev, X[i])
-        r.update(id=f'c{j + 1}', pick=nm, ec=ec, wc=wc, label=CFG_JA[(ec, wc)], x=X[i].tolist(), cheb=float(s[i]))
-        r['mc005'] = monte_carlo(ev, X[i], amp=0.05); r['mc010'] = monte_carlo(ev, X[i], amp=0.10)
+        r.update(id=f"{'B' if TILT else 'c'}{j + 1}", pick=nm, ec=ec, wc=wc, label=CFG_JA[(ec, wc)], x=X[i].tolist(), cheb=float(s[i]))
+        r['mc005'] = monte_carlo(ev, X[i], amp=0.05); r['mc010'] = monte_carlo(ev, X[i], amp=0.10); r['mc020'] = monte_carlo(ev, X[i], amp=0.20)   # 3D-printer tolerance
         for w in (40, 50):
-            ew = Evaluator(ec, wc, w); Fw, Gw, xw = ew(X[i][None], extra=True)
+            ew = Evaluator(ec, wc, w, tilt=TILT); Fw, Gw, xw = ew(X[i][None], extra=True)
             r[f'w{w}'] = dict(fit=float(Fw[0, 4]), prot=float(Fw[0, 2]), sweep=float(xw['sweep'][0]), tip_off=float(xw['fitx']['tipd'][0]))
         out.append(r)
         print(r['id'], nm, ec, wc, 'F', np.round(r['F'], 2), 'MC0.05 p95 %.2f max %.2f fail %.3f' % (r['mc005']['p95'], r['mc005']['max'], r['mc005']['fail']),

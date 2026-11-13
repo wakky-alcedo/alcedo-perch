@@ -23,7 +23,8 @@ def silhouette(ax, b, i, j):
 
 
 def fold_figure(d, b, out, title='', k=0, mech_pts=None):
-    fw = folded_wing(d['Rf'][k:k + 1], d['E1'][k:k + 1], d['M1'][k:k + 1], d['fz'][k:k + 1] if 'fz' in d else None)
+    wt = dict(tw=d['tw'][k:k + 1], phi=d['phi'][k:k + 1], dl=d['dl'][k:k + 1]) if d.get('tilt') else None
+    fw = folded_wing(d['Rf'][k:k + 1], d['E1'][k:k + 1], d['M1'][k:k + 1], d['fz'][k:k + 1] if 'fz' in d else None, wt)
     feath = np.concatenate([fw['sec'], fw['pri']], 1)[0]; bones = np.array([[0, 0, 0], fw['E'][0], fw['W'][0], fw['T'][0]])
     fig, axs = plt.subplots(2, 4, figsize=(26, 13))
     for ax, (i, j, t) in zip(axs[0, :2], [(0, 1, 'top (x lateral, y cranial)'), (1, 2, 'side (y cranial, z dorsal)')]):
