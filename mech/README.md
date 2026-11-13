@@ -15,8 +15,9 @@
   - `v3opt.py` ほか：v3 以前の合成・検証スクリプト。
   - `*.js`：Playwright による検証（全バージョンの指標、±0.1 mm 感度、スクリーンショット、視点操作）。
   - `stage1/`：段階1（3Dモデルで胴と畳み姿勢を確認）。`ck_align.py`（CGを肩座標へ）、`eval_v4_ck.py`（v4をメッシュで評価・図）、`sensitivity.py`、`proportions.py`、`fit_ellipsoid.py`、`bk_*.py`（ヤマセミのスキャン）、`export_mesh_js.py`（シミュレータ用メッシュ）、`dump_path.js`（シミュレータから動きを書き出す）、`shots.js`。
-- `ref/` — 参考3Dモデル（Git LFS）と派生物。作者・ライセンスは `ref/README.md`。
-- `results/` — 最適化の出力（シード別）。`results/stage1/` は段階1の図と数値。
+  - `stage2/`：段階2（畳み姿勢とリンク寸法の多目的最適化）。`body.py`（CG体のSDF）、`kin.py`/`mech.py`（運動学・合成、6構成）、`problem.py`（目的と制約）、`run.py`/`batch.py`（NSGA-III、シード並列）、`pose_only.py`、`analyze.py`（パレート統合・候補・MC）、`cand_figs.py`、`export_sim.py`（候補をシミュレータへ＋照合）、`standalone.py`、`report.py`（結果ページ、手元のみ）。
+- `ref/` — 参考3Dモデルと派生物（git には入れない。手元に置く）。作者・ライセンスは `ref/README.md`。
+- `results/` — 最適化の出力（シード別）。`results/stage1/` は段階1の数値、`results/stage2/` は段階2の候補・要約・パレート図（個々の実行は `runs/`）。CGの形を含む図は `results/local/`（git 外）。
 
 ## バージョン
 タグ `v2` `v3` `v4`。それ以降のコミットは表示・操作の改善。
@@ -26,9 +27,11 @@ Python 3 + numpy + scipy、Node.js + playwright（検証用のみ）。v4 以前
 
 段階1以降（`tools/stage1/`）はリポジトリ内のパスを自分で解決する。準備：
 ```
-uv venv .venv --python 3.13 && uv pip install --python .venv numpy scipy trimesh matplotlib rtree shapely networkx scikit-image fast_simplification
+uv venv .venv --python 3.13 && uv pip install --python .venv numpy scipy trimesh matplotlib rtree shapely networkx scikit-image fast_simplification pymoo
 cd mech/tools && npm install && npx playwright install chromium
 node stage1/dump_path.js v4             # シミュレータから v4 の動きを書き出す
 ../../.venv/Scripts/python stage1/eval_v4_ck.py
+cd stage2 && ../../../.venv/Scripts/python batch.py 400 300 12 15 45   # 72回、16コアで約3時間
+../../../.venv/Scripts/python analyze.py 45 && ../../../.venv/Scripts/python export_sim.py
 ```
 シミュレータの「体の形」で CG メッシュを選べる（`ref/derived/ck_mesh.js` を読み込む。CC BY-SA 4.0）。

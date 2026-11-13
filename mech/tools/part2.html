@@ -211,7 +211,7 @@ function metrics(p){
   pth.forEach((q,i) => { q.trans.forEach(t => tmin = Math.min(tmin, t)); if (i % 8 === 0) prot = Math.max(prot, protrusion(q)); });
   return {pth, ok: pth.every(q => q.ok), tmin, prot, E0: pth[0].Edeg, E1: pth[NS].Edeg, M0: pth[0].Mdeg, M1: pth[NS].Mdeg, fold: pth[NS].T[0]/pth[0].T[0]};
 }
-const STAT = {current:['current','採用中'], superseded:['superseded','置き換え済み'], rejected:['rejected','却下']};
+const STAT = {current:['current','採用中'], candidate:['cand','段階2候補'], superseded:['superseded','置き換え済み'], rejected:['rejected','却下']};
 function versionParams(v){
   const p = {tS:0, tE:0, tW:0, fold:0, dur:1, scale:1, ah0:v.target.AH0, ah1:v.target.AH1}; Object.assign(p, v.dims); return p;
 }
@@ -237,6 +237,7 @@ document.addEventListener('click', e => { if (!$('verPanel').contains(e.target) 
 document.addEventListener('keydown', e => { if (e.key === 'Escape') togglePanel(false); });
 function loadVersion(id){
   ver = VERSIONS.find(v => v.id === id); TARGET = ver.target; BODY = ver.body || BODY_OLD; BODYX = BODY.c[0];
+  if (window.CK_MESH && $('bodyShape')){ $('bodyShape').value = ver.bodyMesh && window.CK_MESH.variants[ver.bodyMesh] ? ver.bodyMesh : 'ell'; }
   const fixedTilt = !!ver.shoulder;
   $('tiltBody').style.display = fixedTilt ? 'none' : ''; $('tiltNote').style.display = fixedTilt ? '' : 'none';
   $('tiltNote').innerHTML = '<b>'+ver.id+'</b> は最初から3Dで設計しています。肩は斜めに傾けた1本の軸（向きは寸法表の最後）で、畳むと上腕骨が後ろへ引きながら下がってねじれ、翼が体の側面に沿います。肘系統はロッド2だけが立体的に振れ、手首系統は翼の面内の平面リンクです。';

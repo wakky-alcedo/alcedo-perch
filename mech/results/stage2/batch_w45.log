@@ -1,0 +1,73 @@
+[ 4705s] ulna/ulna seed 7: 4686s, feasible 300/300 best 0.47 -42.50 0.00 5.15 9.71 10.76
+[ 4706s] ulna/hum seed 3: 4691s, feasible 300/300 best 1.60 -42.78 2.20 4.27 10.50 14.47
+[ 4707s] ulna/hum seed 0: 4688s, feasible 300/300 best 0.89 -35.57 2.05 3.54 9.85 10.55
+[ 4712s] ulna/hum seed 4: 4695s, feasible 300/300 best 2.46 -25.96 5.45 6.63 10.51 13.20
+[ 4727s] ulna/ulna seed 4: 4710s, feasible 300/300 best 5.98 -23.13 5.11 5.61 9.93 14.22
+[ 4731s] ulna/ulna seed 1: 4716s, feasible 300/300 best 0.80 -48.36 2.53 4.34 10.19 11.16
+[ 4732s] ulna/ulna seed 6: 4716s, feasible 300/300 best 0.66 -44.19 0.96 3.46 10.46 14.85
+[ 4742s] ulna/ulna seed 3: 4728s, feasible 300/300 best 0.84 -50.43 1.25 4.02 9.89 14.50
+[ 4746s] ulna/hum seed 2: 4731s, feasible 300/300 best 0.68 -41.57 3.49 3.37 10.14 11.69
+[ 4746s] ulna/hum seed 5: 4732s, feasible 300/300 best 0.94 -46.33 1.99 5.02 9.77 14.40
+[ 4747s] ulna/ulna seed 0: 4725s, feasible 300/300 best 1.78 -41.31 0.00 4.55 9.81 12.06
+[ 4781s] ulna/ulna seed 5: 4764s, feasible 300/300 best 0.47 -33.29 2.95 2.58 9.86 15.85
+[ 4802s] ulna/hum seed 1: 4782s, feasible 300/300 best 0.61 -39.63 0.69 3.20 9.88 14.77
+[ 4807s] ulna/hum seed 6: 4792s, feasible 300/300 best 1.07 -42.03 0.08 3.92 10.15 13.89
+[ 4807s] ulna/ulna seed 2: 4792s, feasible 300/300 best 1.31 -46.26 0.00 4.66 9.53 10.75
+[ 6036s] hum/ulna seed 0: 1263s, feasible 300/300 best 0.93 -36.00 0.00 2.36 9.80 14.70
+[ 6084s] hum/hum seed 0: 1264s, feasible 300/300 best 1.02 -32.05 7.43 1.77 9.98 11.14
+[ 6093s] body/ulna seed 0: 1323s, feasible 300/300 best 0.12 -33.48 8.13 1.66 9.54 15.40
+[ 6111s] hum/ulna seed 1: 1273s, feasible 300/300 best 0.28 -42.19 0.00 1.45 9.72 17.94
+[ 6140s] body/ulna seed 1: 1301s, feasible 300/300 best 0.38 -25.97 4.04 1.77 9.70 18.10
+[ 6143s] body/hum seed 0: 1306s, feasible 300/300 best 0.33 -41.15 8.36 1.67 9.83 21.84
+[ 7323s] hum/hum seed 1: 1240s, feasible 300/300 best 0.38 -34.65 2.10 1.92 9.65 13.52
+[ 7403s] hum/ulna seed 2: 1274s, feasible 300/300 best 0.60 -32.38 2.22 2.00 10.31 9.49
+[ 7415s] hum/hum seed 2: 1238s, feasible 300/300 best 0.49 -35.46 2.20 3.23 9.63 16.16
+[ 7444s] body/hum seed 1: 1320s, feasible 300/300 best 0.27 -29.90 9.04 1.69 9.60 15.85
+[ 7449s] body/ulna seed 2: 1297s, feasible 300/300 best 0.18 -28.17 7.48 1.79 9.84 14.00
+[ 7472s] body/hum seed 2: 1290s, feasible 300/300 best 0.52 -36.30 7.30 2.30 9.95 13.30
+[ 8610s] hum/ulna seed 3: 1243s, feasible 300/300 best 0.41 -35.61 0.01 1.90 9.54 15.41
+[ 8704s] hum/hum seed 3: 1256s, feasible 300/300 best 0.53 -36.49 2.02 3.24 9.90 15.20
+[ 8728s] hum/ulna seed 4: 1241s, feasible 300/300 best 0.43 -34.66 0.00 1.84 9.77 10.34
+[ 8730s] body/ulna seed 3: 1293s, feasible 300/300 best 0.22 -17.45 5.64 2.70 9.98 15.81
+[ 8759s] body/hum seed 3: 1276s, feasible 300/300 best 0.17 -35.43 6.88 1.78 9.78 16.98
+[ 8778s] body/ulna seed 4: 1269s, feasible 300/300 best 0.76 -36.58 5.01 2.78 9.90 16.41
+[ 9104s] ulna/ulna seed 9: 4353s, feasible 300/300 best 1.11 -45.25 0.37 4.95 9.79 14.39
+[ 9118s] ulna/ulna seed 10: 4354s, feasible 300/300 best 0.27 -45.40 0.00 3.32 9.93 15.59
+[ 9118s] ulna/hum seed 7: 4369s, feasible 300/300 best 1.60 -49.50 2.03 5.65 9.96 13.40
+[ 9120s] ulna/hum seed 8: 4373s, feasible 300/300 best 0.66 -47.39 2.67 3.37 9.56 13.26
+[ 9120s] ulna/hum seed 10: 4360s, feasible 300/300 best 0.82 -38.45 0.00 3.39 10.11 13.85
+[ 9138s] ulna/ulna seed 8: 4388s, feasible 300/300 best 1.81 -45.87 0.00 5.30 10.11 13.23
+[ 9150s] ulna/hum seed 9: 4396s, feasible 300/300 best 0.99 -40.06 2.71 3.87 9.83 11.11
+[ 9159s] ulna/hum seed 11: 4389s, feasible 300/300 best 0.60 -38.71 2.82 3.00 9.91 13.04
+[ 9176s] ulna/ulna seed 11: 4409s, feasible 300/300 best 1.33 -41.72 3.77 4.46 10.04 12.80
+[ 9802s] hum/hum seed 4: 1149s, feasible 300/300 best 0.50 -35.47 2.50 2.16 10.62 12.30
+[ 9947s] body/ulna seed 5: 1180s, feasible 300/300 best 0.14 -27.28 6.94 1.78 9.84 16.00
+[ 9949s] hum/ulna seed 5: 1186s, feasible 300/300 best 0.61 -35.49 0.00 1.54 9.53 13.19
+[ 9953s] body/hum seed 4: 1209s, feasible 300/300 best 0.30 -35.76 8.87 2.21 9.92 20.39
+[ 9967s] hum/hum seed 5: 1179s, feasible 300/300 best 0.79 -34.54 3.11 2.99 10.70 13.27
+[10058s] body/hum seed 5: 1235s, feasible 300/300 best 0.23 -30.59 6.51 1.94 10.35 15.37
+[10281s] hum/ulna seed 6: 1135s, feasible 300/300 best 0.32 -33.61 0.00 1.56 9.62 11.63
+[10293s] hum/ulna seed 7: 1142s, feasible 300/300 best 0.76 -35.56 0.00 1.53 9.59 13.28
+[10296s] hum/hum seed 6: 1145s, feasible 300/300 best 0.42 -40.85 0.00 1.80 9.54 13.27
+[10319s] body/hum seed 6: 1171s, feasible 300/300 best 0.25 -26.74 5.92 2.36 9.59 16.98
+[10332s] body/ulna seed 6: 1185s, feasible 300/300 best 0.13 -27.56 4.84 1.72 9.96 16.14
+[10338s] body/ulna seed 7: 1165s, feasible 300/300 best 0.23 -26.86 6.68 1.89 10.14 17.17
+[10340s] hum/ulna seed 8: 1122s, feasible 300/300 best 0.52 -38.42 0.00 1.73 10.12 11.09
+[10344s] hum/hum seed 7: 1158s, feasible 300/300 best 0.34 -34.40 2.09 3.12 9.73 21.82
+[10362s] body/hum seed 7: 1171s, feasible 300/300 best 0.59 -23.45 5.36 2.50 9.83 26.36
+[10998s] body/ulna seed 8: 1168s, feasible 300/300 best 0.30 -27.60 4.78 2.71 10.11 14.96
+[11080s] hum/hum seed 8: 1108s, feasible 300/300 best 0.62 -37.06 0.00 1.93 9.77 12.43
+[11114s] hum/ulna seed 9: 1137s, feasible 300/300 best 1.12 -36.49 0.00 1.62 10.35 11.39
+[11124s] body/hum seed 8: 1151s, feasible 300/300 best 0.41 -26.28 4.03 1.95 10.07 15.58
+[11132s] body/ulna seed 9: 1132s, feasible 300/300 best 0.33 -31.93 6.60 2.49 10.38 13.66
+[11202s] hum/hum seed 9: 1112s, feasible 300/300 best 0.36 -34.39 0.00 2.45 9.71 14.57
+[11345s] hum/ulna seed 10: 1026s, feasible 300/300 best 0.38 -35.53 0.05 1.73 10.08 13.21
+[11360s] hum/ulna seed 11: 998s, feasible 300/300 best 0.50 -34.76 0.00 1.48 10.14 10.88
+[11363s] hum/hum seed 10: 1016s, feasible 300/300 best 0.34 -34.43 1.99 2.22 9.49 11.28
+[11364s] body/ulna seed 10: 1044s, feasible 300/300 best 0.21 -36.56 8.74 1.65 9.94 16.76
+[11364s] body/hum seed 9: 1052s, feasible 300/300 best 0.42 -21.98 5.54 1.76 9.69 17.91
+[11369s] body/hum seed 10: 1013s, feasible 300/300 best 0.11 -29.37 4.53 2.66 9.83 17.73
+[11374s] hum/hum seed 11: 999s, feasible 300/300 best 0.54 -43.12 0.00 2.08 9.75 26.09
+[11376s] body/ulna seed 11: 1016s, feasible 300/300 best 0.25 -38.78 6.87 2.12 9.58 21.59
+[11380s] body/hum seed 11: 977s, feasible 300/300 best 0.47 -38.28 5.57 1.91 9.60 22.21
+done 11380.300148487091

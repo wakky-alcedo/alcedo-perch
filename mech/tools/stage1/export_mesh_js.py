@@ -16,7 +16,7 @@ def dec(m, n):
 
 out = dict(source='Common Kingfisher by Alejandro Guzman (Sketchfab), CC BY-SA 4.0. Decimated and transformed: mech/tools/stage1/export_mesh_js.py. This file is CC BY-SA 4.0.',
            frame='v4 shoulder frame, mm: x lateral (right), y cranial, z dorsal; origin = right shoulder (ESTIMATE)', variants={})
-for name, kw, label in [('asis', {}, 'CG（翼長で縮尺、幅58 mm）'), ('slim40', dict(kx=40 / 57.7, kz=40 / 57.7), 'CG 細身（幅40 mmに縮めた）')]:
+for name, kw, label in [('asis', {}, 'CG（翼長で縮尺、幅58 mm）')] + [(f'w{w}', dict(kx=w / 57.7, kz=w / 57.7), f'CG 幅{w} mm') for w in (40, 45, 50)]:
     tr = transform(**kw); A = aligned_parts(tr)
     parts = {}
     for k, n in TARGET_FACES.items():
