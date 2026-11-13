@@ -1,0 +1,11 @@
+{
+ "source": "DigiMorph Alcedo cristata FMNH 319990, CorFlipBodySkel.mp4 (fluid-preserved whole specimen, scan 2004)",
+ "scale_mm_per_px": 0.0959,
+ "frame_spacing_mm": 0.234,
+ "n_sections": 231,
+ "bone_centre_to_outside_median_mm": 1.3426,
+ "bone_centre_to_outside_p90_mm": 2.2470088317583445,
+ "lateral_ray_median_mm": 1.8221,
+ "bone_diameter_median_mm": 1.2290470865213576,
+ "note": "wet specimen: feathers are flattened, a live bird is thicker (not measured). Scale to A. atthis ~x1.3 (estimate)."
+}

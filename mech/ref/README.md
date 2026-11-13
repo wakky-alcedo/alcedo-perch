@@ -18,3 +18,10 @@
 ## 変換方法（どちらも推定を含む）
 - Common Kingfisher：翼の殻（左右の閉じたメッシュ）の最長の弦を翼長 78.8 mm（BTO、生体成鳥）に合わせて縮尺 ×0.677。胴の第1主成分を前後軸、z=0 面を正中面とした。モデルに骨格がないので、肩の位置は規則で置いた推定（`tools/stage1/ck_align.py`）。
 - Belted Kingfisher：スキャンの単位を mm とみなした（翼長の目安 ≈ 150〜160、実物 155〜165 mm と矛盾しない）。胴の左右対称面を当てはめて体の座標系を作った（`tools/stage1/bk_sym.py`）。
+
+## DigiMorph: Alcedo cristata（マラカイトカワセミ）FMNH 319990
+- 出典: DigiMorph Staff, 2004, "Alcedo cristata" (On-line), Digital Morphology. https://digimorph.org/specimens/Alcedo_cristata/whole/
+  スキャン: Matthew Colbert（UT High-Resolution X-ray CT Facility）、画像処理: Amy Balanoff。標本: Field Museum of Natural History。
+- 使ったもの: 公開されているスライス動画・回転動画（mp4）。`models/digimorph_acristata/` に手元のみ（git に入れない）。著作権は DigiMorph。
+- 生データ（CT 885枚）は MorphoSource media 000712732（CC BY-NC 4.0、申請制）。未取得。
+- 派生物: CT の図は `results/local/` のみ。数値（`results/stage2/ct_wing.json`）だけ git に入れる。
