@@ -1,0 +1,39 @@
+{
+ "fold_bone_sd_min": -15.430005012286022,
+ "fold_bone_sd_max": -3.20260447454575,
+ "fold_feather_sd_min": -17.261274142760413,
+ "fold_feather_sd_max": 1.5134957043283879,
+ "fold_feather_inside_frac(<-1mm)": 0.9875,
+ "fold_feather_float_frac(>5mm)": 0.0,
+ "v4_tip": [
+  -3.8,
+  -70.9,
+  -0.2
+ ],
+ "model_tip": [
+  -2.4,
+  -74.8,
+  -5.6
+ ],
+ "tip_dist": 6.800914054080845,
+ "v4_wrist": [
+  2.4,
+  4.0,
+  -8.6
+ ],
+ "model_wing_front_y": 4.0,
+ "visible_shell_covered_frac(<4mm)": 0.05194805194805195,
+ "visible_shell_to_v4_median": 11.214101867633923,
+ "path_bone_sd_min": -15.430005012286022,
+ "mech_prot_ellipsoid_max": 2.2401,
+ "mech_prot_mesh_max": 0.5620134141663229,
+ "mech_prot_mesh_worst(prot,u,X)": [
+  0.5620134141663229,
+  0.3,
+  [
+   20.0,
+   -20.2,
+   -3.4
+  ]
+ ]
+}

@@ -14,10 +14,21 @@
   - `mkv4.py`：結果からシミュレータのバージョン項目を作り、`part1.html` に差し込む。シミュレータ本体は `cat tools/part1.html tools/part2.html` で組み立てる。
   - `v3opt.py` ほか：v3 以前の合成・検証スクリプト。
   - `*.js`：Playwright による検証（全バージョンの指標、±0.1 mm 感度、スクリーンショット、視点操作）。
-- `results/` — 最適化の出力（シード別）。
+  - `stage1/`：段階1（3Dモデルで胴と畳み姿勢を確認）。`ck_align.py`（CGを肩座標へ）、`eval_v4_ck.py`（v4をメッシュで評価・図）、`sensitivity.py`、`proportions.py`、`fit_ellipsoid.py`、`bk_*.py`（ヤマセミのスキャン）、`export_mesh_js.py`（シミュレータ用メッシュ）、`dump_path.js`（シミュレータから動きを書き出す）、`shots.js`。
+- `ref/` — 参考3Dモデル（Git LFS）と派生物。作者・ライセンスは `ref/README.md`。
+- `results/` — 最適化の出力（シード別）。`results/stage1/` は段階1の図と数値。
 
 ## バージョン
 タグ `v2` `v3` `v4`。それ以降のコミットは表示・操作の改善。
 
 ## 必要なもの
-Python 3 + numpy + scipy、Node.js + playwright（検証用のみ）。スクリプトは作業フォルダで書いたもので、パスはスクリプトと同じ場所に入力ファイルがある前提。
+Python 3 + numpy + scipy、Node.js + playwright（検証用のみ）。v4 以前のスクリプトは作業フォルダで書いたもので、パスはスクリプトと同じ場所に入力ファイルがある前提。
+
+段階1以降（`tools/stage1/`）はリポジトリ内のパスを自分で解決する。準備：
+```
+uv venv .venv --python 3.13 && uv pip install --python .venv numpy scipy trimesh matplotlib rtree shapely networkx scikit-image fast_simplification
+cd mech/tools && npm install && npx playwright install chromium
+node stage1/dump_path.js v4             # シミュレータから v4 の動きを書き出す
+../../.venv/Scripts/python stage1/eval_v4_ck.py
+```
+シミュレータの「体の形」で CG メッシュを選べる（`ref/derived/ck_mesh.js` を読み込む。CC BY-SA 4.0）。

@@ -1,0 +1,134 @@
+[
+ {
+  "case": {},
+  "fold_bone_sd_min": -15.43,
+  "fold_feather_sd_min": -17.26,
+  "fold_feather_sd_max": 1.51,
+  "fold_feather_inside_frac(<-1mm)": 0.99,
+  "tip_dist": 6.8,
+  "visible_shell_covered_frac(<4mm)": 0.05,
+  "visible_shell_to_v4_median": 11.21,
+  "mech_prot_mesh_max": 0.56
+ },
+ {
+  "case": {
+   "SX": 5
+  },
+  "fold_bone_sd_min": -17.45,
+  "fold_feather_sd_min": -18.7,
+  "fold_feather_sd_max": 1.12,
+  "fold_feather_inside_frac(<-1mm)": 0.99,
+  "tip_dist": 9.8,
+  "visible_shell_covered_frac(<4mm)": 0.01,
+  "visible_shell_to_v4_median": 13.87,
+  "mech_prot_mesh_max": 0.28
+ },
+ {
+  "case": {
+   "SX": 13
+  },
+  "fold_bone_sd_min": -12.63,
+  "fold_feather_sd_min": -15.94,
+  "fold_feather_sd_max": 2.12,
+  "fold_feather_inside_frac(<-1mm)": 0.98,
+  "tip_dist": 5.18,
+  "visible_shell_covered_frac(<4mm)": 0.05,
+  "visible_shell_to_v4_median": 10.15,
+  "mech_prot_mesh_max": 0.56
+ },
+ {
+  "case": {
+   "DY": 0
+  },
+  "fold_bone_sd_min": -15.52,
+  "fold_feather_sd_min": -19.71,
+  "fold_feather_sd_max": -1.35,
+  "fold_feather_inside_frac(<-1mm)": 1.0,
+  "tip_dist": 7.98,
+  "visible_shell_covered_frac(<4mm)": 0.0,
+  "visible_shell_to_v4_median": 13.65,
+  "mech_prot_mesh_max": 0.56
+ },
+ {
+  "case": {
+   "DY": 8
+  },
+  "fold_bone_sd_min": -13.99,
+  "fold_feather_sd_min": -15.3,
+  "fold_feather_sd_max": 6.07,
+  "fold_feather_inside_frac(<-1mm)": 0.94,
+  "tip_dist": 9.07,
+  "visible_shell_covered_frac(<4mm)": 0.12,
+  "visible_shell_to_v4_median": 9.81,
+  "mech_prot_mesh_max": 0.56
+ },
+ {
+  "case": {
+   "DZ": 4
+  },
+  "fold_bone_sd_min": -13.83,
+  "fold_feather_sd_min": -15.13,
+  "fold_feather_sd_max": 2.65,
+  "fold_feather_inside_frac(<-1mm)": 0.97,
+  "tip_dist": 9.38,
+  "visible_shell_covered_frac(<4mm)": 0.11,
+  "visible_shell_to_v4_median": 10.04,
+  "mech_prot_mesh_max": 0.56
+ },
+ {
+  "case": {
+   "DZ": 10
+  },
+  "fold_bone_sd_min": -16.32,
+  "fold_feather_sd_min": -19.19,
+  "fold_feather_sd_max": 0.62,
+  "fold_feather_inside_frac(<-1mm)": 0.99,
+  "tip_dist": 4.75,
+  "visible_shell_covered_frac(<4mm)": 0.05,
+  "visible_shell_to_v4_median": 12.67,
+  "mech_prot_mesh_max": 0.56
+ },
+ {
+  "case": {
+   "kx": 0.6932409012131715,
+   "kz": 0.6932409012131715
+  },
+  "fold_bone_sd_min": -9.66,
+  "fold_feather_sd_min": -11.75,
+  "fold_feather_sd_max": 0.68,
+  "fold_feather_inside_frac(<-1mm)": 0.97,
+  "tip_dist": 3.97,
+  "visible_shell_covered_frac(<4mm)": 0.07,
+  "visible_shell_to_v4_median": 7.97,
+  "mech_prot_mesh_max": 0.56
+ },
+ {
+  "case": {
+   "kx": 0.5892547660311959,
+   "kz": 0.5892547660311959
+  },
+  "fold_bone_sd_min": -8.46,
+  "fold_feather_sd_min": -9.17,
+  "fold_feather_sd_max": 3.55,
+  "fold_feather_inside_frac(<-1mm)": 0.92,
+  "tip_dist": 5.22,
+  "visible_shell_covered_frac(<4mm)": 0.02,
+  "visible_shell_to_v4_median": 8.27,
+  "mech_prot_mesh_max": 1.06
+ },
+ {
+  "case": {
+   "kx": 0.6932409012131715,
+   "kz": 0.6932409012131715,
+   "DZ": 5
+  },
+  "fold_bone_sd_min": -8.66,
+  "fold_feather_sd_min": -11.55,
+  "fold_feather_sd_max": 1.06,
+  "fold_feather_inside_frac(<-1mm)": 0.97,
+  "tip_dist": 4.14,
+  "visible_shell_covered_frac(<4mm)": 0.15,
+  "visible_shell_to_v4_median": 6.78,
+  "mech_prot_mesh_max": 1.06
+ }
+]

@@ -138,6 +138,9 @@
           <label class="chk"><input type="checkbox" id="mech" checked>駆動リンク</label>
           <label class="chk"><input type="checkbox" id="trace">翼端の軌跡</label>
         </div>
+        <div class="row" style="margin-top:8px"><label for="bodyShape">体の形</label><select id="bodyShape" style="flex:1;background:var(--bg);color:var(--ink);border:1px solid #27435b;font:12px var(--mono)">
+          <option value="ell">楕円体（バージョンの設定値）</option><option value="asis">CGメッシュ（カワセミ, 翼長で縮尺, 幅58 mm）</option><option value="slim40">CGメッシュ 細身（幅40 mm）</option></select></div>
+        <div><label class="chk" title="CGモデルの畳んだ翼の殻。目標の畳み姿勢の参考（推定）"><input type="checkbox" id="ckWing">CGの畳んだ翼（参考）</label><span id="meshNote" style="font:11px var(--mono);color:var(--dim)"></span></div>
         <div class="row" style="margin-top:8px"><label for="bodyA">体の不透明度</label><input id="bodyA" type="range" min="0" max="1" step="0.05" value="0.3"><output id="obodyA"></output></div>
         <div class="cells">
           <div class="cell"><div class="k">モーター</div><div class="v" id="rMotor">0</div></div>
@@ -200,6 +203,7 @@
   </div>
 </div>
 
+<script src="ref/derived/ck_mesh.js"></script>
 <script>
 (function(){
 'use strict';
@@ -563,7 +567,33 @@ function ellipsoid(c, r){ const out = []; for (let i=0;i<=12;i++){ const th = Ma
   out.push(proj([c[0]+r[0]*Math.sin(th)*Math.cos(ph), c[1]+r[1]*Math.cos(th), c[2]+r[2]*Math.sin(th)*Math.sin(ph)])); } } return out; }
 function fillPoly(pts, fill, stroke){ ctx.beginPath(); pts.forEach((p,i) => i ? ctx.lineTo(p[0],p[1]) : ctx.moveTo(p[0],p[1])); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); if (stroke){ ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.stroke(); } }
 // body: drawn translucent (slider) so the mechanism inside stays visible. Outlines stay opaque.
+// CG mesh body (Common Kingfisher, CC BY-SA, ref/derived/ck_mesh.js). Painted opaque into an offscreen canvas (far-to-near,
+// flat shaded), then composited once with the body opacity, so it reads as one translucent layer like the ellipsoid.
+const meshOff = document.createElement('canvas'), mctx = meshOff.getContext('2d');
+const MESH_COL = {torso:[205,120,60], head:[40,110,170], tail:[30,90,150], bill:[30,30,34], wing:[45,140,200], wing_other:[45,140,200]};
+function meshVariant(){ const v = $('bodyShape').value; return (v !== 'ell' && window.CK_MESH) ? window.CK_MESH.variants[v] : null; }
+function drawBodyMesh(mv_){
+  meshOff.width = stage.width; meshOff.height = stage.height; mctx.clearRect(0,0,meshOff.width,meshOff.height);
+  const cam = camDir(), tris = [];
+  for (const [name, part] of Object.entries(mv_.parts)){
+    if (name.startsWith('wing') && !$('ckWing').checked) continue;
+    const V = part.V, F = part.F, n = V.length/3, P = new Array(n);
+    for (let i=0;i<n;i++) P[i] = proj([V[3*i], V[3*i+1], V[3*i+2]]);
+    const col = MESH_COL[name] || [120,120,120];
+    for (let t=0;t<F.length;t+=3){
+      const a = F[t], b = F[t+1], c = F[t+2];
+      const A = [V[3*a],V[3*a+1],V[3*a+2]], B = [V[3*b],V[3*b+1],V[3*b+2]], C = [V[3*c],V[3*c+1],V[3*c+2]];
+      const nn = cross(sub(B,A), sub(C,A)), ln = norm(nn) || 1, sh = 0.35 + 0.65*Math.abs(dot(nn, cam))/ln;
+      tris.push({p:[P[a],P[b],P[c]], d:(P[a][2]+P[b][2]+P[c][2])/3, f:`rgb(${col.map(x => Math.round(x*sh)).join(',')})`});
+    }
+  }
+  tris.sort((x,y) => y.d - x.d);
+  for (const t of tris){ mctx.beginPath(); mctx.moveTo(t.p[0][0],t.p[0][1]); mctx.lineTo(t.p[1][0],t.p[1][1]); mctx.lineTo(t.p[2][0],t.p[2][1]); mctx.closePath();
+    mctx.fillStyle = t.f; mctx.fill(); mctx.strokeStyle = t.f; mctx.lineWidth = 0.6; mctx.stroke(); }
+  ctx.save(); ctx.globalAlpha = parseFloat(el.bodyA.value); ctx.drawImage(meshOff, 0, 0); ctx.restore();
+}
 function drawBody(){
+  const mv_ = meshVariant(); if (mv_) return drawBodyMesh(mv_);
   const a = parseFloat(el.bodyA.value), [cx, cy, cz] = BODY.c, [rx, ry, rz] = BODY.r, front = cy + ry, back = cy - ry;
   const fill = (r,g,b) => `rgba(${r},${g},${b},${a})`, line = 'rgba(80,130,170,.75)';
   fillPoly(hull([[cx-6,back+10,cz+3],[cx+6,back+10,cz+3],[cx+7,back-22,cz],[cx-7,back-22,cz]].map(proj)), fill(29,58,85), line);
@@ -585,7 +615,8 @@ const PLATE = {bc:['rgba(199,182,255,.22)','#c7b6ff'], hum:['rgba(127,212,255,.2
 // Everything in the 3D view goes into one list and is painted far-to-near. The torso is one translucent layer:
 // a primitive whose line of sight to the camera passes through the torso is painted before it, the rest after it.
 function behindBody(P){
-  const c = camDir(), o = [0,1,2].map(i => (P[i] - BODY.c[i])/BODY.r[i]), d = [0,1,2].map(i => c[i]/BODY.r[i]);
+  const mv_ = meshVariant(), OB = mv_ ? mv_.occluder : BODY;     // with the CG mesh, order against its fitted ellipsoid (rms < 1 mm)
+  const c = camDir(), o = [0,1,2].map(i => (P[i] - OB.c[i])/OB.r[i]), d = [0,1,2].map(i => c[i]/OB.r[i]);
   const A = d[0]*d[0]+d[1]*d[1]+d[2]*d[2], B = 2*(o[0]*d[0]+o[1]*d[1]+o[2]*d[2]), C = o[0]*o[0]+o[1]*o[1]+o[2]*o[2] - 1;
   if (C < 0) return true; const disc = B*B - 4*A*C; if (disc < 0) return false; return (-B + Math.sqrt(disc)) > 0 && (-B - Math.sqrt(disc)) > 0;
 }
@@ -784,7 +815,9 @@ function syncOut(){
 }
 fixedIds.forEach(id => el[id].addEventListener('input', () => { dirty = true; }));
 const fmtA = v => Math.round(v*100)+'%'; fmt.bodyA = fmtA;
-['feathers','mirror','mech','trace'].forEach(id => $(id).addEventListener('change', () => dirty = true));
+['feathers','mirror','mech','trace','bodyShape','ckWing'].forEach(id => $(id).addEventListener('change', () => dirty = true));
+if (!window.CK_MESH){ $('bodyShape').disabled = true; $('ckWing').disabled = true; $('meshNote').textContent = ' ref/derived/ck_mesh.js が見つからないため楕円体のみ'; }
+else $('meshNote').textContent = ' 表示のみ。はみ出しの数値は楕円体で計算（メッシュでの評価は results/stage1/）';
 $('p2d').onclick = () => { setTilts({tS:0,tE:0,tW:0}); $('p2d').classList.add('on'); $('p3d').classList.remove('on'); dirty = true; };
 $('p3d').onclick = () => { setTilts(ver.tilt3d); $('p3d').classList.add('on'); $('p2d').classList.remove('on'); dirty = true; };
 $('resetDims').onclick = () => { setDims(); dirty = true; };
