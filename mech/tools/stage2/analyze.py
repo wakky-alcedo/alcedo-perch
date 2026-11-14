@@ -41,15 +41,15 @@ def load():
 
 
 def monte_carlo(ev, x, n=400, amp=0.05, play=1.0, seed=0):
-    """nonlinear MC: every manufactured dimension uniform +-amp, every rod length additionally +-play*ROD_PLAY (joint clearances of its
-    two ends). Max joint-angle deviation per sample."""
+    """nonlinear MC: every manufactured dimension uniform +-amp, every rod length additionally +-play*ev.play (joint clearances of its
+    two ends and of the main hinges it crosses). Max joint-angle deviation per sample."""
     F0, G0, ex = ev(x[None], extra=True); d, f = ex['d'], ex['f']
     flat = flatten(d, ev.ec, ev.tilt); D_ = flat.shape[1]
     rng = np.random.default_rng(seed)
     pert = rng.uniform(-amp, amp, (n, D_))
     names = [k for k, m in ev.dims for _ in range(m)]
     for i, k in enumerate(names):
-        if k in RODS: pert[:, i] += rng.uniform(-play * ROD_PLAY[k], play * ROD_PLAY[k], n)
+        if k in RODS: pert[:, i] += rng.uniform(-play * ev.play[k], play * ev.play[k], n)
     rep = lambda a: np.repeat(a, n, 0)
     dd = {k: (rep(v) if isinstance(v, np.ndarray) and v.shape[:1] == (1,) else v) for k, v in d.items()}
     dd = unflatten(np.repeat(flat, n, 0) + pert, ev.ec, dd, ev.tilt)

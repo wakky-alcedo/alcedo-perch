@@ -1,0 +1,471 @@
+{
+ "D8": {
+  "id": "D8",
+  "ec": "hum",
+  "wc": "direct",
+  "parts": [
+   "hum",
+   "uln",
+   "hand",
+   "bc1",
+   "rod1",
+   "rod2",
+   "rod4"
+  ],
+  "fixed_clash": [
+   "rod1 / rod4"
+  ],
+  "n_plans_ok": 12,
+  "n_plans": 16807,
+  "feasible": true,
+  "body_mm": 8.632519096389892,
+  "wing_mm": 6.232519096389893,
+  "within_budget": false,
+  "n_plans_within_budget": 0,
+  "levels": {
+   "hum": 1,
+   "uln": 2,
+   "hand": 0,
+   "bc1": -3,
+   "rod1": 0,
+   "rod2": 3,
+   "rod4": 0
+  },
+  "studs_mm": {
+   "hum-uln": 1.2,
+   "uln-hand": 2.4,
+   "bc1-hum": 4.8,
+   "bc1-rod1": 3.6,
+   "bc1-rod2": 7.2,
+   "rod2-uln": 1.2,
+   "rod4-hum": 5.33,
+   "rod4-hand": 3.45
+  }
+ },
+ "D1": {
+  "id": "D1",
+  "ec": "hum",
+  "wc": "hum",
+  "parts": [
+   "hum",
+   "uln",
+   "hand",
+   "bc1",
+   "rod1",
+   "rod2",
+   "bc2",
+   "rod3",
+   "rod4"
+  ],
+  "fixed_clash": [],
+  "n_plans_ok": 0,
+  "n_plans": 823543,
+  "feasible": false,
+  "min_clashes": 5,
+  "body_mm": 6.240827591207225,
+  "wing_mm": 5.6365675738155065,
+  "clashes": [
+   "hum / rod1",
+   "uln / rod1",
+   "rod1 / rod2",
+   "bc2 / rod3",
+   "pin rod2-uln / hum"
+  ],
+  "levels": {
+   "hum": -1,
+   "uln": 0,
+   "hand": 2,
+   "bc1": 1,
+   "rod1": 0,
+   "rod2": -2,
+   "bc2": 1,
+   "rod3": 1,
+   "rod4": 0
+  },
+  "studs_mm": {
+   "hum-uln": 1.2,
+   "uln-hand": 2.4,
+   "bc1-hum": 2.4,
+   "bc1-rod1": 1.2,
+   "bc1-rod2": 3.6,
+   "rod2-uln": 2.4,
+   "bc2-hum": 2.4,
+   "rod3-uln": 1.2,
+   "bc2-rod3": 0.0,
+   "bc2-rod4": 1.67,
+   "rod4-hand": 3.59
+  }
+ },
+ "D2": {
+  "id": "D2",
+  "ec": "ulna",
+  "wc": "hum",
+  "parts": [
+   "hum",
+   "uln",
+   "hand",
+   "bc1",
+   "rod1",
+   "rod2",
+   "bc2",
+   "rod3",
+   "rod4"
+  ],
+  "fixed_clash": [
+   "rod1 / rod4"
+  ],
+  "n_plans_ok": 0,
+  "n_plans": 823543,
+  "feasible": false,
+  "min_clashes": 2,
+  "body_mm": 7.403319055736782,
+  "wing_mm": 6.347874064980553,
+  "clashes": [
+   "hum / rod1",
+   "pin bc2-hum / rod1"
+  ],
+  "levels": {
+   "hum": -1,
+   "uln": 0,
+   "hand": -2,
+   "bc1": 1,
+   "rod1": 0,
+   "rod2": 0,
+   "bc2": -3,
+   "rod3": -2,
+   "rod4": 0
+  },
+  "studs_mm": {
+   "hum-uln": 1.2,
+   "uln-hand": 2.4,
+   "bc1-uln": 1.2,
+   "bc1-rod1": 1.2,
+   "bc1-rod2": 1.2,
+   "rod2-hum": 1.2,
+   "bc2-hum": 2.4,
+   "rod3-uln": 2.4,
+   "bc2-rod3": 1.2,
+   "bc2-rod4": 1.65,
+   "rod4-hand": 4.14
+  }
+ },
+ "D3": {
+  "id": "D3",
+  "ec": "hum",
+  "wc": "direct",
+  "parts": [
+   "hum",
+   "uln",
+   "hand",
+   "bc1",
+   "rod1",
+   "rod2",
+   "rod4"
+  ],
+  "fixed_clash": [
+   "rod1 / rod4"
+  ],
+  "n_plans_ok": 126,
+  "n_plans": 16807,
+  "feasible": true,
+  "body_mm": 5.305690908070288,
+  "wing_mm": 5.510354532670458,
+  "within_budget": false,
+  "n_plans_within_budget": 0,
+  "levels": {
+   "hum": 0,
+   "uln": 1,
+   "hand": 0,
+   "bc1": 1,
+   "rod1": 0,
+   "rod2": -1,
+   "rod4": 0
+  },
+  "studs_mm": {
+   "hum-uln": 1.2,
+   "uln-hand": 1.2,
+   "bc1-hum": 1.2,
+   "bc1-rod1": 1.2,
+   "bc1-rod2": 2.4,
+   "rod2-uln": 2.4,
+   "rod4-hum": 3.05,
+   "rod4-hand": 2.67
+  }
+ },
+ "D4": {
+  "id": "D4",
+  "ec": "ulna",
+  "wc": "direct",
+  "parts": [
+   "hum",
+   "uln",
+   "hand",
+   "bc1",
+   "rod1",
+   "rod2",
+   "rod4"
+  ],
+  "fixed_clash": [],
+  "n_plans_ok": 58,
+  "n_plans": 16807,
+  "feasible": true,
+  "body_mm": 9.362279511003841,
+  "wing_mm": 9.362279511003841,
+  "within_budget": false,
+  "n_plans_within_budget": 0,
+  "levels": {
+   "hum": 1,
+   "uln": -2,
+   "hand": 1,
+   "bc1": -3,
+   "rod1": 0,
+   "rod2": 2,
+   "rod4": 0
+  },
+  "studs_mm": {
+   "hum-uln": 3.6,
+   "uln-hand": 3.55,
+   "bc1-uln": 1.2,
+   "bc1-rod1": 3.6,
+   "bc1-rod2": 6.0,
+   "rod2-hum": 1.2,
+   "rod4-hum": 3.38,
+   "rod4-hand": 6.39
+  }
+ },
+ "D5": {
+  "id": "D5",
+  "ec": "direct",
+  "wc": "hum",
+  "parts": [
+   "hum",
+   "uln",
+   "hand",
+   "rod1",
+   "bc2",
+   "rod3",
+   "rod4"
+  ],
+  "fixed_clash": [],
+  "n_plans_ok": 0,
+  "n_plans": 16807,
+  "feasible": false,
+  "min_clashes": 1,
+  "body_mm": 7.032775511625134,
+  "wing_mm": 6.038309670995458,
+  "clashes": [
+   "hand / rod4"
+  ],
+  "levels": {
+   "hum": -2,
+   "uln": -1,
+   "hand": -3,
+   "rod1": 0,
+   "bc2": -1,
+   "rod3": -3,
+   "rod4": 0
+  },
+  "studs_mm": {
+   "hum-uln": 1.2,
+   "uln-hand": 2.5,
+   "rod1-uln": 9.07,
+   "bc2-hum": 1.2,
+   "rod3-uln": 2.4,
+   "bc2-rod3": 2.4,
+   "bc2-rod4": 6.13,
+   "rod4-hand": 0.96
+  }
+ },
+ "D6": {
+  "id": "D6",
+  "ec": "direct",
+  "wc": "direct",
+  "parts": [
+   "hum",
+   "uln",
+   "hand",
+   "rod1",
+   "rod4"
+  ],
+  "fixed_clash": [],
+  "n_plans_ok": 9,
+  "n_plans": 343,
+  "feasible": true,
+  "body_mm": 8.262677669892586,
+  "wing_mm": 10.662677669892581,
+  "within_budget": false,
+  "n_plans_within_budget": 0,
+  "levels": {
+   "hum": -3,
+   "uln": -1,
+   "hand": -3,
+   "rod1": 0,
+   "rod4": 0
+  },
+  "studs_mm": {
+   "hum-uln": 2.4,
+   "uln-hand": 2.55,
+   "rod1-uln": 9.03,
+   "rod4-hum": 7.36,
+   "rod4-hand": 3.59
+  }
+ },
+ "D7": {
+  "id": "D7",
+  "ec": "ulna",
+  "wc": "hum",
+  "parts": [
+   "hum",
+   "uln",
+   "hand",
+   "bc1",
+   "rod1",
+   "rod2",
+   "bc2",
+   "rod3",
+   "rod4"
+  ],
+  "fixed_clash": [
+   "rod1 / rod4"
+  ],
+  "n_plans_ok": 0,
+  "n_plans": 823543,
+  "feasible": false,
+  "min_clashes": 2,
+  "body_mm": 7.43483780945472,
+  "wing_mm": 6.356138292403143,
+  "clashes": [
+   "hum / rod1",
+   "pin bc2-hum / rod1"
+  ],
+  "levels": {
+   "hum": -1,
+   "uln": 0,
+   "hand": -2,
+   "bc1": 1,
+   "rod1": 0,
+   "rod2": 0,
+   "bc2": -3,
+   "rod3": -2,
+   "rod4": 0
+  },
+  "studs_mm": {
+   "hum-uln": 1.2,
+   "uln-hand": 2.4,
+   "bc1-uln": 1.2,
+   "bc1-rod1": 1.2,
+   "bc1-rod2": 1.2,
+   "rod2-hum": 1.2,
+   "bc2-hum": 2.4,
+   "rod3-uln": 2.4,
+   "bc2-rod3": 1.2,
+   "bc2-rod4": 1.69,
+   "rod4-hand": 4.12
+  }
+ },
+ "D9": {
+  "id": "D9",
+  "ec": "ulna",
+  "wc": "hum",
+  "parts": [
+   "hum",
+   "uln",
+   "hand",
+   "bc1",
+   "rod1",
+   "rod2",
+   "bc2",
+   "rod3",
+   "rod4"
+  ],
+  "fixed_clash": [
+   "rod1 / rod4"
+  ],
+  "n_plans_ok": 0,
+  "n_plans": 823543,
+  "feasible": false,
+  "min_clashes": 2,
+  "body_mm": 7.451678260570096,
+  "wing_mm": 6.383853027476661,
+  "clashes": [
+   "hum / rod1",
+   "pin bc2-hum / rod1"
+  ],
+  "levels": {
+   "hum": -1,
+   "uln": 0,
+   "hand": -3,
+   "bc1": 1,
+   "rod1": 0,
+   "rod2": 0,
+   "bc2": -3,
+   "rod3": -2,
+   "rod4": 0
+  },
+  "studs_mm": {
+   "hum-uln": 1.2,
+   "uln-hand": 3.6,
+   "bc1-uln": 1.2,
+   "bc1-rod1": 1.2,
+   "bc1-rod2": 1.2,
+   "rod2-hum": 1.2,
+   "bc2-hum": 2.4,
+   "rod3-uln": 2.4,
+   "bc2-rod3": 1.2,
+   "bc2-rod4": 1.7,
+   "rod4-hand": 3.0
+  }
+ },
+ "D10": {
+  "id": "D10",
+  "ec": "ulna",
+  "wc": "hum",
+  "parts": [
+   "hum",
+   "uln",
+   "hand",
+   "bc1",
+   "rod1",
+   "rod2",
+   "bc2",
+   "rod3",
+   "rod4"
+  ],
+  "fixed_clash": [
+   "rod1 / rod4"
+  ],
+  "n_plans_ok": 0,
+  "n_plans": 823543,
+  "feasible": false,
+  "min_clashes": 1,
+  "body_mm": 7.455040641033969,
+  "wing_mm": 6.778839499951445,
+  "clashes": [
+   "hum / rod1"
+  ],
+  "levels": {
+   "hum": -1,
+   "uln": 0,
+   "hand": -2,
+   "bc1": 1,
+   "rod1": 0,
+   "rod2": 0,
+   "bc2": -3,
+   "rod3": -2,
+   "rod4": 0
+  },
+  "studs_mm": {
+   "hum-uln": 1.2,
+   "uln-hand": 2.4,
+   "bc1-uln": 1.2,
+   "bc1-rod1": 1.2,
+   "bc1-rod2": 1.2,
+   "rod2-hum": 1.2,
+   "bc2-hum": 2.4,
+   "rod3-uln": 2.4,
+   "bc2-rod3": 1.2,
+   "bc2-rod4": 1.54,
+   "rod4-hand": 4.57
+  }
+ }
+}

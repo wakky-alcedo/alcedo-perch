@@ -36,6 +36,7 @@ GAIN_MAX = 2.5                        # max joint-angle change per degree of mot
 SIG_MOTOR = 0.5 / np.sqrt(12)         # motor commanded in 0.5 deg steps -> uniform quantisation error, sigma (deg)
 SIG_DIM = 0.05 / np.sqrt(3); CLEAR = 0.01; SIG_CL = 2 * CLEAR / np.sqrt(3)
 TMIN_DIRECT = 25.0
+HINGE = True                                  # include the main-hinge play (S, E, W) in the rod length play
 # interference: radii (mm) of the part envelopes, gap between parts in one layer, layer thickness and budgets
 R_BONE, R_ROD, R_BOSS, R_PIN, GAP = 1.5, 1.0, 2.0, 1.5, 0.3   # bone / bracket, rod shank, boss around a 681 bearing, resin pin / ball boss
 LAYER_T, LAYERS_ALL, LAYERS_WING = 1.2, 4, 2                   # 681 width 1 mm + 0.2 washer; 5 mm body / 3 mm wing
@@ -87,11 +88,11 @@ class Evaluator:
         rng = np.random.default_rng(0)
         v = self.body.vis; self.vis = v[rng.choice(len(v), min(nvis, len(v)), replace=False)]
         self.vars = var_list(ec, wc, tilt)
-        self.dims = dim_list(ec, tilt, wc)
+        self.dims = dim_list(ec, tilt, wc); self.play = rod_play(ec, wc, HINGE)
         self.tmin_min = TMIN_DIRECT if 'direct' in (ec, wc) else TMIN_MIN
         sig = []
         for k, n in self.dims:
-            s = SIG_DIM ** 2 + ((ROD_PLAY[k] / np.sqrt(3)) ** 2 if k in RODS else 0); sig += [np.sqrt(s)] * n
+            s = SIG_DIM ** 2 + ((self.play[k] / np.sqrt(3)) ** 2 if k in RODS else 0); sig += [np.sqrt(s)] * n
         self.sig = np.array(sig)
 
     # ------------------------------------------------------------ pieces

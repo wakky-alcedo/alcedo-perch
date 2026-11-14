@@ -40,6 +40,21 @@ RODS = ['Lc1', 'L2', 'Lc3', 'L4', 'Ld']
 # rod-length play = sum of the radial clearances of its two end joints (mm): 681 bearing 0.01, ball joint / rod end 0.03,
 # printed resin pin on the hand (no bearing, light wing tip) 0.05
 ROD_PLAY = dict(Lc1=0.06, L2=0.02, Lc3=0.02, L4=0.08, Ld=0.06)
+# radial play of the main hinges (mm): shoulder (motor-side bearings) and elbow 681 bearings, wrist resin pin (wing tip, light).
+# A hinge's play moves the distal bone rigidly against the proximal one, so it adds to the length play of every rod that crosses it.
+HINGE_PLAY = dict(S=0.01, E=0.01, W=0.05)
+CROSS = {('Lc1', 'hum'): 'S', ('Lc1', 'ulna'): 'SE', ('L2', 'hum'): 'E', ('L2', 'ulna'): 'E', ('Ld', 'direct'): 'SE',
+         ('Lc3', 'hum'): 'E', ('Lc3', 'ulna'): 'E', ('L4', 'hum'): 'EW', ('L4', 'ulna'): 'W', ('L4', 'direct'): 'EW'}
+
+
+def rod_play(ec, wc, hinge=True):
+    """length play per rod: its two end joints (+ the main hinges it crosses)"""
+    out = {}
+    for k, v in ROD_PLAY.items():
+        side = wc if k in ('Lc3', 'L4') else ec
+        if (k, side) not in CROSS: continue
+        out[k] = v + (sum(HINGE_PLAY[h] for h in CROSS[(k, side)]) if hinge else 0)
+    return out
 
 
 def var_list(ec, wc, tilt=False):
