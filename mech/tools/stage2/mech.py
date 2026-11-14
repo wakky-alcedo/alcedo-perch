@@ -34,6 +34,8 @@ DIMS_WT = [('G2', 2), ('h3', 2), ('rb3', 1), ('Lc3', 1), ('b4', 3), ('L4', 1), (
 # design B (tilted wrist): wrist-axis tilt tw (deg), primary root twist phi (deg), shift of the folded primary angles dl (deg),
 # out-of-plane offsets of the hand lever (qz) and of the rod-4 ball on bellcrank 2 (b4z). Appended after the planar variables.
 TILT_VARS = [('tw', -85, 85), ('phi', -20, 20), ('dl', -60, 10), ('qz', -8, 8), ('b4z', -12, 12)]
+# stage 2e design A: the planar wing (wrist hinge not tilted, no root twist of the primaries) in the same model as design B
+TILT_VARS_A = [v for v in TILT_VARS if v[0] not in ('tw', 'phi')]
 DIMS_WD = [('b4', 3), ('L4', 1), ('q', 3)]                                                       # direct wrist rod: b4 = anchor on the humerus
 DIMS_B = [('LH', 1), ('LU', 1)]
 RODS = ['Lc1', 'L2', 'Lc3', 'L4', 'Ld']
@@ -58,7 +60,7 @@ def rod_play(ec, wc, hinge=True):
 
 
 def var_list(ec, wc, tilt=False):
-    return POSE_VARS + ELBOW_VARS[ec] + WRIST_VARS[wc] + (TILT_VARS if tilt else [])
+    return POSE_VARS + ELBOW_VARS[ec] + WRIST_VARS[wc] + ((TILT_VARS_A if tilt == 'A' else TILT_VARS) if tilt else [])
 
 
 def dim_list(ec, tilt=False, wc=None):
@@ -133,7 +135,7 @@ def synthesise(ec, wc, X, u, tilt=False):
     Et = E0 + (x['E1'][:, None] - E0) * u; Mt = M0 + (x['M1'][:, None] - M0) * u
     pe_t, psi_t = np.pi - Et * D, -(np.pi - Mt * D)
     d = dict(LH=np.full(P, LH), LU=np.full(P, LU), axis=axis, th=th, Rf=Rf, E1=x['E1'], M1=x['M1'], fz=x['fz'], ec=ec, wc=wc, tilt=tilt)
-    if tilt: d.update(tw=np.radians(x['tw']), phi=np.radians(x['phi']), dl=x['dl'])
+    if tilt: d.update(tw=np.radians(x['tw']) if 'tw' in x else np.zeros(P), phi=np.radians(x['phi']) if 'phi' in x else np.zeros(P), dl=x['dl'])
     ref = dict(pe=pe_t, psi=psi_t)
     E = mv(Rh, np.array([LH, 0, 0])); Ru = Rh @ rz3(pe_t)
     ok = np.ones(P, bool); res_e = np.zeros(P)

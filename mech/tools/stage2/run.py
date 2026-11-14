@@ -25,8 +25,9 @@ class Log(Callback):
         self.rows.append([algo.n_gen, feas.sum(), cv.min()] + list(best))
 
 
-def main(ec, wc, seed, gens=300, pop=300, width=45, tilt=False):
-    prob = LinkProblem(ec, wc, width, tilt)
+def main(ec, wc, seed, gens=300, pop=300, width=45, tilt=False, design=None):
+    if design: tilt = 'A' if design == 'A' else True        # stage 2e: design A (planar) or B (tilted wrist), real-height layer plan
+    prob = LinkProblem(ec, wc, width, tilt, stack=bool(design))
     ref = get_reference_directions('energy', 6, 120, seed=1)
     # initial population: half uniform random, half with the pose near the best pose-only solution (the linkage part random)
     rng = np.random.default_rng(seed); xl, xu = prob.xl, prob.xu
@@ -37,25 +38,31 @@ def main(ec, wc, seed, gens=300, pop=300, width=45, tilt=False):
     pj = min(cands, key=lambda r: r['cost'])['x']           # best pose-only solution over its seeds
     half = pop // 2
     X0[:half, :6] = np.clip(np.array(pj[:6]) + rng.normal(0, 1, (half, 6)) * np.array([0.08, 0.08, 0.08, 1.5, 1.5, 0.5]), xl[:6], xu[:6])
-    if tilt:                                    # tw, phi, dl from the pose-only optimum too (they are the last 5 variables but two)
+    if tilt == 'A':                             # only dl from the pose-only optimum (tw = phi = 0)
+        j = len(xl) - 3
+        X0[:half, j] = np.clip(pj[8] + rng.normal(0, 4.0, half), xl[j], xu[j])
+    elif tilt:                                  # tw, phi, dl from the pose-only optimum too (they are the last 5 variables but two)
         j = len(xl) - 5
         X0[:half, j:j + 3] = np.clip(np.array(pj[6:9]) + rng.normal(0, 1, (half, 3)) * np.array([4.0, 3.0, 4.0]), xl[j:j + 3], xu[j:j + 3])
-    old = ROOT / 'results' / 'stage2' / 'runs_tilt' / f'{ec}_{wc}_w{int(width)}_s{seed}.npz'
+    old = ROOT / 'results' / 'stage2' / ('runs_2d' if design else 'runs_tilt') / f'{ec}_{wc}_w{int(width)}_s{seed}.npz'
     if tilt and old.exists():
-        Xo = np.load(old)['X']; m = min(len(Xo), pop // 4); X0[half:half + m] = Xo[rng.choice(len(Xo), m, replace=False)]
+        Xo = np.load(old)['X']
+        if tilt == 'A': Xo = np.delete(Xo, [Xo.shape[1] - 5, Xo.shape[1] - 4], 1)       # drop tw, phi
+        m = min(len(Xo), pop // 4); X0[half:half + m] = np.clip(Xo[rng.choice(len(Xo), m, replace=False)], xl, xu)
     algo = NSGA3(ref_dirs=ref, pop_size=pop, sampling=X0, eliminate_duplicates=True)
     log = Log(); t = time.time()
     res = minimize(prob, algo, ('n_gen', gens), seed=seed, callback=log, verbose=False)
     pop_ = res.pop; X, F, G = pop_.get('X'), pop_.get('F'), pop_.get('G')
-    out = ROOT / 'results' / 'stage2' / ('runs_2d' if tilt else 'runs'); out.mkdir(parents=True, exist_ok=True)
-    np.savez_compressed(out / f'{ec}_{wc}_w{int(width)}_s{seed}.npz', X=X, F=F, G=G, log=np.array(log.rows), time=time.time() - t,
+    out = ROOT / 'results' / 'stage2' / ('runs_2e' if design else 'runs_2d' if tilt else 'runs'); out.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(out / f'{design + "-" if design else ""}{ec}_{wc}_w{int(width)}_s{seed}.npz', X=X, F=F, G=G, log=np.array(log.rows), time=time.time() - t,
                         vars=np.array([v[0] for v in prob.ev.vars]))
     feas = np.all(G <= 0, 1)
-    print(f'{ec}/{wc}{" tilt" if tilt else ""} seed {seed}: {time.time() - t:.0f}s, feasible {feas.sum()}/{len(X)}',
+    print(f'{design or ""}{ec}/{wc}{" tilt" if tilt else ""} seed {seed}: {time.time() - t:.0f}s, feasible {feas.sum()}/{len(X)}',
           ('best ' + ' '.join(f'{v:.2f}' for v in F[feas].min(0))) if feas.any() else f'min CV {np.maximum(G, 0).sum(1).min():.2f}', flush=True)
 
 
 if __name__ == '__main__':
     a = sys.argv[1:]
     tilt = 'tilt' in a; a = [v for v in a if v != 'tilt']
-    main(a[0], a[1], int(a[2]), *(int(v) for v in a[3:6]), tilt=tilt)
+    design = next((v[1] for v in a if v in ('dA', 'dB')), None); a = [v for v in a if v not in ('dA', 'dB')]
+    main(a[0], a[1], int(a[2]), *(int(v) for v in a[3:6]), tilt=tilt, design=design)

@@ -7,11 +7,12 @@ wrist (signs chosen for the best result). Masses are ESTIMATES: forearm + second
 hand + primaries M_H at W + 1.2 (T - W). Forces scale linearly with them.
 usage: loads.py   -> results/stage2/2d/loads.json"""
 import json, pathlib, itertools, numpy as np
+import sys
 from problem import Evaluator, U
 from mech import forward, RODS
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-OUT = ROOT / 'results' / 'stage2' / '2d'
+OUT = ROOT / 'results' / 'stage2' / ('2e' if '2e' in sys.argv else '2d')
 M_U, M_H = 1.5e-3, 1.0e-3          # kg (estimates)
 G0 = 9.81
 H = 1e-3                            # mm, finite-difference step on a rod length
@@ -23,7 +24,7 @@ def gravity_dirs(n=200):
 
 
 def run(c):
-    ev = Evaluator(c['ec'], c['wc'], 45, tilt=True)
+    ev = Evaluator(c['ec'], c['wc'], 45, tilt=('A' if c.get('dsg') == 'A' else True))
     F, Gc, e = ev(np.array([c['x']]), extra=True); d, f = e['d'], e['f']
     rods = [k for k in RODS if k in d]
     rows = []

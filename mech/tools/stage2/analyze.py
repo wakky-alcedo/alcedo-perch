@@ -12,10 +12,11 @@ from problem import Evaluator, U, SIG_DIM, CLEAR
 from mech import *
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-TILT = 'tilt' in sys.argv; S2D = '2d' in sys.argv; sys.argv = [v for v in sys.argv if v not in ('tilt', '2d')]
-RUNS = ROOT / 'results' / 'stage2' / ('runs_2d' if S2D else 'runs_tilt' if TILT else 'runs')
-OUT = ROOT / 'results' / 'stage2' / ('2d' if S2D else 'tilt' if TILT else ''); OUT.mkdir(exist_ok=True); LOCAL = ROOT / 'results' / 'local'
-PREFIX = 'D' if S2D else 'B' if TILT else 'c'
+TILT = 'tilt' in sys.argv; S2D = '2d' in sys.argv; S2E = '2e' in sys.argv; sys.argv = [v for v in sys.argv if v not in ('tilt', '2d', '2e')]
+TILT = TILT or S2E
+RUNS = ROOT / 'results' / 'stage2' / ('runs_2e' if S2E else 'runs_2d' if S2D else 'runs_tilt' if TILT else 'runs')
+OUT = ROOT / 'results' / 'stage2' / ('2e' if S2E else '2d' if S2D else 'tilt' if TILT else ''); OUT.mkdir(exist_ok=True); LOCAL = ROOT / 'results' / 'local'
+PREFIX = 'E' if S2E else 'D' if S2D else 'B' if TILT else 'c'
 WIDTH = int(sys.argv[1]) if len(sys.argv) > 1 else 45
 OBJ = ['joint error (deg)', 'min transmission (deg)', 'protrusion (mm)', 'sensitivity 2σ (deg)', 'fold fit', 'max part (mm)']
 CFG_JA = {('body', 'ulna'): '肘BC:体（スティーブンソン型・空間）／手首BC:尺骨', ('hum', 'ulna'): '肘BC:上腕骨（ワット型）／手首BC:尺骨',
@@ -34,10 +35,22 @@ def cheb(F):
 def load():
     runs = []
     for f in sorted(glob.glob(str(RUNS / f'*_w{WIDTH}_s*.npz'))):
-        name = pathlib.Path(f).stem; ec, wc, w, s = name.split('_')
+        name = pathlib.Path(f).stem; dsg = ''
+        if S2E: dsg, name = name.split('-', 1)
+        ec, wc, w, s = name.split('_')
         d = np.load(f)
-        runs.append(dict(ec=ec, wc=wc, seed=int(s[1:]), X=d['X'], F=d['F'], G=d['G'], log=d['log'], time=float(d['time'])))
+        runs.append(dict(ec=ec, wc=wc, dsg=dsg, seed=int(s[1:]), X=d['X'], F=d['F'], G=d['G'], log=d['log'], time=float(d['time'])))
     return runs
+
+
+def make_ev(ec, wc, width, dsg=''):
+    """evaluator of a configuration (stage 2e: design A planar / B tilted, with the real-height layer plan)"""
+    if dsg: return Evaluator(ec, wc, width, tilt='A' if dsg == 'A' else True, stack=True)
+    return Evaluator(ec, wc, width, tilt=TILT)
+
+
+cname = lambda c: (c[2] + ':' if len(c) > 2 and c[2] else '') + f'{c[0]}/{c[1]}'
+clabel = lambda c: (('案A（平面）' if c[2] == 'A' else '案B（手首傾き）') + ' ' if len(c) > 2 and c[2] else '') + CFG_JA[(c[0], c[1])]
 
 
 def monte_carlo(ev, x, n=400, amp=0.05, play=1.0, seed=0):
@@ -77,47 +90,48 @@ def describe(ev, x):
     if d['tilt']: r.update(tw=float(np.degrees(d['tw'][0])), phi=float(np.degrees(d['phi'][0])), dl=float(d['dl'][0]))
     if 'layers' in e: r.update(layers=int(e['layers'][0]), layers_wing=int(e['layers_wing'][0]),
                                clash={f'{a}-{b}': round(float(v[0]), 2) for (a, b), v in e['layx']['pairs'].items() if v[0] < 1.0})
+    if e.get('stack_plans') is not None: r.update(stack_unplaced=int(G[0, -1]), stack_plan=e['stack_plans'][0])
     return r, e
 
 
 def main():
     runs = load()
     print('runs', len(runs))
-    cfgs = sorted({(r['ec'], r['wc']) for r in runs}, key=lambda c: list(CFG_JA).index(c))
+    cfgs = sorted({(r['ec'], r['wc'], r['dsg']) for r in runs}, key=lambda c: (c[2], list(CFG_JA).index(c[:2])))
     seeds_rows = []; allX, allF, allC = [], [], []
     for c in cfgs:
-        for r in [r for r in runs if (r['ec'], r['wc']) == c]:
+        for r in [r for r in runs if (r['ec'], r['wc'], r['dsg']) == c]:
             feas = np.all(r['G'] <= 0, 1)
-            row = dict(ec=c[0], wc=c[1], seed=r['seed'], feasible=int(feas.sum()), time_s=round(r['time']))
+            row = dict(ec=c[0], wc=c[1], dsg=c[2], seed=r['seed'], feasible=int(feas.sum()), time_s=round(r['time']))
             if feas.any():
                 F = r['F'][feas]; s, _ = cheb(F)
                 row.update({f'best_{k}': float(v) for k, v in zip(['err', 'negtmin', 'prot', 'sens', 'fit', 'part'], F.min(0))}, best_cheb=float(s.min()))
                 allX.append(r['X'][feas]); allF.append(F); allC += [c] * feas.sum()
             seeds_rows.append(row)
-    X = [x for a in allX for x in a]; F = np.concatenate(allF); C = np.array([f'{a}/{b}' for a, b in allC])
+    X = [x for a in allX for x in a]; F = np.concatenate(allF); C = np.array([cname(c) for c in allC])
     nd = NonDominatedSorting().do(F, only_non_dominated_front=True)
     print('feasible', len(F), 'global non-dominated', len(nd))
     # seed table
     import csv
-    keys = ['ec', 'wc', 'seed', 'feasible', 'best_err', 'best_negtmin', 'best_prot', 'best_sens', 'best_fit', 'best_part', 'best_cheb', 'time_s']
+    keys = ['dsg', 'ec', 'wc', 'seed', 'feasible', 'best_err', 'best_negtmin', 'best_prot', 'best_sens', 'best_fit', 'best_part', 'best_cheb', 'time_s']
     with open(OUT / 'seeds.csv', 'w', newline='', encoding='utf-8') as fh:
         w = csv.DictWriter(fh, keys); w.writeheader(); [w.writerow({k: (round(v, 3) if isinstance(v, float) else v) for k, v in r.items() if k in keys}) for r in seeds_rows]
     # per config summary over seeds
     summ = {}
     for c in cfgs:
-        rs = [r for r in seeds_rows if (r['ec'], r['wc']) == c]
+        rs = [r for r in seeds_rows if (r['ec'], r['wc'], r['dsg']) == c]
         ch = np.array([r.get('best_cheb', np.nan) for r in rs])
-        summ['/'.join(c)] = dict(label=CFG_JA[c], seeds=len(rs), seeds_with_feasible=int(np.sum([r['feasible'] > 0 for r in rs])),
+        summ[cname(c)] = dict(label=clabel(c), seeds=len(rs), seeds_with_feasible=int(np.sum([r['feasible'] > 0 for r in rs])),
                                  best_cheb_median=float(np.nanmedian(ch)) if np.isfinite(ch).any() else None,
                                  best_cheb_min=float(np.nanmin(ch)) if np.isfinite(ch).any() else None, best_cheb_max=float(np.nanmax(ch)) if np.isfinite(ch).any() else None,
-                                 n_in_global_front=int(np.sum(C[nd] == '/'.join(c))))
+                                 n_in_global_front=int(np.sum(C[nd] == cname(c))))
     print(json.dumps(summ, ensure_ascii=False, indent=1))
     # candidates: best compromise per configuration + global extremes among reasonable designs
     s, z = cheb(F)
     cand = []
     for c in cfgs:
-        m = np.where(C == '/'.join(c))[0]
-        if len(m): cand.append(('best-' + '/'.join(c), m[np.argmin(s[m])]))
+        m = np.where(C == cname(c))[0]
+        if len(m): cand.append(('best-' + cname(c), m[np.argmin(s[m])]))
     ok = np.where(s <= max(1.6, 1.5 * s.min()))[0]                       # "reasonable" relative to the best compromise
     for k, nm in [(4, 'best-fit'), (3, 'best-sens'), (1, 'best-tmin'), (0, 'best-err')]:
         if len(ok): cand.append((nm, ok[np.argmin(F[ok, k])]))
@@ -127,14 +141,14 @@ def main():
         seen.add(i); uniq.append((nm, i))
     out = []
     for j, (nm, i) in enumerate(uniq):
-        ec, wc = C[i].split('/')
-        ev = Evaluator(ec, wc, WIDTH, tilt=TILT)
+        dsg, ecwc = C[i].split(':') if ':' in C[i] else ('', C[i]); ec, wc = ecwc.split('/')
+        ev = make_ev(ec, wc, WIDTH, dsg)
         r, e = describe(ev, X[i])
-        r.update(id=f"{PREFIX}{j + 1}", pick=nm, ec=ec, wc=wc, label=CFG_JA[(ec, wc)], x=X[i].tolist(), cheb=float(s[i]))
+        r.update(id=f"{PREFIX}{j + 1}", pick=nm, ec=ec, wc=wc, dsg=dsg, label=clabel((ec, wc, dsg)), x=X[i].tolist(), cheb=float(s[i]))
         r['mc005'] = monte_carlo(ev, X[i], amp=0.05); r['mc010'] = monte_carlo(ev, X[i], amp=0.10); r['mc020'] = monte_carlo(ev, X[i], amp=0.20)   # 3D-printer tolerance
         r['mc_play'] = monte_carlo(ev, X[i], amp=0.0)                                  # joint play only (bearings / balls / resin pins)
         for w in (40, 50):
-            ew = Evaluator(ec, wc, w, tilt=TILT); Fw, Gw, xw = ew(X[i][None], extra=True)
+            ew = make_ev(ec, wc, w, dsg); Fw, Gw, xw = ew(X[i][None], extra=True)
             r[f'w{w}'] = dict(fit=float(Fw[0, 4]), prot=float(Fw[0, 2]), sweep=float(xw['sweep'][0]), tip_off=float(xw['fitx']['tipd'][0]))
         out.append(r)
         print(r['id'], nm, ec, wc, 'F', np.round(r['F'], 2), 'MC0.05 p95 %.2f max %.2f fail %.3f' % (r['mc005']['p95'], r['mc005']['max'], r['mc005']['fail']),
@@ -146,7 +160,7 @@ def main():
 
 
 def figures(F, C, nd, cands, seeds_rows, cfgs):
-    cols = dict(zip(['/'.join(c) for c in CFG_JA], ['#1f77b4', '#d62728', '#2ca02c', '#9467bd', '#ff7f0e', '#8c564b', '#17becf', '#bcbd22', '#e377c2', '#7f7f7f']))
+    cols = dict(zip([cname(c) for c in cfgs] if S2E else ['/'.join(c) for c in CFG_JA], ['#1f77b4', '#d62728', '#2ca02c', '#9467bd', '#ff7f0e', '#8c564b', '#17becf', '#bcbd22', '#e377c2', '#7f7f7f']))
     Fp = F.copy(); Fp[:, 1] *= -1
     pairs = [(0, 3), (2, 4), (1, 3), (4, 3), (5, 2), (0, 1)]
     fig, axs = plt.subplots(2, 3, figsize=(20, 12))
@@ -169,11 +183,11 @@ def figures(F, C, nd, cands, seeds_rows, cfgs):
     # seeds
     fig, ax = plt.subplots(1, 1, figsize=(12, 5))
     for i, c in enumerate(cfgs):
-        v = [r['best_cheb'] for r in seeds_rows if (r['ec'], r['wc']) == c and 'best_cheb' in r]
-        ax.scatter(np.full(len(v), i) + np.random.default_rng(0).uniform(-0.15, 0.15, len(v)), v, c=cols['/'.join(c)], s=30)
-        nf = sum(1 for r in seeds_rows if (r['ec'], r['wc']) == c and r['feasible'] == 0)
+        v = [r['best_cheb'] for r in seeds_rows if (r['ec'], r['wc'], r['dsg']) == c and 'best_cheb' in r]
+        ax.scatter(np.full(len(v), i) + np.random.default_rng(0).uniform(-0.15, 0.15, len(v)), v, c=cols[cname(c)], s=30)
+        nf = sum(1 for r in seeds_rows if (r['ec'], r['wc'], r['dsg']) == c and r['feasible'] == 0)
         ax.annotate(f'no feasible: {nf}', (i, 0), fontsize=8, ha='center')
-    ax.set_xticks(range(len(cfgs))); ax.set_xticklabels(['/'.join(c) for c in cfgs]); ax.set_ylabel('best compromise score per seed (lower = better)')
+    ax.set_xticks(range(len(cfgs))); ax.set_xticklabels([cname(c) for c in cfgs]); ax.set_ylabel('best compromise score per seed (lower = better)')
     ax.set_title('seed-to-seed variation (each dot = one NSGA-III run)'); ax.grid(alpha=.3)
     plt.tight_layout(); plt.savefig(OUT / 'seeds.png', dpi=70); plt.close(fig)
 

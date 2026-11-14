@@ -82,8 +82,8 @@ U = np.linspace(0, 1, 41); SUB = np.arange(0, 41, 4)
 
 
 class Evaluator:
-    def __init__(self, ec, wc, width=45, nvis=100, tilt=False):
-        self.ec, self.wc, self.tilt = ec, wc, tilt
+    def __init__(self, ec, wc, width=45, nvis=100, tilt=False, stack=False):
+        self.ec, self.wc, self.tilt, self.stack = ec, wc, tilt, stack
         self.body = Body(width)
         rng = np.random.default_rng(0)
         v = self.body.vis; self.vis = v[rng.choice(len(v), min(nvis, len(v)), replace=False)]
@@ -299,6 +299,10 @@ class Evaluator:
             La, Lw, lx = self.layers(f)
             over = np.maximum(La - LAYERS_ALL, Lw - LAYERS_WING)
             g_lay = np.where(over > 0, over - 0.5 + 0.5 * np.minimum(1, lx['shallowest'] / 4), over)
+            plans = None
+            if self.stack:                               # stage 2e: layer plan in real heights (stack.py) replaces the layer count
+                from stack import stack_constraint
+                g_lay, plans = stack_constraint(self, f, d)
             gE, gM = self.gain(d, f); gmax = np.maximum(gE.max(1), gM.max(1))
         F = np.c_[err, -tmin, prot, sens, fit, part]
         F = np.where(valid[:, None] & np.isfinite(F), F, BIG)
@@ -310,12 +314,12 @@ class Evaluator:
         return F, G, dict(d=d, f=f, err=err, tmin=tmin, marg=marg, prot=prot, sens=sens, fit=fit, part=part, lev=lev, swivel=swiv,
                           sweep=sweep, rods=rods, valid=valid, gain=gmax, res_e=info['res_e'], res_w=info['res_w'], rodforce=sx['rodforce'],
                           worst005=sx['worst005'], fitx=fx, trans=np.stack([t.min(1) for t in f['trans']], 1),
-                          margins=np.stack([m.min(1) for m in f['margins']], 1), layers=La, layers_wing=Lw, layx=lx)
+                          margins=np.stack([m.min(1) for m in f['margins']], 1), layers=La, layers_wing=Lw, layx=lx, stack_plans=plans)
 
 
 class LinkProblem(Problem):
-    def __init__(self, ec, wc, width=45, tilt=False):
-        self.ev = Evaluator(ec, wc, width, tilt=tilt)
+    def __init__(self, ec, wc, width=45, tilt=False, stack=False):
+        self.ev = Evaluator(ec, wc, width, tilt=tilt, stack=stack)
         xl = np.array([v[1] for v in self.ev.vars], float); xu = np.array([v[2] for v in self.ev.vars], float)
         super().__init__(n_var=len(xl), n_obj=6, n_ieq_constr=12, xl=xl, xu=xu)
 

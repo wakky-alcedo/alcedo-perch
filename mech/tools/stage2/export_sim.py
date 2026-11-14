@@ -9,13 +9,19 @@ from mech import *
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 TOOLS = ROOT / 'tools'
 r4 = lambda v: round(float(v), 4)
-TILT = 'tilt' in sys.argv; S2D = '2d' in sys.argv
-MARK = 'STAGE2D' if S2D else 'STAGE2B' if TILT else 'STAGE2'
-CAND = ROOT / 'results' / 'stage2' / ('2d' if S2D else 'tilt' if TILT else '') / 'candidates.json'
+TILT = 'tilt' in sys.argv; S2D = '2d' in sys.argv; S2E = '2e' in sys.argv; TILT = TILT or S2E
+MARK = 'STAGE2E' if S2E else 'STAGE2D' if S2D else 'STAGE2B' if TILT else 'STAGE2'
+CAND = ROOT / 'results' / 'stage2' / ('2e' if S2E else '2d' if S2D else 'tilt' if TILT else '') / 'candidates.json'
+
+
+def make_ev(c):
+    if c.get('dsg'): return Evaluator(c['ec'], c['wc'], 45, tilt='A' if c['dsg'] == 'A' else True, stack=True)
+    return Evaluator(c['ec'], c['wc'], 45, tilt=TILT)
+
 
 
 def entry(c, mesh):
-    ev = Evaluator(c['ec'], c['wc'], 45, tilt=TILT)
+    ev = make_ev(c)
     F, G, e = ev(np.array([c['x']]), extra=True); d = e['d']
     if c['wc'] == 'direct':
         W = dict(b4x=r4(d['b4'][0, 0]), b4y=r4(d['b4'][0, 1]), L4=r4(d['L4'][0]), qx=r4(d['q'][0, 0]), qy=r4(d['q'][0, 1]))
@@ -47,7 +53,12 @@ def entry(c, mesh):
            f"はみ出し（CGメッシュ基準）{F0[2]:.1f} mm、寸法感度2σ {F0[3]:.1f}°（MC ±0.05 mmで95%が{c['mc005']['p95']:.1f}°以内）、"
            f"畳み姿勢の当てはまり{F0[4]:.1f}、最大部品{F0[5]:.0f} mm、ボールジョイント首振り{c['swivel']:.0f}°、羽根の浮かせ{c['fz']:.1f} mm、モーター{c['theta']:.0f}°。")
     occ = mesh['variants']['w45']['occluder']
-    if S2D:
+    if S2E:
+        st = c.get('stack', {})
+        lay = (f"立体の層チェック：{'合格' if st.get('unplaced', 1) == 0 else '不合格'}（ロッド1は竹串で直線、ロッド4は曲げて層を移る）、"
+               f"ガタだけ（蝶番を含む）95%で{c['mc_play']['p95']:.1f}°、±0.2 mmで95%が{c['mc020']['p95']:.1f}°。")
+        why = (f"段階2e（{c['label']}）。手首軸の傾き{np.degrees(d['tw'][0]):.0f}°。" + lay) + why
+    elif S2D:
         lay = f"リンクの重なり{c['layers']}層（翼の部分{c['layers_wing']}層）、ガタだけのずれ 95%で{c['mc_play']['p95']:.1f}°、±0.2 mmで95%が{c['mc020']['p95']:.1f}°。"
         why = (f"段階2d（干渉と関節ごとのガタを入れた再計算、{c['label']}）。手首軸の傾き{np.degrees(d['tw'][0]):.0f}°。" + lay) + why
     elif TILT:
@@ -57,7 +68,7 @@ def entry(c, mesh):
     else:
         why = why0 + why
     v = dict(id=c['id'], status='candidate', date='2026-11-14' if TILT else '2026-11-13',
-             title=(f"段階2d候補 {c['id']}：{c['label']}" if S2D else f"案B候補 {c['id']}：{c['label']}（手首軸 傾き）" if TILT else f"段階2候補 {c['id']}：{c['label']}"), topo=topo, wristMount=c['wc'], elbowMount=em,
+             title=(f"段階2e候補 {c['id']}：{c['label']}" if S2E else f"段階2d候補 {c['id']}：{c['label']}" if S2D else f"案B候補 {c['id']}：{c['label']}（手首軸 傾き）" if TILT else f"段階2候補 {c['id']}：{c['label']}"), topo=topo, wristMount=c['wc'], elbowMount=em,
              why=why, shoulder=dict(axis=[r4(v) for v in d['axis'][0]], Ro=[[r4(v) for v in row] for row in Ro]), body=dict(c=occ['c'], r=occ['r']),
              bodyMesh='w45', featherZ=r4(d['fz'][0]),
              target=dict(AH0=0, AH1=round(float(np.degrees(d['th'][0])), 3), E0=150.0, E1=r4(d['E1'][0]), M0=160.0, M1=r4(d['M1'][0])),
