@@ -1,5 +1,7 @@
 """One NSGA-III run. usage: run.py ec wc seed [gens] [pop] [width] [tilt]  -> results/stage2/runs[_tilt]/<ec>_<wc>_w<width>_s<seed>.npz
-tilt: design B (tilted wrist hinge, spatial rod 4, primaries with root twist / shifted folded angle)."""
+tilt: design B (tilted wrist hinge, spatial rod 4, primaries with root twist / shifted folded angle).
+Since stage 2d (link interference + per-joint play) the design-B runs go to runs_2d/; configurations that were already run in
+runs_tilt/ get a quarter of the initial population from their old final populations (warm start)."""
 import os
 os.environ.setdefault('OMP_NUM_THREADS', '1'); os.environ.setdefault('OPENBLAS_NUM_THREADS', '1'); os.environ.setdefault('MKL_NUM_THREADS', '1')
 import sys, time, pathlib, numpy as np
@@ -38,11 +40,14 @@ def main(ec, wc, seed, gens=300, pop=300, width=45, tilt=False):
     if tilt:                                    # tw, phi, dl from the pose-only optimum too (they are the last 5 variables but two)
         j = len(xl) - 5
         X0[:half, j:j + 3] = np.clip(np.array(pj[6:9]) + rng.normal(0, 1, (half, 3)) * np.array([4.0, 3.0, 4.0]), xl[j:j + 3], xu[j:j + 3])
+    old = ROOT / 'results' / 'stage2' / 'runs_tilt' / f'{ec}_{wc}_w{int(width)}_s{seed}.npz'
+    if tilt and old.exists():
+        Xo = np.load(old)['X']; m = min(len(Xo), pop // 4); X0[half:half + m] = Xo[rng.choice(len(Xo), m, replace=False)]
     algo = NSGA3(ref_dirs=ref, pop_size=pop, sampling=X0, eliminate_duplicates=True)
     log = Log(); t = time.time()
     res = minimize(prob, algo, ('n_gen', gens), seed=seed, callback=log, verbose=False)
     pop_ = res.pop; X, F, G = pop_.get('X'), pop_.get('F'), pop_.get('G')
-    out = ROOT / 'results' / 'stage2' / ('runs_tilt' if tilt else 'runs'); out.mkdir(parents=True, exist_ok=True)
+    out = ROOT / 'results' / 'stage2' / ('runs_2d' if tilt else 'runs'); out.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(out / f'{ec}_{wc}_w{int(width)}_s{seed}.npz', X=X, F=F, G=G, log=np.array(log.rows), time=time.time() - t,
                         vars=np.array([v[0] for v in prob.ev.vars]))
     feas = np.all(G <= 0, 1)

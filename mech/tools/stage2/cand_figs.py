@@ -5,7 +5,7 @@ from body import Body
 from viz import fold_figure
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-TILT = 'tilt' in sys.argv; SUB_ = 'tilt' if TILT else ''
+TILT = 'tilt' in sys.argv; SUB_ = '2d' if '2d' in sys.argv else 'tilt' if TILT else ''
 cands = json.load(open(ROOT / 'results' / 'stage2' / SUB_ / 'candidates.json', encoding='utf-8'))
 b = Body(45)
 for c in cands:

@@ -1,0 +1,73 @@
+[ 4451s] ulna/direct tilt seed 2: 4436s, feasible 300/300 best 2.76 -41.93 0.00 5.54 12.48 15.39
+[ 4455s] ulna/direct tilt seed 5: 4439s, feasible 300/300 best 3.82 -43.97 0.00 2.70 12.54 10.58
+[ 4476s] ulna/direct tilt seed 3: 4461s, feasible 300/300 best 2.10 -44.31 0.00 4.01 12.93 8.49
+[ 4527s] ulna/direct tilt seed 0: 4511s, feasible 300/300 best 3.32 -44.43 2.44 3.47 14.25 9.28
+[ 4578s] ulna/direct tilt seed 4: 4562s, feasible 300/300 best 1.60 -43.33 0.00 2.54 12.85 9.15
+[ 4588s] ulna/direct tilt seed 1: 4572s, feasible 300/300 best 2.42 -46.02 2.60 2.05 12.87 10.73
+[ 4630s] ulna/direct tilt seed 6: 4615s, feasible 300/300 best 2.14 -42.99 0.91 3.54 12.90 8.73
+[ 5973s] ulna/hum tilt seed 6: 5957s, feasible 0/300 min CV 0.50
+[ 5993s] ulna/hum tilt seed 0: 5973s, feasible 300/300 best 0.61 -48.82 1.20 3.66 12.66 13.43
+[ 6026s] ulna/hum tilt seed 3: 6009s, feasible 300/300 best 0.85 -56.42 1.71 7.88 13.46 15.55
+[ 6086s] ulna/hum tilt seed 5: 6070s, feasible 0/300 min CV 0.50
+[ 6145s] ulna/hum tilt seed 7: 6124s, feasible 300/300 best 1.89 -52.66 0.40 4.95 13.15 18.07
+[ 6158s] ulna/hum tilt seed 2: 6139s, feasible 300/300 best 2.63 -54.86 1.80 5.34 12.50 14.99
+[ 6189s] ulna/hum tilt seed 4: 6172s, feasible 300/300 best 0.79 -47.52 2.14 3.27 12.88 14.34
+[ 6318s] ulna/hum tilt seed 1: 6299s, feasible 300/300 best 5.68 -55.87 0.19 7.20 12.92 15.56
+[ 7207s] direct/direct tilt seed 0: 1005s, feasible 300/300 best 1.18 -32.07 9.09 1.74 14.41 10.66
+[ 7647s] hum/direct tilt seed 0: 1517s, feasible 300/300 best 1.45 -37.86 2.15 1.73 13.21 22.24
+[ 7691s] direct/hum tilt seed 0: 1514s, feasible 300/300 best 1.28 -31.83 10.44 1.73 14.35 11.30
+[ 7925s] hum/direct tilt seed 1: 1571s, feasible 300/300 best 2.12 -37.27 1.81 1.72 13.26 12.34
+[ 8336s] hum/hum tilt seed 0: 2278s, feasible 0/300 min CV 0.50
+[ 8488s] hum/hum tilt seed 1: 2255s, feasible 0/300 min CV 0.06
+[ 8665s] direct/direct tilt seed 1: 973s, feasible 300/300 best 1.30 -30.69 9.69 1.71 13.93 11.10
+[ 8700s] ulna/direct tilt seed 8: 4192s, feasible 300/300 best 1.73 -43.27 0.00 3.32 12.70 10.32
+[ 8729s] ulna/direct tilt seed 7: 4243s, feasible 300/300 best 1.96 -44.83 1.11 4.46 12.73 11.12
+[ 8814s] direct/hum tilt seed 1: 1563s, feasible 300/300 best 1.55 -29.94 9.07 1.87 14.24 16.65
+[ 8834s] ulna/direct tilt seed 9: 4220s, feasible 300/300 best 2.23 -41.75 1.43 4.75 12.82 11.02
+[ 8906s] ulna/direct tilt seed 10: 4235s, feasible 300/300 best 4.17 -43.30 0.30 7.90 12.90 9.26
+[ 9503s] direct/direct tilt seed 2: 983s, feasible 300/300 best 1.17 -32.02 8.89 1.79 14.16 11.07
+[ 9541s] hum/direct tilt seed 2: 1589s, feasible 300/300 best 2.05 -37.67 3.13 2.31 13.35 33.28
+[ 9812s] direct/direct tilt seed 3: 969s, feasible 300/300 best 1.11 -31.39 9.24 1.78 15.11 11.22
+[ 9820s] direct/hum tilt seed 2: 1444s, feasible 0/300 min CV 0.09
+[ 9924s] hum/hum tilt seed 2: 2193s, feasible 0/300 min CV 0.50
+[10010s] ulna/direct tilt seed 11: 3966s, feasible 300/300 best 2.21 -44.46 0.25 2.70 13.24 10.56
+[10090s] ulna/hum tilt seed 8: 5604s, feasible 0/300 min CV 2.50
+[10139s] ulna/hum tilt seed 10: 5518s, feasible 300/300 best 1.28 -54.35 2.76 6.60 12.62 17.14
+[10157s] ulna/hum tilt seed 9: 5586s, feasible 0/300 min CV 0.50
+[10204s] direct/hum tilt seed 3: 1451s, feasible 300/300 best 1.33 -29.64 9.82 1.88 15.36 12.55
+[10279s] hum/direct tilt seed 3: 1542s, feasible 300/300 best 2.69 -39.10 3.89 1.93 12.83 28.18
+[10430s] hum/direct tilt seed 4: 1484s, feasible 300/300 best 1.77 -33.69 2.47 1.74 13.96 11.56
+[10529s] direct/direct tilt seed 4: 956s, feasible 300/300 best 1.22 -31.25 9.45 1.73 14.13 11.06
+[10866s] hum/hum tilt seed 3: 2169s, feasible 0/300 min CV 2.39
+[10946s] direct/hum tilt seed 4: 1401s, feasible 300/300 best 0.82 -31.69 9.57 1.84 16.07 17.17
+[10980s] direct/direct tilt seed 5: 942s, feasible 300/300 best 1.40 -31.61 9.22 1.80 14.07 11.15
+[11012s] hum/hum tilt seed 4: 2145s, feasible 0/300 min CV 0.50
+[11132s] direct/direct tilt seed 6: 899s, feasible 300/300 best 1.40 -30.56 8.94 1.81 14.08 11.13
+[11252s] hum/direct tilt seed 5: 1406s, feasible 300/300 best 1.59 -37.09 0.00 1.55 13.59 10.85
+[11309s] ulna/hum tilt seed 11: 5299s, feasible 0/300 min CV 1.50
+[11310s] direct/hum tilt seed 5: 1356s, feasible 300/300 best 1.18 -32.57 10.53 1.81 14.87 16.58
+[11562s] hum/direct tilt seed 6: 1381s, feasible 300/300 best 1.61 -36.28 2.25 1.88 14.11 10.83
+[11625s] direct/hum tilt seed 6: 1427s, feasible 300/300 best 1.14 -30.69 9.23 1.77 14.17 18.60
+[11769s] direct/direct tilt seed 7: 878s, feasible 300/300 best 1.14 -31.55 9.18 1.77 14.52 11.27
+[11881s] hum/direct tilt seed 7: 1421s, feasible 300/300 best 1.47 -38.21 2.04 1.81 13.05 10.59
+[11893s] hum/hum tilt seed 5: 2050s, feasible 300/300 best 1.94 -42.97 2.66 2.19 15.56 19.77
+[11945s] direct/hum tilt seed 7: 1366s, feasible 300/300 best 1.03 -31.54 9.25 1.86 14.22 20.23
+[12039s] direct/direct tilt seed 8: 870s, feasible 300/300 best 1.28 -31.74 9.20 1.82 15.07 10.59
+[12183s] hum/hum tilt seed 6: 2050s, feasible 0/300 min CV 0.50
+[12399s] hum/hum tilt seed 7: 2085s, feasible 300/300 best 1.79 -40.88 5.64 2.54 13.22 40.66
+[12414s] hum/direct tilt seed 8: 1404s, feasible 300/300 best 1.48 -37.96 0.00 1.59 13.47 11.12
+[12452s] direct/hum tilt seed 8: 1410s, feasible 300/300 best 1.08 -31.54 9.31 1.87 14.55 11.13
+[12506s] direct/direct tilt seed 9: 911s, feasible 300/300 best 1.14 -31.36 9.28 1.75 14.35 11.26
+[12628s] hum/direct tilt seed 9: 1297s, feasible 300/300 best 2.47 -35.04 3.38 1.80 14.78 25.43
+[12657s] direct/hum tilt seed 9: 1325s, feasible 300/300 best 1.58 -29.96 9.36 1.84 13.26 11.36
+[12742s] direct/direct tilt seed 10: 822s, feasible 300/300 best 1.29 -32.26 8.98 1.73 14.52 11.19
+[12841s] hum/hum tilt seed 8: 1866s, feasible 300/300 best 1.07 -41.39 0.31 1.59 13.90 20.29
+[12934s] hum/direct tilt seed 10: 1142s, feasible 300/300 best 1.08 -37.20 1.15 1.64 15.28 15.74
+[12997s] direct/hum tilt seed 10: 1091s, feasible 300/300 best 1.39 -29.99 9.21 1.90 14.35 10.68
+[13008s] direct/direct tilt seed 11: 581s, feasible 300/300 best 1.26 -33.02 10.45 1.70 15.61 10.77
+[13018s] hum/hum tilt seed 9: 1735s, feasible 300/300 best 2.16 -43.29 1.61 2.18 13.42 16.32
+[13054s] hum/direct tilt seed 11: 976s, feasible 300/300 best 1.88 -37.68 3.14 2.11 13.62 29.29
+[13091s] direct/hum tilt seed 11: 879s, feasible 300/300 best 1.68 -30.09 8.82 1.91 14.09 11.19
+[13115s] hum/hum tilt seed 10: 1457s, feasible 0/300 min CV 0.50
+[13174s] hum/hum tilt seed 11: 1202s, feasible 0/300 min CV 0.50
+done 13174.326685905457

@@ -7,7 +7,8 @@ PY = sys.executable
 TILT = 'tilt' in sys.argv; argv = [v for v in sys.argv if v != 'tilt']
 gens, pop, nseeds, workers = (int(v) for v in argv[1:5]); width = argv[5] if len(argv) > 5 else '45'
 CFG = [('hum', 'ulna'), ('body', 'ulna'), ('ulna', 'ulna'), ('hum', 'hum'), ('body', 'hum'), ('ulna', 'hum')]
-if TILT: CFG = [c for c in CFG if c[0] != 'body']
+# stage 2d: the two bellcrank configurations that survived +-0.2 mm, and the ones with one or no bellcrank (direct rods)
+if TILT: CFG = [('hum', 'hum'), ('ulna', 'hum'), ('hum', 'direct'), ('ulna', 'direct'), ('direct', 'hum'), ('direct', 'direct')]
 jobs = [(ec, wc, s) for s in range(nseeds) for ec, wc in CFG]
 # slow configs first so the pool stays busy
 jobs.sort(key=lambda j: 0 if j[0] == 'ulna' else 1)

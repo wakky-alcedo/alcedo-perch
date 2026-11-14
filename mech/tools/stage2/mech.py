@@ -15,39 +15,48 @@ ELBOW_VARS = {
             ('wx', -12, 10), ('wy', -12, 8), ('br1', 0, 1)],
     'ulna': [('Ax', -25, 10), ('Ay', -40, 15), ('Az', -20, 12), ('gx', -6, 32), ('gy', -14, 10), ('rb1', 4, 16), ('Lc1', 4, 40),
              ('kx', 0, 30), ('ky', -14, 10), ('br1', 0, 1)],
+    # no elbow bellcrank: one spatial rod (ball ends) from the body point A straight to the ulna lever w (ulna frame, 3D; x, y fitted, z = wz)
+    'direct': [('Ax', -25, 10), ('Ay', -40, 15), ('Az', -20, 12), ('wz', -8, 8)],
 }
 WRIST_VARS = {
     'ulna': [('G2x', -4, 30), ('G2y', -14, 6), ('h3x', 6, 30), ('h3y', -16, 4), ('rb3', 4, 16), ('Lc3', 4, 40), ('qx', -12, 20), ('qy', -14, 6), ('br3', 0, 1)],
     'hum': [('G2x', -4, 26), ('G2y', -16, 6), ('h3x', -6, 20), ('h3y', -14, 6), ('rb3', 4, 16), ('Lc3', 4, 40), ('qx', -12, 20), ('qy', -14, 6), ('br3', 0, 1)],
+    # no wrist bellcrank (design B only): rod 4 from a fixed point on the humerus (x, y fitted, z = b4z) straight to the hand lever
+    'direct': [('qx', -12, 20), ('qy', -14, 6)],
 }
 # manufactured dimensions (perturbed in the sensitivity analysis) and which of them are rod lengths (+ joint clearance)
 DIMS_E = {'body': [('G1w', 3), ('h1', 3), ('rb1', 1), ('Lc1', 1), ('b2', 3), ('L2', 1), ('w', 2)],
           'hum': [('A', 3), ('g', 2), ('rb1', 1), ('Lc1', 1), ('b2', 2), ('L2', 1), ('w', 2)],
-          'ulna': [('A', 3), ('g', 2), ('rb1', 1), ('Lc1', 1), ('b2', 2), ('L2', 1), ('k', 2)]}
+          'ulna': [('A', 3), ('g', 2), ('rb1', 1), ('Lc1', 1), ('b2', 2), ('L2', 1), ('k', 2)],
+          'direct': [('A', 3), ('wd', 3), ('Ld', 1)]}
 DIMS_W = [('G2', 2), ('h3', 2), ('rb3', 1), ('Lc3', 1), ('b4', 2), ('L4', 1), ('q', 2)]
 DIMS_WT = [('G2', 2), ('h3', 2), ('rb3', 1), ('Lc3', 1), ('b4', 3), ('L4', 1), ('q', 3)]           # tilted wrist: rod 4 is spatial
 # design B (tilted wrist): wrist-axis tilt tw (deg), primary root twist phi (deg), shift of the folded primary angles dl (deg),
 # out-of-plane offsets of the hand lever (qz) and of the rod-4 ball on bellcrank 2 (b4z). Appended after the planar variables.
 TILT_VARS = [('tw', -85, 85), ('phi', -20, 20), ('dl', -60, 10), ('qz', -8, 8), ('b4z', -12, 12)]
+DIMS_WD = [('b4', 3), ('L4', 1), ('q', 3)]                                                       # direct wrist rod: b4 = anchor on the humerus
 DIMS_B = [('LH', 1), ('LU', 1)]
-RODS = ['Lc1', 'L2', 'Lc3', 'L4']
+RODS = ['Lc1', 'L2', 'Lc3', 'L4', 'Ld']
+# rod-length play = sum of the radial clearances of its two end joints (mm): 681 bearing 0.01, ball joint / rod end 0.03,
+# printed resin pin on the hand (no bearing, light wing tip) 0.05
+ROD_PLAY = dict(Lc1=0.06, L2=0.02, Lc3=0.02, L4=0.08, Ld=0.06)
 
 
 def var_list(ec, wc, tilt=False):
     return POSE_VARS + ELBOW_VARS[ec] + WRIST_VARS[wc] + (TILT_VARS if tilt else [])
 
 
-def dim_list(ec, tilt=False):
-    return DIMS_B + DIMS_E[ec] + (DIMS_WT if tilt else DIMS_W)
+def dim_list(ec, tilt=False, wc=None):
+    return DIMS_B + DIMS_E[ec] + (DIMS_WD if wc == 'direct' else DIMS_WT if tilt else DIMS_W)
 
 
 def flatten(d, ec, tilt=False):
-    return np.concatenate([np.reshape(d[k], (d[k].shape[0], -1)) for k, n in dim_list(ec, tilt)], 1)
+    return np.concatenate([np.reshape(d[k], (d[k].shape[0], -1)) for k, n in dim_list(ec, tilt, d['wc'])], 1)
 
 
 def unflatten(F, ec, template, tilt=False):
     out = dict(template); i = 0
-    for k, n in dim_list(ec, tilt):
+    for k, n in dim_list(ec, tilt, template['wc']):
         v = F[:, i:i + n]; out[k] = v[:, 0] if n == 1 else v; i += n
     return out
 
@@ -128,6 +137,11 @@ def synthesise(ec, wc, X, u, tilt=False):
         c, L2, res = sphere_fit(Ub)
         d.update(G1w=G1w, h1=h1, rb1=x['rb1'], Lc1=x['Lc1'], b2=c, L2=L2, w=np.c_[x['wx'], x['wy']], Ab=Ab)
         ref['b1'] = beta; ok &= m1.min(1) > 0; res_e = np.abs(res).max(1)
+    elif ec == 'direct':
+        A = np.c_[x['Ax'], x['Ay'], x['Az']]
+        Au = mtv(Ru, A[:, None] - E)                                                      # body point seen from the ulna
+        c, Ld, res = fit_fixed_z(Au, x['wz'])
+        d.update(A=A, wd=c, Ld=Ld); res_e = np.abs(res).max(1)
     else:
         A = np.c_[x['Ax'], x['Ay'], x['Az']]; g = np.c_[x['gx'], x['gy']]
         if ec == 'hum':
@@ -151,6 +165,13 @@ def synthesise(ec, wc, X, u, tilt=False):
             d.update(A=A, g=g, rb1=x['rb1'], Lc1=x['Lc1'], b2=c, L2=L2, k=k)
         ref['b1'] = b; res_e = np.abs(res).max(1)
     # ---- wrist chain (2D, humerus plane)
+    if wc == 'direct':
+        q = np.c_[x['qx'], x['qy'], x['qz']]
+        Qu = np.array([LU, 0, 0.0]) + mv(hand_rot(psi_t, d['tw']), q[:, None])
+        Qh = np.array([LH, 0, 0.0]) + rotz_apply(pe_t, Qu)                                 # hand lever seen from the humerus
+        c4, L4, res4 = fit_fixed_z(Qh, x['b4z'])
+        d.update(b4=c4, L4=L4, q=q); ref['b3'] = np.zeros((P, N))
+        return d, ref, dict(ok=ok, res_e=res_e, res_w=np.abs(res4).max(1), Rh=Rh)
     G2, h3 = np.c_[x['G2x'], x['G2y']], np.c_[x['h3x'], x['h3y']]; q = np.c_[x['qx'], x['qy']]
     br3 = (x['br3'] > 0.5)[:, None]
     if wc == 'ulna':
@@ -224,6 +245,18 @@ def forward(d, ref, u, Rh=None, detail=False):
             out['pts'] += [G, B1, B2, U, A + 0 * B1] + [A + (B1 - A) * t for t in (.25, .5, .75)] + [B2 + (U - B2) * t for t in (.25, .5, .75)] \
                 + [(G + B1) / 2, (B1 + B2) / 2, (G + B2) / 2, (U + E) / 2]
             out['elbow_pts'] = dict(G1=G, B1=B1, B2=B2, A=A + 0 * B1, U=U)
+    elif ec == 'direct':
+        A = d['A'][:, None]; w = d['wd']
+        c0 = E + mv(Rh, np.c_[0 * w[:, 0], 0 * w[:, 0], w[:, 2]][:, None]) - A
+        c1 = mv(Rh, np.c_[w[:, 0], w[:, 1], 0 * w[:, 0]][:, None]); c2 = mv(Rh, np.c_[-w[:, 1], w[:, 0], 0 * w[:, 0]][:, None])
+        roots, m1 = roots3(c0, c1, c2, d['Ld'][:, None])
+        pe = pick(roots, ref['pe']); Ru = Rh @ rz3(pe); U = E + mv(Ru, w[:, None])
+        out['trans'] += [trans_angle(U - A, np.cross(zh, U - E))]
+        out['margins'] += [m1]
+        if detail:
+            out['swivel'] = [cone_half_angle(unit(U - A)), rod_end_tilt(unit(mtv(Ru, A - U)))]
+            out['pts'] += [U, A + 0 * U] + [A + (U - A) * t for t in (.25, .5, .75)] + [(U + E) / 2]
+            out['elbow_pts'] = dict(A=A + 0 * U, U=U)
     else:   # ulna: unknowns pe, b solved together (Newton from the reference)
         A = d['A'][:, None]; g = d['g'][:, None]; r1 = np.c_[d['rb1'], 0 * d['rb1']][:, None]; b2 = d['b2'][:, None]; k = d['k'][:, None]
         LHv2 = np.array([1.0, 0]) * LHv[..., None]
@@ -257,6 +290,8 @@ def forward(d, ref, u, Rh=None, detail=False):
                 + [(Gw + B1) / 2, (B1 + B2) / 2, (Gw + B2) / 2, (K + E) / 2]
             out['elbow_pts'] = dict(G1=Gw, B1=B1, B2=B2, A=A + 0 * B1, K=K)
     # ---- wrist (2D in the humerus plane)
+    if wc == 'direct':
+        return _wrist_tilt(d, ref, out, Rh, E, pe, None, None, None, None, None, detail, locals().get('b'))
     G2, rb3 = d['G2'][:, None], d['rb3'][:, None]
     LHv2 = np.array([1.0, 0]) * LHv[..., None]
     if wc == 'ulna':
@@ -297,19 +332,31 @@ def forward(d, ref, u, Rh=None, detail=False):
 def _wrist_tilt(d, ref, out, Rh, E, pe, B3, Cu, G2, beta3, m3, detail, b1):
     """wrist chain of design B, worked in the ulna frame (3D): bellcrank 2 planar (pins on rod 3), rod 4 spatial (balls)."""
     wc = d['wc']; P, N = pe.shape
-    G2u = to_ulna3(np.broadcast_to(G2, B3.shape), pe, wc); bu = beta3 - (pe if wc == 'hum' else 0)
-    B3u = to_ulna3(B3, pe, wc); Cuu = to_ulna3(Cu, pe, wc)
-    B4u = G2u + rotz_apply(bu, np.broadcast_to(d['b4'][:, None], B3u.shape))
+    if wc == 'direct':                                                                            # anchor fixed on the humerus
+        B4u = to_ulna3(np.broadcast_to(d['b4'][:, None, :2], (P, N, 2)), pe, 'hum', np.broadcast_to(d['b4'][:, None, 2], (P, N)))
+        beta3 = np.zeros((P, N))
+    else:
+        G2u = to_ulna3(np.broadcast_to(G2, B3.shape), pe, wc); bu = beta3 - (pe if wc == 'hum' else 0)
+        B3u = to_ulna3(B3, pe, wc); Cuu = to_ulna3(Cu, pe, wc)
+        B4u = G2u + rotz_apply(bu, np.broadcast_to(d['b4'][:, None], B3u.shape))
     a = wrist_axis(d['tw'])[:, None]; q0 = mv(rz3(np.full(P, PSI0)), d['q'])[:, None]            # lever at the open pose (ulna frame)
     Wu = np.zeros_like(B4u); Wu[..., 0] = d['LU'][:, None]
     qa = np.sum(q0 * a, -1, keepdims=True) * a; c1 = q0 - qa; c2 = np.cross(a, q0)
     roots, m4 = roots3(Wu + qa - B4u, np.broadcast_to(c1, B4u.shape), np.broadcast_to(c2, B4u.shape), d['L4'][:, None])
     dpsi = pick(roots, ref['psi'] - PSI0); psi = PSI0 + dpsi
     Rw = hand_rot(psi, d['tw']); Q = Wu + mv(Rw, d['q'][:, None])
-    out['trans'] += [trans_angle(to3(B3 - Cu), to3(rot2(np.pi / 2 + 0 * pe, B3 - G2))), trans_angle(Q - B4u, np.cross(np.broadcast_to(a, Q.shape), Q - Wu))]
-    out['margins'] += [m3, m4]
+    if wc != 'direct': out['trans'] += [trans_angle(to3(B3 - Cu), to3(rot2(np.pi / 2 + 0 * pe, B3 - G2)))]; out['margins'] += [m3]
+    out['trans'] += [trans_angle(Q - B4u, np.cross(np.broadcast_to(a, Q.shape), Q - Wu))]
+    out['margins'] += [m4]
     out.update(pe=pe, psi=psi, E=180 - np.degrees(pe), M=180 + np.degrees(psi), b1=b1, b3=beta3)
-    if detail:
+    if detail and wc == 'direct':
+        out['swivel'] = list(out['swivel']) + [rod_end_tilt(unit(rotz_apply(pe, Q - B4u))), rod_end_tilt(unit(mtv(Rw, B4u - Q)))]
+        Ru = Rh @ rz3(pe); tow = lambda v: E + mv(Ru, v)
+        w3 = dict(B4=tow(B4u), Q=tow(Q)); out['wrist_pts'] = w3
+        out['pts'] += [w3['B4'], w3['Q']] + [w3['B4'] + (w3['Q'] - w3['B4']) * t for t in (.25, .5, .75)] + [(w3['Q'] + tow(Wu)) / 2]
+        out['Rh'] = Rh; out['E_w'] = E; out['Ru'] = Ru; out['Rm'] = Ru @ Rw
+        out['W_w'] = tow(Wu); out['T_w'] = out['W_w'] + mv(out['Rm'], np.array([LMAN, 0, 0.0]))
+    elif detail:
         Rb = rz3(bu)                                                                              # bellcrank-2 frame in ulna coords
         out['swivel'] = list(out['swivel']) + [rod_end_tilt(unit(mtv(Rb, Q - B4u))), rod_end_tilt(unit(mtv(Rw, B4u - Q)))]   # rod 4: rod-end bearings
         Ru = Rh @ rz3(pe)

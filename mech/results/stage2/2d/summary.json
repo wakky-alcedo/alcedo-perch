@@ -1,0 +1,61 @@
+{
+ "width": 45,
+ "configs": {
+  "hum/hum": {
+   "label": "肘BC:上腕骨／手首BC:上腕骨",
+   "seeds": 12,
+   "seeds_with_feasible": 4,
+   "best_cheb_median": 2.350580805151271,
+   "best_cheb_min": 1.7665832075326418,
+   "best_cheb_max": 5.63963626369129,
+   "n_in_global_front": 625
+  },
+  "ulna/hum": {
+   "label": "肘BC:尺骨／手首BC:上腕骨",
+   "seeds": 12,
+   "seeds_with_feasible": 7,
+   "best_cheb_median": 2.645169351479264,
+   "best_cheb_min": 1.597119840741314,
+   "best_cheb_max": 3.1246632314696305,
+   "n_in_global_front": 1454
+  },
+  "hum/direct": {
+   "label": "肘BC:上腕骨／手首:直結ロッド",
+   "seeds": 12,
+   "seeds_with_feasible": 12,
+   "best_cheb_median": 2.420813577361943,
+   "best_cheb_min": 1.3805801350117548,
+   "best_cheb_max": 4.172427600948713,
+   "n_in_global_front": 1078
+  },
+  "ulna/direct": {
+   "label": "肘BC:尺骨／手首:直結ロッド",
+   "seeds": 12,
+   "seeds_with_feasible": 12,
+   "best_cheb_median": 2.5185039026897185,
+   "best_cheb_min": 2.054101285568085,
+   "best_cheb_max": 3.37440539800996,
+   "n_in_global_front": 1452
+  },
+  "direct/hum": {
+   "label": "肘:直結ロッド／手首BC:上腕骨",
+   "seeds": 12,
+   "seeds_with_feasible": 11,
+   "best_cheb_median": 9.313059965158388,
+   "best_cheb_min": 8.817338223597275,
+   "best_cheb_max": 10.529004096984863,
+   "n_in_global_front": 710
+  },
+  "direct/direct": {
+   "label": "肘・手首とも直結ロッド（ベルクランクなし）",
+   "seeds": 12,
+   "seeds_with_feasible": 12,
+   "best_cheb_median": 9.207847083326936,
+   "best_cheb_min": 8.894083752312842,
+   "best_cheb_max": 10.445799827575684,
+   "n_in_global_front": 2211
+  }
+ },
+ "n_feasible": 17400,
+ "n_front": 7530
+}

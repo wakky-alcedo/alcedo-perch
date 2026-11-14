@@ -1,6 +1,7 @@
 """Add the stage-2 candidates (results/stage2/candidates.json) to the simulator's version list (part1.html, between the
 __STAGE2 markers), rebuild kingfisher_wing_fold.html, and check that the simulator reproduces the Python kinematics.
-usage: export_sim.py [tilt]   (tilt: design B candidates from results/stage2/tilt/, ids B1.., between the __STAGE2B markers)"""
+usage: export_sim.py [tilt] [2d]   (tilt: design B candidates from results/stage2/tilt/, ids B1.., between the __STAGE2B markers;
+                                    tilt 2d: stage-2d candidates from results/stage2/2d/, ids D1.., between the __STAGE2D markers)"""
 import json, pathlib, subprocess, sys, numpy as np
 from problem import Evaluator, U
 from mech import *
@@ -8,18 +9,25 @@ from mech import *
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 TOOLS = ROOT / 'tools'
 r4 = lambda v: round(float(v), 4)
-TILT = 'tilt' in sys.argv
-MARK = 'STAGE2B' if TILT else 'STAGE2'
-CAND = ROOT / 'results' / 'stage2' / ('tilt' if TILT else '') / 'candidates.json'
+TILT = 'tilt' in sys.argv; S2D = '2d' in sys.argv
+MARK = 'STAGE2D' if S2D else 'STAGE2B' if TILT else 'STAGE2'
+CAND = ROOT / 'results' / 'stage2' / ('2d' if S2D else 'tilt' if TILT else '') / 'candidates.json'
 
 
 def entry(c, mesh):
     ev = Evaluator(c['ec'], c['wc'], 45, tilt=TILT)
     F, G, e = ev(np.array([c['x']]), extra=True); d = e['d']
-    W = dict(G2x=r4(d['G2'][0, 0]), G2y=r4(d['G2'][0, 1]), h3x=r4(d['h3'][0, 0]), h3y=r4(d['h3'][0, 1]), rb3=r4(d['rb3'][0]), Lc3=r4(d['Lc3'][0]),
-             b4x=r4(d['b4'][0, 0]), b4y=r4(d['b4'][0, 1]), L4=r4(d['L4'][0]), qx=r4(d['q'][0, 0]), qy=r4(d['q'][0, 1]))
+    if c['wc'] == 'direct':
+        W = dict(b4x=r4(d['b4'][0, 0]), b4y=r4(d['b4'][0, 1]), L4=r4(d['L4'][0]), qx=r4(d['q'][0, 0]), qy=r4(d['q'][0, 1]))
+    else:
+        W = dict(G2x=r4(d['G2'][0, 0]), G2y=r4(d['G2'][0, 1]), h3x=r4(d['h3'][0, 0]), h3y=r4(d['h3'][0, 1]), rb3=r4(d['rb3'][0]), Lc3=r4(d['Lc3'][0]),
+                 b4x=r4(d['b4'][0, 0]), b4y=r4(d['b4'][0, 1]), L4=r4(d['L4'][0]), qx=r4(d['q'][0, 0]), qy=r4(d['q'][0, 1]))
     if TILT: W.update(b4z=r4(d['b4'][0, 2]), qz=r4(d['q'][0, 2]))
-    if c['ec'] == 'body':
+    if c['ec'] == 'direct':
+        topo, em = 'twoD', 'direct'
+        dims = dict(Ax=r4(d['A'][0, 0]), Ay=r4(d['A'][0, 1]), Az=r4(d['A'][0, 2]), wdx=r4(d['wd'][0, 0]), wdy=r4(d['wd'][0, 1]), wdz=r4(d['wd'][0, 2]),
+                    Ld=r4(d['Ld'][0]), **W)
+    elif c['ec'] == 'body':
         topo, em = 'two3', 'body'
         dims = dict(G1x=r4(d['G1w'][0, 0]), G1y=r4(d['G1w'][0, 1]), G1z=r4(d['G1w'][0, 2]), h1x=r4(d['h1'][0, 0]), h1y=r4(d['h1'][0, 1]), h1z=r4(d['h1'][0, 2]),
                     rb1=r4(d['rb1'][0]), Lc1=r4(d['Lc1'][0]), b2x=r4(d['b2'][0, 0]), b2y=r4(d['b2'][0, 1]), b2z=r4(d['b2'][0, 2]), L2=r4(d['L2'][0]),
@@ -32,20 +40,24 @@ def entry(c, mesh):
         topo, em = 'twoU', 'ulna'
         dims = dict(Ax=r4(d['A'][0, 0]), Ay=r4(d['A'][0, 1]), Az=r4(d['A'][0, 2]), G1x=r4(d['g'][0, 0]), G1y=r4(d['g'][0, 1]), rb1=r4(d['rb1'][0]), Lc1=r4(d['Lc1'][0]),
                     b2x=r4(d['b2'][0, 0]), b2y=r4(d['b2'][0, 1]), L2=r4(d['L2'][0]), kx=r4(d['k'][0, 0]), ky=r4(d['k'][0, 1]), **W)
+    if c['wc'] == 'direct': topo = 'twoD'
     F0 = c['F']
     why0 = f"段階2の候補（{c['label']}、選び方: {c['pick']}）。胴幅45 mmのCGに合わせて、畳み姿勢とリンク寸法を同時に多目的最適化した局所解の1つ。"
     why = (f"肘{c['E'][0]:.0f}→{c['E'][1]:.0f}°、手首{c['M'][0]:.0f}→{c['M'][1]:.0f}°、関節角の誤差{F0[0]:.1f}°、最小伝達角{-F0[1]:.0f}°、"
            f"はみ出し（CGメッシュ基準）{F0[2]:.1f} mm、寸法感度2σ {F0[3]:.1f}°（MC ±0.05 mmで95%が{c['mc005']['p95']:.1f}°以内）、"
            f"畳み姿勢の当てはまり{F0[4]:.1f}、最大部品{F0[5]:.0f} mm、ボールジョイント首振り{c['swivel']:.0f}°、羽根の浮かせ{c['fz']:.1f} mm、モーター{c['theta']:.0f}°。")
     occ = mesh['variants']['w45']['occluder']
-    if TILT:
+    if S2D:
+        lay = f"リンクの重なり{c['layers']}層（翼の部分{c['layers_wing']}層）、ガタだけのずれ 95%で{c['mc_play']['p95']:.1f}°、±0.2 mmで95%が{c['mc020']['p95']:.1f}°。"
+        why = (f"段階2d（干渉と関節ごとのガタを入れた再計算、{c['label']}）。手首軸の傾き{np.degrees(d['tw'][0]):.0f}°。" + lay) + why
+    elif TILT:
         why = (f"案B（手首の軸を尺骨まわりに{np.degrees(d['tw'][0]):.0f}°傾け、畳んだ手を腕の面から外す。ロッド4は両端ロッドエンド）。"
                f"初列風切の付け根のねじれ{np.degrees(d['phi'][0]):.0f}°、畳んだ時の初列の角度ずらし{d['dl'][0]:.0f}°。CTの肘・手首位置からのずれ{c['ct_pos']:.1f} mm、"
                f"手の向きのずれ{c['ct_hand']:.0f}°（選び方: {c['pick']}）。") + why
     else:
         why = why0 + why
     v = dict(id=c['id'], status='candidate', date='2026-11-14' if TILT else '2026-11-13',
-             title=(f"案B候補 {c['id']}：{c['label']}（手首軸 傾き）" if TILT else f"段階2候補 {c['id']}：{c['label']}"), topo=topo, wristMount=c['wc'], elbowMount=em,
+             title=(f"段階2d候補 {c['id']}：{c['label']}" if S2D else f"案B候補 {c['id']}：{c['label']}（手首軸 傾き）" if TILT else f"段階2候補 {c['id']}：{c['label']}"), topo=topo, wristMount=c['wc'], elbowMount=em,
              why=why, shoulder=dict(axis=[r4(v) for v in d['axis'][0]], Ro=[[r4(v) for v in row] for row in Ro]), body=dict(c=occ['c'], r=occ['r']),
              bodyMesh='w45', featherZ=r4(d['fz'][0]),
              target=dict(AH0=0, AH1=round(float(np.degrees(d['th'][0])), 3), E0=150.0, E1=r4(d['E1'][0]), M0=160.0, M1=r4(d['M1'][0])),

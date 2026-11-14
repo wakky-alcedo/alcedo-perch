@@ -1,5 +1,6 @@
 """Merge the NSGA-III runs, report seed-to-seed variation, pick candidates, verify them (Monte Carlo, body width 40/50),
-and write tables + figures.  usage: analyze.py [width] [tilt]   (tilt: design B, runs_tilt/ -> results/stage2/tilt/)
+and write tables + figures.  usage: analyze.py [width] [tilt] [2d]
+  tilt: design B, runs_tilt/ -> results/stage2/tilt/;  tilt 2d: design B with link interference + per-joint play, runs_2d/ -> results/stage2/2d/
 Outputs: results/stage2/summary.json, candidates.json, seeds.csv, pareto.png, seeds.png (no CG content -> git);
          results/local/cand_*.png (CG body drawn -> not in git)."""
 import os
@@ -11,14 +12,16 @@ from problem import Evaluator, U, SIG_DIM, CLEAR
 from mech import *
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-TILT = 'tilt' in sys.argv; sys.argv = [v for v in sys.argv if v != 'tilt']
-RUNS = ROOT / 'results' / 'stage2' / ('runs_tilt' if TILT else 'runs')
-OUT = ROOT / 'results' / 'stage2' / ('tilt' if TILT else ''); OUT.mkdir(exist_ok=True); LOCAL = ROOT / 'results' / 'local'
+TILT = 'tilt' in sys.argv; S2D = '2d' in sys.argv; sys.argv = [v for v in sys.argv if v not in ('tilt', '2d')]
+RUNS = ROOT / 'results' / 'stage2' / ('runs_2d' if S2D else 'runs_tilt' if TILT else 'runs')
+OUT = ROOT / 'results' / 'stage2' / ('2d' if S2D else 'tilt' if TILT else ''); OUT.mkdir(exist_ok=True); LOCAL = ROOT / 'results' / 'local'
+PREFIX = 'D' if S2D else 'B' if TILT else 'c'
 WIDTH = int(sys.argv[1]) if len(sys.argv) > 1 else 45
 OBJ = ['joint error (deg)', 'min transmission (deg)', 'protrusion (mm)', 'sensitivity 2σ (deg)', 'fold fit', 'max part (mm)']
 CFG_JA = {('body', 'ulna'): '肘BC:体（スティーブンソン型・空間）／手首BC:尺骨', ('hum', 'ulna'): '肘BC:上腕骨（ワット型）／手首BC:尺骨',
           ('ulna', 'ulna'): '肘BC:尺骨／手首BC:尺骨', ('body', 'hum'): '肘BC:体／手首BC:上腕骨', ('hum', 'hum'): '肘BC:上腕骨／手首BC:上腕骨',
-          ('ulna', 'hum'): '肘BC:尺骨／手首BC:上腕骨'}
+          ('ulna', 'hum'): '肘BC:尺骨／手首BC:上腕骨', ('hum', 'direct'): '肘BC:上腕骨／手首:直結ロッド', ('ulna', 'direct'): '肘BC:尺骨／手首:直結ロッド',
+          ('direct', 'hum'): '肘:直結ロッド／手首BC:上腕骨', ('direct', 'direct'): '肘・手首とも直結ロッド（ベルクランクなし）'}
 # goal levels for picking a balanced compromise (Chebyshev): value at which each term reaches 1
 GOAL = dict(err=(0, 2), tmin=(45, 15), prot=(0, 1), sens=(0, 3), fit=(8, 4), part=(10, 6))
 
@@ -37,15 +40,16 @@ def load():
     return runs
 
 
-def monte_carlo(ev, x, n=400, amp=0.05, clear=CLEAR, seed=0):
-    """nonlinear MC: every manufactured dimension uniform +-amp, every rod length additionally +-2*clear. Max joint-angle deviation per sample."""
+def monte_carlo(ev, x, n=400, amp=0.05, play=1.0, seed=0):
+    """nonlinear MC: every manufactured dimension uniform +-amp, every rod length additionally +-play*ROD_PLAY (joint clearances of its
+    two ends). Max joint-angle deviation per sample."""
     F0, G0, ex = ev(x[None], extra=True); d, f = ex['d'], ex['f']
     flat = flatten(d, ev.ec, ev.tilt); D_ = flat.shape[1]
     rng = np.random.default_rng(seed)
     pert = rng.uniform(-amp, amp, (n, D_))
     names = [k for k, m in ev.dims for _ in range(m)]
     for i, k in enumerate(names):
-        if k in ('Lc1', 'L2', 'Lc3', 'L4'): pert[:, i] += rng.uniform(-2 * clear, 2 * clear, n)
+        if k in RODS: pert[:, i] += rng.uniform(-play * ROD_PLAY[k], play * ROD_PLAY[k], n)
     rep = lambda a: np.repeat(a, n, 0)
     dd = {k: (rep(v) if isinstance(v, np.ndarray) and v.shape[:1] == (1,) else v) for k, v in d.items()}
     dd = unflatten(np.repeat(flat, n, 0) + pert, ev.ec, dd, ev.tilt)
@@ -71,6 +75,8 @@ def describe(ev, x):
              axis=d['axis'][0].round(4).tolist(), E1=float(d['E1'][0]), M1=float(d['M1'][0]), fz=float(d['fz'][0]),
              res=[float(e['res_e'][0]), float(e['res_w'][0])], ct_pos=float(e['fitx']['ct_pos'][0]), ct_hand=float(e['fitx']['ct_hand'][0]), tilt=bool(d['tilt']))
     if d['tilt']: r.update(tw=float(np.degrees(d['tw'][0])), phi=float(np.degrees(d['phi'][0])), dl=float(d['dl'][0]))
+    if 'layers' in e: r.update(layers=int(e['layers'][0]), layers_wing=int(e['layers_wing'][0]),
+                               clash={f'{a}-{b}': round(float(v[0]), 2) for (a, b), v in e['layx']['pairs'].items() if v[0] < 1.0})
     return r, e
 
 
@@ -88,7 +94,7 @@ def main():
                 row.update({f'best_{k}': float(v) for k, v in zip(['err', 'negtmin', 'prot', 'sens', 'fit', 'part'], F.min(0))}, best_cheb=float(s.min()))
                 allX.append(r['X'][feas]); allF.append(F); allC += [c] * feas.sum()
             seeds_rows.append(row)
-    X = np.concatenate(allX); F = np.concatenate(allF); C = np.array([f'{a}/{b}' for a, b in allC])
+    X = [x for a in allX for x in a]; F = np.concatenate(allF); C = np.array([f'{a}/{b}' for a, b in allC])
     nd = NonDominatedSorting().do(F, only_non_dominated_front=True)
     print('feasible', len(F), 'global non-dominated', len(nd))
     # seed table
@@ -124,8 +130,9 @@ def main():
         ec, wc = C[i].split('/')
         ev = Evaluator(ec, wc, WIDTH, tilt=TILT)
         r, e = describe(ev, X[i])
-        r.update(id=f"{'B' if TILT else 'c'}{j + 1}", pick=nm, ec=ec, wc=wc, label=CFG_JA[(ec, wc)], x=X[i].tolist(), cheb=float(s[i]))
+        r.update(id=f"{PREFIX}{j + 1}", pick=nm, ec=ec, wc=wc, label=CFG_JA[(ec, wc)], x=X[i].tolist(), cheb=float(s[i]))
         r['mc005'] = monte_carlo(ev, X[i], amp=0.05); r['mc010'] = monte_carlo(ev, X[i], amp=0.10); r['mc020'] = monte_carlo(ev, X[i], amp=0.20)   # 3D-printer tolerance
+        r['mc_play'] = monte_carlo(ev, X[i], amp=0.0)                                  # joint play only (bearings / balls / resin pins)
         for w in (40, 50):
             ew = Evaluator(ec, wc, w, tilt=TILT); Fw, Gw, xw = ew(X[i][None], extra=True)
             r[f'w{w}'] = dict(fit=float(Fw[0, 4]), prot=float(Fw[0, 2]), sweep=float(xw['sweep'][0]), tip_off=float(xw['fitx']['tipd'][0]))
@@ -134,12 +141,12 @@ def main():
               'swivel %.0f' % r['swivel'], 'w40 fit %.1f w50 fit %.1f' % (r['w40']['fit'], r['w50']['fit']), flush=True)
     json.dump(dict(width=WIDTH, configs=summ, n_feasible=int(len(F)), n_front=int(len(nd))), open(OUT / 'summary.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     json.dump(out, open(OUT / 'candidates.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
-    np.savez_compressed(OUT / 'front.npz', X=X[nd], F=F[nd], C=C[nd])
+    np.savez_compressed(OUT / 'front.npz', X=np.array([X[i] for i in nd], dtype=object), F=F[nd], C=C[nd])
     figures(F, C, nd, out, seeds_rows, cfgs)
 
 
 def figures(F, C, nd, cands, seeds_rows, cfgs):
-    cols = dict(zip(['/'.join(c) for c in CFG_JA], ['#1f77b4', '#d62728', '#2ca02c', '#9467bd', '#ff7f0e', '#8c564b']))
+    cols = dict(zip(['/'.join(c) for c in CFG_JA], ['#1f77b4', '#d62728', '#2ca02c', '#9467bd', '#ff7f0e', '#8c564b', '#17becf', '#bcbd22', '#e377c2', '#7f7f7f']))
     Fp = F.copy(); Fp[:, 1] *= -1
     pairs = [(0, 3), (2, 4), (1, 3), (4, 3), (5, 2), (0, 1)]
     fig, axs = plt.subplots(2, 3, figsize=(20, 12))
