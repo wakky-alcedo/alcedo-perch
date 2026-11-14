@@ -1,0 +1,85 @@
+{
+ "D1": {
+  "ec": "hum",
+  "wc": "hum",
+  "unplaced": 2,
+  "plan": {
+   "hum": 1,
+   "uln": 2,
+   "hand": 0,
+   "bc1": 2,
+   "rod2": 3,
+   "bc2": 0
+  },
+  "studs_mm": {}
+ },
+ "D2": {
+  "ec": "ulna",
+  "wc": "hum",
+  "skipped": "bellcrank on the ulna: not in the stage-2e configurations"
+ },
+ "D3": {
+  "ec": "hum",
+  "wc": "direct",
+  "unplaced": 1,
+  "plan": {
+   "hum": 0,
+   "uln": -1,
+   "hand": 0,
+   "bc1": 1,
+   "rod2": 0
+  },
+  "studs_mm": {}
+ },
+ "D4": {
+  "ec": "ulna",
+  "wc": "direct",
+  "skipped": "bellcrank on the ulna: not in the stage-2e configurations"
+ },
+ "D5": {
+  "ec": "direct",
+  "wc": "hum",
+  "unplaced": 5,
+  "plan": {
+   "hum": 0
+  },
+  "studs_mm": {}
+ },
+ "D6": {
+  "ec": "direct",
+  "wc": "direct",
+  "unplaced": 3,
+  "plan": {
+   "hum": 0
+  },
+  "studs_mm": {}
+ },
+ "D7": {
+  "ec": "ulna",
+  "wc": "hum",
+  "skipped": "bellcrank on the ulna: not in the stage-2e configurations"
+ },
+ "D8": {
+  "ec": "hum",
+  "wc": "direct",
+  "unplaced": 1,
+  "plan": {
+   "hum": 1,
+   "uln": 2,
+   "hand": 0,
+   "bc1": 2,
+   "rod2": 3
+  },
+  "studs_mm": {}
+ },
+ "D9": {
+  "ec": "ulna",
+  "wc": "hum",
+  "skipped": "bellcrank on the ulna: not in the stage-2e configurations"
+ },
+ "D10": {
+  "ec": "ulna",
+  "wc": "hum",
+  "skipped": "bellcrank on the ulna: not in the stage-2e configurations"
+ }
+}

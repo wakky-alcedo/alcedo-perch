@@ -133,8 +133,17 @@ def main():
         m = np.where(C == cname(c))[0]
         if len(m): cand.append(('best-' + cname(c), m[np.argmin(s[m])]))
     ok = np.where(s <= max(1.6, 1.5 * s.min()))[0]                       # "reasonable" relative to the best compromise
-    for k, nm in [(4, 'best-fit'), (3, 'best-sens'), (1, 'best-tmin'), (0, 'best-err')]:
-        if len(ok): cand.append((nm, ok[np.argmin(F[ok, k])]))
+    groups = [('', ok)]
+    if S2E:                                                               # stage 2e: extremes per design (A vs B compared like for like)
+        dz = np.array([cc.split(':')[0] for cc in C])
+        groups = [(g + ':', ok[dz[ok] == g]) for g in ('A', 'B')]
+    for pre, okg in groups:
+        for k, nm in [(4, 'best-fit'), (3, 'best-sens'), (1, 'best-tmin'), (0, 'best-err')]:
+            if len(okg): cand.append((pre + nm, okg[np.argmin(F[okg, k])]))
+        if S2E:                                                           # robust and well folded: sens <= 2.3, err <= 3.5, prot <= 1.5, tmin >= 25 -> best fit
+            dz = np.array([cc.split(':')[0] for cc in C])
+            k = np.where((dz == pre[:-1]) & (F[:, 3] <= 2.3) & (F[:, 0] <= 3.5) & (F[:, 2] <= 1.5) & (F[:, 1] <= -25))[0]
+            if len(k): cand.insert(0, (pre + 'robust-fit', k[np.argmin(F[k, 4])]))
     seen, uniq = set(), []
     for nm, i in cand:
         if i in seen: continue

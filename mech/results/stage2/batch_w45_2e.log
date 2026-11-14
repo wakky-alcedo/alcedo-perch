@@ -1,0 +1,65 @@
+[ 1264s] Bdirect/direct tilt seed 0: 1247s, feasible 0/300 min CV 3.00
+[ 1298s] Adirect/direct tilt seed 1: 1281s, feasible 0/300 min CV 3.00
+[ 1378s] Adirect/direct tilt seed 0: 1361s, feasible 0/300 min CV 3.00
+[ 2408s] Bdirect/direct tilt seed 1: 1123s, feasible 0/300 min CV 3.00
+[ 2856s] Adirect/hum tilt seed 1: 2839s, feasible 0/300 min CV 5.00
+[ 2881s] Adirect/hum tilt seed 0: 2862s, feasible 0/300 min CV 5.00
+[ 2904s] Bdirect/hum tilt seed 1: 2885s, feasible 0/300 min CV 5.00
+[ 2950s] Bhum/direct tilt seed 0: 2935s, feasible 300/300 best 1.50 -38.56 0.28 1.85 14.71 19.71
+[ 3030s] Ahum/direct tilt seed 0: 3012s, feasible 300/300 best 1.98 -38.73 0.08 1.99 17.16 19.52
+[ 3117s] Bdirect/hum tilt seed 0: 3102s, feasible 0/300 min CV 5.00
+[ 3386s] Bhum/direct tilt seed 1: 3370s, feasible 300/300 best 1.82 -38.74 1.10 1.99 13.62 12.38
+[ 3452s] Ahum/direct tilt seed 1: 3434s, feasible 300/300 best 2.21 -37.74 0.74 2.08 15.99 12.63
+[ 4053s] Adirect/direct tilt seed 2: 1176s, feasible 0/300 min CV 3.00
+[ 4174s] Ahum/direct tilt seed 2: 2772s, feasible 0/300 min CV 1.00
+[ 4234s] Bdirect/direct tilt seed 2: 1186s, feasible 0/300 min CV 3.00
+[ 4981s] Adirect/hum tilt seed 2: 2556s, feasible 0/300 min CV 5.07
+[ 5257s] Adirect/direct tilt seed 3: 1181s, feasible 0/300 min CV 3.00
+[ 5581s] Bdirect/hum tilt seed 2: 2612s, feasible 0/300 min CV 5.07
+[ 5918s] Bhum/direct tilt seed 2: 2995s, feasible 0/300 min CV 1.00
+[ 5939s] Bhum/hum tilt seed 1: 5920s, feasible 0/300 min CV 1.06
+[ 6022s] Bhum/hum tilt seed 0: 6005s, feasible 0/300 min CV 2.00
+[ 6101s] Ahum/hum tilt seed 1: 6084s, feasible 0/300 min CV 1.01
+[ 6144s] Ahum/hum tilt seed 0: 6128s, feasible 0/300 min CV 2.00
+[ 6328s] Adirect/hum tilt seed 3: 2851s, feasible 0/300 min CV 5.00
+[ 6503s] Bdirect/direct tilt seed 3: 1204s, feasible 0/300 min CV 3.00
+[ 6804s] Ahum/direct tilt seed 3: 3377s, feasible 300/300 best 2.96 -38.97 5.27 2.16 16.11 26.85
+[ 6972s] Ahum/hum tilt seed 2: 5650s, feasible 0/300 min CV 2.00
+[ 7202s] Adirect/direct tilt seed 4: 1154s, feasible 0/300 min CV 3.00
+[ 7501s] Bhum/direct tilt seed 3: 3244s, feasible 300/300 best 2.57 -38.77 3.43 2.15 14.95 27.08
+[ 7619s] Bdirect/direct tilt seed 4: 1097s, feasible 0/300 min CV 3.00
+[ 7745s] Bdirect/hum tilt seed 3: 2735s, feasible 0/300 min CV 5.00
+[ 8543s] Bhum/hum tilt seed 2: 5646s, feasible 0/300 min CV 1.00
+[ 8584s] Adirect/hum tilt seed 4: 2626s, feasible 0/300 min CV 5.00
+[ 8629s] Adirect/direct tilt seed 5: 1108s, feasible 0/300 min CV 3.00
+[ 8971s] Bdirect/hum tilt seed 4: 2624s, feasible 0/300 min CV 5.00
+[ 9044s] Ahum/hum tilt seed 3: 5906s, feasible 0/300 min CV 6.07
+[ 9182s] Ahum/direct tilt seed 4: 3236s, feasible 300/300 best 1.75 -37.62 5.99 2.16 16.23 14.49
+[ 9291s] Bhum/direct tilt seed 4: 3117s, feasible 300/300 best 1.65 -35.03 2.51 2.26 15.58 12.03
+[ 9790s] Bdirect/direct tilt seed 5: 1186s, feasible 0/300 min CV 3.00
+[ 9933s] Bhum/hum tilt seed 3: 5735s, feasible 0/300 min CV 5.79
+[10010s] Ahum/direct tilt seed 5: 3014s, feasible 300/300 best 1.86 -37.68 0.00 2.06 16.14 10.41
+[10120s] Adirect/hum tilt seed 5: 2891s, feasible 0/300 min CV 5.00
+[10521s] Adirect/direct tilt seed 6: 1319s, feasible 0/300 min CV 3.00
+[10809s] Bhum/direct tilt seed 5: 3045s, feasible 300/300 best 1.45 -37.85 0.00 2.01 14.63 9.71
+[11119s] Ahum/hum tilt seed 4: 5513s, feasible 0/300 min CV 2.00
+[11366s] Bdirect/direct tilt seed 6: 1328s, feasible 0/300 min CV 3.00
+[11434s] Bhum/hum tilt seed 4: 5307s, feasible 0/300 min CV 1.00
+[11634s] Bdirect/hum tilt seed 5: 3070s, feasible 0/300 min CV 5.00
+[12061s] Adirect/hum tilt seed 6: 2999s, feasible 0/300 min CV 5.00
+[12320s] Ahum/hum tilt seed 5: 5496s, feasible 0/300 min CV 2.00
+[12344s] Adirect/direct tilt seed 7: 1198s, feasible 0/300 min CV 3.00
+[12427s] Ahum/direct tilt seed 6: 3438s, feasible 300/300 best 2.55 -37.34 1.08 2.00 16.56 10.83
+[12812s] Bdirect/hum tilt seed 6: 2837s, feasible 0/300 min CV 5.00
+[13092s] Bhum/hum tilt seed 5: 5455s, feasible 0/300 min CV 2.00
+[13099s] Bhum/direct tilt seed 6: 3279s, feasible 300/300 best 1.84 -37.94 0.97 1.90 15.24 10.46
+[13113s] Bdirect/direct tilt seed 7: 1033s, feasible 0/300 min CV 3.00
+[13409s] Adirect/hum tilt seed 7: 2550s, feasible 0/300 min CV 5.00
+[13587s] Ahum/direct tilt seed 7: 3035s, feasible 300/300 best 2.11 -37.71 2.87 2.15 16.77 9.91
+[13821s] Ahum/hum tilt seed 6: 5170s, feasible 0/300 min CV 2.00
+[14128s] Bdirect/hum tilt seed 7: 2462s, feasible 0/300 min CV 5.00
+[14450s] Bhum/direct tilt seed 7: 2981s, feasible 300/300 best 1.71 -38.46 2.23 2.06 14.56 11.27
+[14474s] Bhum/hum tilt seed 6: 5159s, feasible 0/300 min CV 2.00
+[15329s] Ahum/hum tilt seed 7: 5187s, feasible 0/300 min CV 1.00
+[15932s] Bhum/hum tilt seed 7: 4536s, feasible 0/300 min CV 1.00
+done 15931.508588790894

@@ -24,7 +24,7 @@ def gravity_dirs(n=200):
 
 
 def run(c):
-    ev = Evaluator(c['ec'], c['wc'], 45, tilt=('A' if c.get('dsg') == 'A' else True))
+    ev = Evaluator(c['ec'], c['wc'], 45, tilt=('A' if c.get('dsg') == 'A' else True))   # no stack needed here
     F, Gc, e = ev(np.array([c['x']]), extra=True); d, f = e['d'], e['f']
     rods = [k for k in RODS if k in d]
     rows = []
@@ -65,6 +65,13 @@ def run(c):
     flips = {k: float(np.mean(np.any(np.sign(Gk[j]) != np.sign(Gk[j][:, :1]), 1))) for j, k in enumerate(rods)}
     out['share_of_dirs_with_sign_change_no_spring'] = flips
     out['spring'] = best
+    # angle change per mm of rod length (elbow E, wrist M), max over the fold -> how much a rod's elastic stretch costs
+    out['dangle_dL_deg_per_mm'] = {k: dict(E=float(np.degrees(np.abs(res[2 * j]['E'] - res[2 * j + 1]['E']).max() / (2 * H))),
+                                           M=float(np.degrees(np.abs(res[2 * j]['M'] - res[2 * j + 1]['M']).max() / (2 * H))))
+                                   for j, k in enumerate(rods)}
+    if best:                                   # rod forces with the spring at twice the minimum preload (margin), worst gravity direction
+        sE, sW = best['signs']; tE, tW = 2 * best['tau_E'], 2 * best['tau_W']
+        out['force_max_with_spring_N'] = {k: float(np.abs(Gk[j] + (sE * tE * SE[j] + sW * tW * SW[j])[None]).max()) for j, k in enumerate(rods)}
     if best:
         th = np.radians(c['theta'])
         dEdth = np.abs(np.gradient(np.radians(f['E'][0]), U)) / th; dMdth = np.abs(np.gradient(np.radians(f['M'][0]), U)) / th

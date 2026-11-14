@@ -27,6 +27,8 @@ STEPS = np.arange(0, len(U), 2)
 FIXED = ('rod1',)
 ORDER = ['hum', 'uln', 'hand', 'bc1', 'rod2', 'bc2', 'rod3', 'rod4']
 NODE_LIMIT = 20000
+import os
+GRADED = os.environ.get('STACK_GRADED') == '1'   # add a graded term (ball-stud thickness excess) to the unplaced count
 
 
 def seg2(p1, q1, p2, q2):
@@ -232,9 +234,24 @@ def full_check(ev, x):
     return int(v), plan, studs
 
 
+def ball_excess(g):
+    """(P,) mm: for every ball joint, how far the best level of its plate partner(s) leaves the stud stack over budget"""
+    ex = np.zeros(g.P)
+    for a, b, X, ball in g.J:
+        if not ball: continue
+        bud = np.where(g.wing(X), BUD_WING, BUD_BODY).min(1)                  # (P,)
+        for c in (a, b):
+            if c in ('rod1', 'rod4'): continue
+            dz = np.abs(X[..., 2][..., None] - g.base(c, X)[..., None] - LV * T).max(1)   # (P, NL)
+            ex += np.maximum(0, dz.min(1) + TP - bud)
+    return ex
+
+
 def stack_constraint(ev, f, d):
     G = Geometry(ev, f, d)
     out = np.zeros(G.P); plans = []
     for p in range(G.P):
         v, plan = G.solve(p); out[p] = v; plans.append(plan)
+    if GRADED:
+        out = out + (out > 0) * np.minimum(0.9, 0.1 * ball_excess(G))
     return out, plans
