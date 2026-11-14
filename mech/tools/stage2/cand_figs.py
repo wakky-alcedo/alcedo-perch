@@ -5,7 +5,8 @@ from body import Body
 from viz import fold_figure
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-TILT = 'tilt' in sys.argv; SUB_ = '2e' if '2e' in sys.argv else '2d' if '2d' in sys.argv else 'tilt' if TILT else ''
+TILT = 'tilt' in sys.argv; from problem import STAGE
+SUB_ = STAGE if '2e' in sys.argv else '2d' if '2d' in sys.argv else 'tilt' if TILT else ''
 def make_ev(c):
     if c.get('dsg'): return Evaluator(c['ec'], c['wc'], 45, tilt='A' if c['dsg'] == 'A' else True, stack=True)
     return Evaluator(c['ec'], c['wc'], 45, tilt=TILT)

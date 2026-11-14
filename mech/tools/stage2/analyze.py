@@ -14,9 +14,10 @@ from mech import *
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 TILT = 'tilt' in sys.argv; S2D = '2d' in sys.argv; S2E = '2e' in sys.argv; sys.argv = [v for v in sys.argv if v not in ('tilt', '2d', '2e')]
 TILT = TILT or S2E
-RUNS = ROOT / 'results' / 'stage2' / ('runs_2e' if S2E else 'runs_2d' if S2D else 'runs_tilt' if TILT else 'runs')
-OUT = ROOT / 'results' / 'stage2' / ('2e' if S2E else '2d' if S2D else 'tilt' if TILT else ''); OUT.mkdir(exist_ok=True); LOCAL = ROOT / 'results' / 'local'
-PREFIX = 'E' if S2E else 'D' if S2D else 'B' if TILT else 'c'
+from problem import STAGE
+RUNS = ROOT / 'results' / 'stage2' / (f'runs_{STAGE}' if S2E else 'runs_2d' if S2D else 'runs_tilt' if TILT else 'runs')
+OUT = ROOT / 'results' / 'stage2' / (STAGE if S2E else '2d' if S2D else 'tilt' if TILT else ''); OUT.mkdir(exist_ok=True); LOCAL = ROOT / 'results' / 'local'
+PREFIX = ('F' if STAGE == '2f' else 'E') if S2E else 'D' if S2D else 'B' if TILT else 'c'
 WIDTH = int(sys.argv[1]) if len(sys.argv) > 1 else 45
 OBJ = ['joint error (deg)', 'min transmission (deg)', 'protrusion (mm)', 'sensitivity 2σ (deg)', 'fold fit', 'max part (mm)']
 CFG_JA = {('body', 'ulna'): '肘BC:体（スティーブンソン型・空間）／手首BC:尺骨', ('hum', 'ulna'): '肘BC:上腕骨（ワット型）／手首BC:尺骨',
@@ -144,6 +145,14 @@ def main():
             dz = np.array([cc.split(':')[0] for cc in C])
             k = np.where((dz == pre[:-1]) & (F[:, 3] <= 2.3) & (F[:, 0] <= 3.5) & (F[:, 2] <= 1.5) & (F[:, 1] <= -25))[0]
             if len(k): cand.insert(0, (pre + 'robust-fit', k[np.argmin(F[k, 4])]))
+    scr = OUT / 'screen_mc.json'
+    if S2E and STAGE == '2f' and scr.exists():                            # stage 2f: picked on the nonlinear MC (screen_mc.py) instead of the
+        rows = json.load(open(scr, encoding='utf-8'))                     # linear sensitivity: err <= 4, MC +-0.20 mm 95% <= 8.5 deg -> best fit
+        for g in ('A', 'B'):
+            k = [r for r in rows if r['C'].startswith(g + ':') and r['F'][0] <= 4.0 and r['mc020']['p95'] <= 8.5]
+            if k:
+                b_ = min(k, key=lambda r: r['F'][4]); assert np.allclose(F[nd[b_['i']]], b_['F'], atol=1e-3)
+                cand.insert(0, (g + ':robust-mc', nd[b_['i']]))
     seen, uniq = set(), []
     for nm, i in cand:
         if i in seen: continue

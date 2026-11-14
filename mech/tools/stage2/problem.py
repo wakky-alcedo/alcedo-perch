@@ -79,11 +79,19 @@ def chromatic(adj, n, kmax=6):
     return out
 
 U = np.linspace(0, 1, 41); SUB = np.arange(0, 41, 4)
+import os
+# stage 2f (env MIDLINE=1): the left and right wings are mirror images about the body midline x = MID_X (shoulder frame; the CT
+# shoulder rule puts the shoulder SX = 12.7 mm lateral of it). Both wings move together, so their parts sit at the same heights and
+# cannot pass each other in layers: every part must stay on its own side, surface x >= MID_X + MID_GAP.
+MIDLINE = os.environ.get('MIDLINE') == '1'
+MID_X, MID_GAP = -12.7, 0.5
+STAGE = '2f' if MIDLINE else '2e'
 
 
 class Evaluator:
-    def __init__(self, ec, wc, width=45, nvis=100, tilt=False, stack=False):
+    def __init__(self, ec, wc, width=45, nvis=100, tilt=False, stack=False, mid=None):
         self.ec, self.wc, self.tilt, self.stack = ec, wc, tilt, stack
+        self.mid = (MIDLINE and stack) if mid is None else mid
         self.body = Body(width)
         rng = np.random.default_rng(0)
         v = self.body.vis; self.vis = v[rng.choice(len(v), min(nvis, len(v)), replace=False)]
@@ -277,6 +285,22 @@ class Evaluator:
         La, Lw = chromatic(A_all, n), chromatic(A_wing, n)
         return La, Lw, dict(names=names, pairs=pairs, shallowest=worst, A_all=A_all, A_wing=A_wing)
 
+    def midline(self, f, plans=None):
+        """(P,) mm: how far the most medial part surface reaches past MID_X + MID_GAP (<= 0: every part stays on its own side).
+        All 41 poses. With a layer plan (stage 2e stack) each part is moved by its level along the humerus z axis first: in the
+        folded poses that axis tilts, so a part 3.6 mm up or down the stack also moves sideways (the stage-2f v0 runs missed this)."""
+        k = np.arange(len(U))
+        P_, adj, _ = self.parts(f, k=k)
+        za = f['Rh'][:, k][..., :, 2]                    # humerus z axis in the body frame, (P, S, 3)
+        from stack import T as LT
+        flat = ('hum', 'uln', 'bc1', 'rod2', 'bc2', 'rod3')   # plates: kinematic point moved into the humerus plane, then to its level
+        xs = []
+        for nm, lst in P_.items():
+            lev = np.zeros(za.shape[0]) if plans is None else np.array([pl.get(nm, 0) for pl in plans], float)
+            X = lambda p: p[..., 0] + ((lev[:, None] * LT - (np.sum(p * za, -1) if nm in flat else 0)) * za[..., 0])
+            xs += [np.minimum(X(p), X(q)).min(1) - r for p, q, r in lst]
+        return MID_X + MID_GAP - np.min(xs, 0)
+
     # ------------------------------------------------------------ full evaluation
     def __call__(self, X, extra=False):
         P = X.shape[0]
@@ -306,9 +330,10 @@ class Evaluator:
             gE, gM = self.gain(d, f); gmax = np.maximum(gE.max(1), gM.max(1))
         F = np.c_[err, -tmin, prot, sens, fit, part]
         F = np.where(valid[:, None] & np.isfinite(F), F, BIG)
-        G = np.c_[np.where(valid, 0, 1) * BIG + 0 * err,
+        G = np.c_[tuple([np.where(valid, 0, 1) * BIG + 0 * err,
                   MARGIN_MIN - marg, LMIN - lev, 4 - rods.min(0), rods.max(0) - 40, swiv - SWIVEL, SWEEP_MIN - sweep, fit - FIT_MAX,
-                  np.maximum(info['res_e'], info['res_w']) - 0.3, gmax - GAIN_MAX, self.tmin_min - tmin, g_lay]
+                  np.maximum(info['res_e'], info['res_w']) - 0.3, gmax - GAIN_MAX, self.tmin_min - tmin]
+                  + ([self.midline(f, plans)] if self.mid else []) + [g_lay])]
         G = np.where(np.isfinite(G), G, BIG)
         if not extra: return F, G
         return F, G, dict(d=d, f=f, err=err, tmin=tmin, marg=marg, prot=prot, sens=sens, fit=fit, part=part, lev=lev, swivel=swiv,
@@ -321,7 +346,7 @@ class LinkProblem(Problem):
     def __init__(self, ec, wc, width=45, tilt=False, stack=False):
         self.ev = Evaluator(ec, wc, width, tilt=tilt, stack=stack)
         xl = np.array([v[1] for v in self.ev.vars], float); xu = np.array([v[2] for v in self.ev.vars], float)
-        super().__init__(n_var=len(xl), n_obj=6, n_ieq_constr=12, xl=xl, xu=xu)
+        super().__init__(n_var=len(xl), n_obj=6, n_ieq_constr=12 + int(self.ev.mid), xl=xl, xu=xu)
 
     def _evaluate(self, X, out, *args, **kwargs):
         F, G = self.ev(X); out['F'] = F; out['G'] = G

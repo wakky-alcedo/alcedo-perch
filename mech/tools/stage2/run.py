@@ -9,7 +9,7 @@ from pymoo.algorithms.moo.nsga3 import NSGA3
 from pymoo.util.ref_dirs import get_reference_directions
 from pymoo.optimize import minimize
 from pymoo.core.callback import Callback
-from problem import LinkProblem
+from problem import LinkProblem, MIDLINE
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 
@@ -45,15 +45,18 @@ def main(ec, wc, seed, gens=300, pop=300, width=45, tilt=False, design=None):
         j = len(xl) - 5
         X0[:half, j:j + 3] = np.clip(np.array(pj[6:9]) + rng.normal(0, 1, (half, 3)) * np.array([4.0, 3.0, 4.0]), xl[j:j + 3], xu[j:j + 3])
     old = ROOT / 'results' / 'stage2' / ('runs_2d' if design else 'runs_tilt') / f'{ec}_{wc}_w{int(width)}_s{seed}.npz'
+    if design and MIDLINE: old = ROOT / 'results' / 'stage2' / 'runs_2e' / f'{design}-{ec}_{wc}_w{int(width)}_s{seed}.npz'   # stage 2f: warm start from 2e (same variables)
+    if design and MIDLINE and os.environ.get('WARM2F') == '1':     # stage 2f v1: restart from the v0 final populations (midline without layer offsets)
+        old = ROOT / 'results' / 'local' / 'runs_2f_v0' / f'{design}-{ec}_{wc}_w{int(width)}_s{seed}.npz'
     if tilt and old.exists():
         Xo = np.load(old)['X']
-        if tilt == 'A': Xo = np.delete(Xo, [Xo.shape[1] - 5, Xo.shape[1] - 4], 1)       # drop tw, phi
-        m = min(len(Xo), pop // 4); X0[half:half + m] = np.clip(Xo[rng.choice(len(Xo), m, replace=False)], xl, xu)
+        if tilt == 'A' and Xo.shape[1] != len(xl): Xo = np.delete(Xo, [Xo.shape[1] - 5, Xo.shape[1] - 4], 1)       # drop tw, phi
+        m = min(len(Xo), pop // (2 if os.environ.get('WARM2F') == '1' else 4)); X0[half:half + m] = np.clip(Xo[rng.choice(len(Xo), m, replace=False)], xl, xu)
     algo = NSGA3(ref_dirs=ref, pop_size=pop, sampling=X0, eliminate_duplicates=True)
     log = Log(); t = time.time()
     res = minimize(prob, algo, ('n_gen', gens), seed=seed, callback=log, verbose=False)
     pop_ = res.pop; X, F, G = pop_.get('X'), pop_.get('F'), pop_.get('G')
-    out = ROOT / 'results' / 'stage2' / ('runs_2e' if design else 'runs_2d' if tilt else 'runs'); out.mkdir(parents=True, exist_ok=True)
+    out = ROOT / 'results' / 'stage2' / (('runs_2f' if MIDLINE else 'runs_2e') if design else 'runs_2d' if tilt else 'runs'); out.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(out / f'{design + "-" if design else ""}{ec}_{wc}_w{int(width)}_s{seed}.npz', X=X, F=F, G=G, log=np.array(log.rows), time=time.time() - t,
                         vars=np.array([v[0] for v in prob.ev.vars]))
     feas = np.all(G <= 0, 1)
