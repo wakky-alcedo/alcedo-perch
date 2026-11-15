@@ -16,12 +16,13 @@ Each plate gets a level l in -3..3 (height l * LAYER_T on top of its own plane).
   exempt (their separation is the designed tilt of the hand, judged by the fit to the body), and so is rod 1 (it comes up
   from the body anchor 10+ mm below the arm plane).
 Returns per design the number of parts that could not be placed (0 = a clash-free plan within budget exists)."""
-import numpy as np
+import os, numpy as np
 from problem import LAYER_T, GAP, R_PIN, R_ROD, U
 
 T = LAYER_T; TP = LAYER_T - GAP
 LV = np.arange(-3, 4); NL = len(LV)
 BUD_BODY, BUD_WING = 5.0, 3.0
+BUD_JOINT = float(os.environ.get("STACK_BUD_JOINT", 4.0))   # user 2026-11-15: at a ball joint the local stack may be 4 mm (or more) on the wing side too
 R_SKEW = 1.5                       # 3 mm bamboo skewer
 STEPS = np.arange(0, len(U), 2)
 FIXED = ('rod1',)
@@ -33,7 +34,6 @@ HALF = {'rod1': R_SKEW}
 SLOPED, NSUB = ('rod1', 'rod4', 'hand'), 8
 hh = lambda n: HALF.get(n, TP / 2)
 FLAT = np.array([1., 1., 0.])
-import os
 GRADED = os.environ.get('STACK_GRADED') == '1'   # add a graded term (ball-stud thickness excess) to the unplaced count
 
 
@@ -149,7 +149,7 @@ class Geometry:
         for a, b, X, ball in self.J:
             zX = X[..., 2]
             ba, bb_ = self.base(a, X), self.base(b, X)
-            bud = np.where(self.wing(X), BUD_WING, BUD_BODY)
+            bud = np.where(self.wing(X), max(BUD_WING, BUD_JOINT), BUD_BODY)
             la_set = Lz if a not in FIXED else np.array([0.])
             lb_set = Lz if b not in FIXED else np.array([0.])
             # span[x, y] -> (P,S) lo / hi
@@ -251,7 +251,7 @@ def ball_excess(g):
     ex = np.zeros(g.P)
     for a, b, X, ball in g.J:
         if not ball: continue
-        bud = np.where(g.wing(X), BUD_WING, BUD_BODY).min(1)                  # (P,)
+        bud = np.where(g.wing(X), max(BUD_WING, BUD_JOINT), BUD_BODY).min(1)                  # (P,)
         for c in (a, b):
             if c in ('rod1', 'rod4'): continue
             dz = np.abs(X[..., 2][..., None] - g.base(c, X)[..., None] - LV * T).max(1)   # (P, NL)
