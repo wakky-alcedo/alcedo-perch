@@ -27,6 +27,12 @@ STEPS = np.arange(0, len(U), 2)
 FIXED = ('rod1',)
 ORDER = ['hum', 'uln', 'hand', 'bc1', 'rod2', 'bc2', 'rod3', 'rod4']
 NODE_LIMIT = 20000
+# half height of each part: plates TP / 2; rod 1 is a round skewer (stage 2f fix: before, every pair only needed one pitch T apart,
+# and plan overlap was taken from 3D distance with the plates at their own plane, which missed the skewer crossing a shifted plate)
+HALF = {'rod1': R_SKEW}
+SLOPED, NSUB = ('rod1', 'rod4', 'hand'), 8
+hh = lambda n: HALF.get(n, TP / 2)
+FLAT = np.array([1., 1., 0.])
 import os
 GRADED = os.environ.get('STACK_GRADED') == '1'   # add a graded term (ball-stud thickness excess) to the unplaced count
 
@@ -84,7 +90,12 @@ class Geometry:
             cs = []
             for j, (p, q, r) in enumerate(lst):
                 if nm == 'rod1' and j == 0: r = R_SKEW
-                cs.append((flat[nm](h(p)), flat[nm](h(q)), r))
+                P0, Q0 = flat[nm](h(p)), flat[nm](h(q))
+                if nm in SLOPED:                          # height varies along it: one closest point per pair is not enough
+                    for a0, a1 in zip(np.linspace(0, 1, NSUB + 1)[:-1], np.linspace(0, 1, NSUB + 1)[1:]):
+                        cs.append((P0 + a0 * (Q0 - P0), P0 + a1 * (Q0 - P0), r))
+                else:
+                    cs.append((P0, Q0, r))
             self.caps[nm] = cs
         self.names = list(P_)
         self.var = [n for n in ORDER if n in self.names]
@@ -114,7 +125,7 @@ class Geometry:
                 thick = {a, b} != {'hand', 'uln'} and 'rod1' not in (a, b)
                 for pa, qa, ra in self.caps[a]:
                     for pb, qb, rb in self.caps[b]:
-                        dd, s, t = seg2(pa, qa, pb, qb)
+                        dd, s, t = seg2(pa * FLAT, qa * FLAT, pb * FLAT, qb * FLAT)        # overlap in plan
                         za = pa[..., 2] + s * (qa[..., 2] - pa[..., 2]); zb = pb[..., 2] + t * (qb[..., 2] - pb[..., 2])
                         xa = pa + s[..., None] * (qa - pa); xb = pb + t[..., None] * (qb - pb)
                         bud = np.where(self.wing((xa + xb) / 2), BUD_WING, BUD_BODY)
@@ -123,13 +134,13 @@ class Geometry:
                         if a in FIXED or b in FIXED:          # one fixed: unary on the other
                             v, zv, zf = (b, zb, za) if a in FIXED else (a, za, zb)
                             dz = (zv[..., None] + Lz) - zf[..., None]                       # (P,S,NL)
-                            bad = (near[..., None] & (np.abs(dz) < T - 1e-6))
+                            bad = (near[..., None] & (np.abs(dz) < hh(a) + hh(b) + GAP - 1e-6))
                             unary[v] |= bad.any(1)
                         else:
                             key = bin_(a, b); sw = key != (a, b)
                             for x, la in enumerate(Lz):
                                 dz = (za + la)[..., None] - (zb[..., None] + Lz)           # (P,S,NL) over lb
-                                bad = near[..., None] & (np.abs(dz) < T - 1e-6)
+                                bad = near[..., None] & (np.abs(dz) < hh(a) + hh(b) + GAP - 1e-6)
                                 if thick: bad |= tight[..., None] & (np.abs(dz) + TP > bud[..., None] + 1e-6)
                                 bb = bad.any(1)
                                 if sw: binary[key][:, :, x] |= bb
@@ -155,13 +166,14 @@ class Geometry:
             for c in self.names:
                 if c in (a, b): continue
                 for pc, qc, rc in self.caps[c]:
-                    dd, s, t = seg2(X, X, pc, qc)
+                    dd, s, t = seg2(X * FLAT, X * FLAT, pc * FLAT, qc * FLAT)
                     near = dd < R_PIN + rc + GAP
                     if not near.any(): continue
                     zc = pc[..., 2] + t * (qc[..., 2] - pc[..., 2])
                     lc_set = Lz if c not in FIXED else np.array([0.])
                     zcl = zc[None] + lc_set[:, None, None]                    # (nc,P,S)
-                    bad = near[None, None, None] & (lo[:, :, None] - T + 1e-6 < zcl[None, None]) & (zcl[None, None] < hi[:, :, None] + T - 1e-6)
+                    hc = hh(c) + TP / 2 + GAP                                          # pin / stud ends flush with plate faces
+                    bad = near[None, None, None] & (lo[:, :, None] - hc + 1e-6 < zcl[None, None]) & (zcl[None, None] < hi[:, :, None] + hc - 1e-6)
                     bad = np.moveaxis(bad.any(-1), -1, 0)                                # (P, na, nb, nc)
                     self._put(unary, binary, ternary, a, b, c, bad)
         self.unary, self.binary, self.ternary = unary, binary, ternary

@@ -47,7 +47,7 @@ def main(ec, wc, seed, gens=300, pop=300, width=45, tilt=False, design=None):
     old = ROOT / 'results' / 'stage2' / ('runs_2d' if design else 'runs_tilt') / f'{ec}_{wc}_w{int(width)}_s{seed}.npz'
     if design and MIDLINE: old = ROOT / 'results' / 'stage2' / 'runs_2e' / f'{design}-{ec}_{wc}_w{int(width)}_s{seed}.npz'   # stage 2f: warm start from 2e (same variables)
     if design and MIDLINE and os.environ.get('WARM2F') == '1':     # stage 2f v1: restart from the v0 final populations (midline without layer offsets)
-        old = ROOT / 'results' / 'local' / 'runs_2f_v0' / f'{design}-{ec}_{wc}_w{int(width)}_s{seed}.npz'
+        old = ROOT / 'results' / 'local' / os.environ.get('WARM_DIR', 'runs_2f_v0') / f'{design}-{ec}_{wc}_w{int(width)}_s{seed}.npz'
     if tilt and old.exists():
         Xo = np.load(old)['X']
         if tilt == 'A' and Xo.shape[1] != len(xl): Xo = np.delete(Xo, [Xo.shape[1] - 5, Xo.shape[1] - 4], 1)       # drop tw, phi
