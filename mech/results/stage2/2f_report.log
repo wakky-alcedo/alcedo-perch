@@ -1,0 +1,1 @@
+C:\userfile\alcedo-perch\mech\results\local\stage2_2f2_report.html 4797 KB {'A:hum/direct': Counter({'n': 19, '通過': 12, '層の配置が不成立': 5, '左右が当たる': 2}), 'B:hum/direct': Counter({'n': 152, '層の配置が不成立': 84, '通過': 66, '左右が当たる': 2}), 'B:direct/direct': Counter({'n': 974, '通過': 959, '部品が交差': 15})}

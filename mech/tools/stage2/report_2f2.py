@@ -2,7 +2,7 @@
 bowed feathers -> results/local/stage2_2f2_report.html (embeds CG-derived figures, CC BY-SA 4.0: stays out of git).
 usage: MIDLINE=1 STACK_BUD_JOINT=8 STACK_NSUB=24 report_2f2.py
        (after gate_2f.py, analyze.py 45 2e, check_2e.py, crossing_check.py, mirror_check.py, loads.py 2e, feather_bend.py,
-        stack_figs.py, cand_figs.py 2e, mirror_figs.py F1 ..)"""
+        stack_figs.py, cand_figs.py 2e, mirror_figs.py <ids>)"""
 import sys, json, base64, pathlib, collections, numpy as np
 INTERIM = 'interim' in sys.argv; sys.argv = sys.argv[:1]
 from problem import LAYER_T, GAP
@@ -79,6 +79,9 @@ def fbrow(c):
 fb_tbl = ''.join(fbrow(c) for c in D)
 gain = [(1 - FB[c['id']]['fit_bent'] / FB[c['id']]['fit_flat']) * 100 for c in D]
 by = {c['id']: c for c in D}
+ZD = [c for c in D if c['id'].startswith('Z')]; FD = [c for c in D if c['id'].startswith('F')]
+def rng(cs, f, n):
+    v = [f(c) for c in cs]; return f'{min(v):.{n}f}〜{max(v):.{n}f}'
 def worst3(t):
     return '、'.join(f"{pair(k)} {v['clear']:.2f}" for k, v in sorted(t.items(), key=lambda kv: kv[1]['clear'])[:3])
 
@@ -130,7 +133,7 @@ img{{max-width:100%;height:auto}} figure{{margin:1.2em 0}} figcaption{{color:var
 
 <h2>結論（先に）</h2>
 <ul>
-<li><b>すべての確認を通った候補は7つです（F1〜F7）。</b>ベルクランク0個の構成（F2〜F4）が、今回初めて確認を通りました。確認したのは次の5つです。
+<li><b>すべての確認を通った候補は6つです。</b>前回の候補 F1〜F3（ベルクランク1個）はそのまま残し、今回初めて確認を通ったベルクランク0個の解を Z1〜Z3 としました。確認したのは次の5つです。
  <ul>
  <li>層の配置（全41姿勢）</li>
  <li>部品どうしの交差（竹串の実際の太さで判定）</li>
@@ -139,13 +142,13 @@ img{{max-width:100%;height:auto}} figure{{margin:1.2em 0}} figcaption{{color:var
  <li>反らせた羽根での当てはまり</li>
  </ul>
  選び方は、ご指定の優先順位（開きやすさ、畳んだときと開いたときの形、動きの滑らかさと再現性）に合わせました。
- 案A・ベルクランク1個では、3通りの選び方がどれも同じ解（F1）になりました。</li>
-<li><b>ベルクランク0個（F2〜F4）は、動きの精度と再現性で1個の構成より良く、はみ出しで劣ります。</b>
+ Z1〜Z3 は、0個の構成の中で3通りの選び方（再現性・形・開きやすさ）でそれぞれ選んだ解です。</li>
+<li><b>ベルクランク0個（Z1〜Z3）は、動きの精度と再現性で1個の構成より良く、はみ出しで劣ります。</b>
  <ul>
- <li>関節角誤差 1.5〜1.9°（1個の構成の候補は 2.9〜3.8°）。</li>
- <li>±0.20 mm の 95%：6.2〜7.4°（同 8.6〜9.9°）。</li>
- <li>はみ出し 11〜12 mm（同 1.5〜2 mm）。体側のレバーと玉が胴から出ます。</li>
- <li>反らせた羽根での当てはまりは、F3 が 12.5 で1個の構成と同程度、F2・F4 は 14.7 でやや劣ります。</li>
+ <li>関節角誤差 {rng(ZD, lambda c: c['F'][0], 1)}°（F1〜F3 は {rng(FD, lambda c: c['F'][0], 1)}°）。</li>
+ <li>±0.20 mm の 95%：{rng(ZD, lambda c: c['mc020']['p95'], 1)}°（同 {rng(FD, lambda c: c['mc020']['p95'], 1)}°）。</li>
+ <li>はみ出し {rng(ZD, lambda c: c['F'][2], 1)} mm（同 {rng(FD, lambda c: c['F'][2], 1)} mm）。体側のレバーと玉が胴から出ます。</li>
+ <li>反らせた羽根での当てはまり：{'、'.join(c['id'] + ' ' + format(FB[c['id']]['fit_bent'], '.1f') for c in ZD)}（F1〜F3 は {rng(FD, lambda c: FB[c['id']]['fit_bent'], 1)}）。</li>
  <li>部品が2つ（ベルクランク、ロッド2）減ります。左右のすき間は 9〜13 mm と大きく余裕があります。</li>
  </ul></li>
 <li><b>羽根を軸に沿って反らせると、畳み当てはまりが {min(gain):.0f}〜{max(gain):.0f}% 良くなります。</b>
@@ -160,17 +163,16 @@ img{{max-width:100%;height:auto}} figure{{margin:1.2em 0}} figcaption{{color:var
  <li>玉継手のまわり 5 mm では、継ぎ手の厚さ枠（{BUD_JOINT:.0f} mm）を使うようにしました。前は翼の厚さ枠（{BUD_WING:.0f} mm）が掛かり、玉のすぐ横で成立しない場合がありました。</li>
  </ul>
  最適化の結果はそのまま使わず、前線の解すべてに後段の確認をかけてから選んでいます（下の「確認の手順」）。</li>
-<li>シミュレータと Python の関節角の差は、7案とも 0.33° 以下です。</li>
+<li>シミュレータと Python の関節角の差は、6案とも 0.33° 以下です（前回の計算と同じ）。</li>
 </ul>
 
 <h2>決めていただきたいこと</h2>
 <ol>
 <li>段階3（CAD）に進める候補。
  <ul>
- <li><b>はみ出しを 10 mm 程度まで許せるなら、F3（ベルクランク0個・形重視）を勧めます。</b>関節角誤差 1.9°、±0.20 mm の 95% が 7.4° で、当てはまりも 1個の構成と同程度です。部品も少なくなります。</li>
- <li>F2・F4（ベルクランク0個）：F3 より精度と再現性が少し良く（±0.20 mm で 6.2〜6.7°）、当てはまりがやや劣ります。</li>
- <li>はみ出しを抑えたいなら F1（案A・ベルクランク1個、手首が平面で作りやすい）です。ただし ±0.20 mm の 95% が 9.0° で、F2〜F4 より悪くなります。</li>
- <li>F5〜F7（案B・ベルクランク1個）は、F1 に比べて良い点が少ないです。</li>
+ <li><b>はみ出しを 10 mm 程度まで許せるなら、Z2（ベルクランク0個・形重視）を勧めます。</b>関節角誤差 {by['Z2']['F'][0]:.1f}°、±0.20 mm の 95% が {by['Z2']['mc020']['p95']:.1f}° で、当てはまりも F1〜F3 と同程度です。部品も少なくなります。</li>
+ <li>Z1・Z3：Z2 より精度と再現性が少し良く（±0.20 mm で {rng([by['Z1'], by['Z3']], lambda c: c['mc020']['p95'], 1)}°）、当てはまりがやや劣ります。</li>
+ <li>はみ出しを抑えたいなら F1〜F3（ベルクランク1個）です。F1 は案Aで、手首が平面なので作りやすくなります。ただし ±0.20 mm の 95% は Z1〜Z3 より悪くなります。</li>
  </ul>
  「ところどころ出っ張るのは仕方ない」とのことでしたが、約 10 mm は局所的な出っ張りとしては大きい量です。許せるかどうかをシミュレータで見て判断してください。</li>
 <li>反らせた羽根の反りの量。

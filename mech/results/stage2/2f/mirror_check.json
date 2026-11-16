@@ -16,6 +16,36 @@
  },
  "F2": {
   "anchor_A": [
+   -3.1,
+   15.0,
+   11.3
+  ],
+  "anchor_from_mid": 9.6,
+  "min_clear": 1.66,
+  "pair": [
+   "bc1",
+   "bc1"
+  ],
+  "u": 0.95,
+  "clashes": {}
+ },
+ "F3": {
+  "anchor_A": [
+   -2.9,
+   14.9,
+   12.0
+  ],
+  "anchor_from_mid": 9.8,
+  "min_clear": 1.42,
+  "pair": [
+   "bc1",
+   "bc1"
+  ],
+  "u": 0.825,
+  "clashes": {}
+ },
+ "Z1": {
+  "anchor_A": [
    9.7,
    15.0,
    -9.3
@@ -29,7 +59,7 @@
   "u": 1.0,
   "clashes": {}
  },
- "F3": {
+ "Z2": {
   "anchor_A": [
    9.0,
    15.0,
@@ -44,7 +74,7 @@
   "u": 1.0,
   "clashes": {}
  },
- "F4": {
+ "Z3": {
   "anchor_A": [
    8.9,
    15.0,
@@ -57,51 +87,6 @@
    "rod4"
   ],
   "u": 1.0,
-  "clashes": {}
- },
- "F5": {
-  "anchor_A": [
-   -3.1,
-   14.9,
-   12.0
-  ],
-  "anchor_from_mid": 9.6,
-  "min_clear": 0.88,
-  "pair": [
-   "bc1",
-   "bc1"
-  ],
-  "u": 0.85,
-  "clashes": {}
- },
- "F6": {
-  "anchor_A": [
-   4.8,
-   -39.9,
-   1.8
-  ],
-  "anchor_from_mid": 17.5,
-  "min_clear": 1.47,
-  "pair": [
-   "bc1",
-   "bc1"
-  ],
-  "u": 0.675,
-  "clashes": {}
- },
- "F7": {
-  "anchor_A": [
-   -3.1,
-   15.0,
-   11.3
-  ],
-  "anchor_from_mid": 9.6,
-  "min_clear": 1.66,
-  "pair": [
-   "bc1",
-   "bc1"
-  ],
-  "u": 0.95,
   "clashes": {}
  }
 }

@@ -5,7 +5,7 @@ Outputs: results/stage2/summary.json, candidates.json, seeds.csv, pareto.png, se
          results/local/cand_*.png (CG body drawn -> not in git)."""
 import os
 os.environ.setdefault('OMP_NUM_THREADS', '4')
-import sys, json, glob, pathlib, numpy as np, matplotlib
+import sys, json, glob, pathlib, collections, numpy as np, matplotlib
 matplotlib.use('Agg'); import matplotlib.pyplot as plt
 from pymoo.util.nds.non_dominated_sorting import NonDominatedSorting
 from problem import Evaluator, U, SIG_DIM, CLEAR
@@ -168,15 +168,27 @@ def main():
                     b_ = min(kk, key=key); assert np.allclose(F[nd[b_['i']]], b_['F'], atol=1e-3)
                     cand.append((f'{grp}:{nm}', nd[b_['i']]))
     seen, uniq = set(), []
-    for nm, i in cand:
-        if i in seen: continue
-        seen.add(i); uniq.append((nm, i))
+    kept = OUT / 'kept.json'
+    if S2E and STAGE == '2f' and gate.exists() and kept.exists():      # user 2026-11-17: earlier candidates keep their ids; new picks only for
+        kj = json.load(open(kept, encoding='utf-8'))                     # the configs in "new", numbered with their own prefix
+        for k in kj['kept']:
+            m = [i for i in nd if C[i] == k['C'] and np.allclose(F[i], k['F'], atol=6e-3)]
+            assert len(m) == 1, (k['id'], m); seen.add(m[0]); uniq.append((k['id'], k['pick'], m[0]))
+        cnt = collections.Counter()
+        for nm, i in cand:
+            pre = next((v for cf, v in kj['new'].items() if (':' + cf) in nm), None)
+            if pre is None or i in seen: continue
+            cnt[pre] += 1; seen.add(i); uniq.append((f'{pre}{cnt[pre]}', nm, i))
+    else:
+        for nm, i in cand:
+            if i in seen: continue
+            seen.add(i); uniq.append((f"{PREFIX}{len(uniq) + 1}", nm, i))
     out = []
-    for j, (nm, i) in enumerate(uniq):
+    for j, (cid, nm, i) in enumerate(uniq):
         dsg, ecwc = C[i].split(':') if ':' in C[i] else ('', C[i]); ec, wc = ecwc.split('/')
         ev = make_ev(ec, wc, WIDTH, dsg)
         r, e = describe(ev, X[i])
-        r.update(id=f"{PREFIX}{j + 1}", pick=nm, ec=ec, wc=wc, dsg=dsg, label=clabel((ec, wc, dsg)), x=X[i].tolist(), cheb=float(s[i]))
+        r.update(id=cid, pick=nm, ec=ec, wc=wc, dsg=dsg, label=clabel((ec, wc, dsg)), x=X[i].tolist(), cheb=float(s[i]))
         r['mc005'] = monte_carlo(ev, X[i], amp=0.05); r['mc010'] = monte_carlo(ev, X[i], amp=0.10); r['mc020'] = monte_carlo(ev, X[i], amp=0.20)   # 3D-printer tolerance
         r['mc_play'] = monte_carlo(ev, X[i], amp=0.0)                                  # joint play only (bearings / balls / resin pins)
         for w in (40, 50):

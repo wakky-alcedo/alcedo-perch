@@ -1,29 +1,25 @@
 F1
 F2
 F3
-F4
-F5
-F6
-F7
+Z1
+Z2
+Z3
 F1 (21, 3)
-F2 (12, 3)
-F3 (12, 3)
-F4 (12, 3)
-F5 (21, 3)
-F6 (21, 3)
-F7 (21, 3)
+F2 (21, 3)
+F3 (21, 3)
+Z1 (12, 3)
+Z2 (12, 3)
+Z3 (12, 3)
 C:\userfile\alcedo-perch\mech\results\stage2\2f\mirror_F1.png
 C:\userfile\alcedo-perch\mech\results\stage2\2f\mirror_F2.png
 C:\userfile\alcedo-perch\mech\results\stage2\2f\mirror_F3.png
-C:\userfile\alcedo-perch\mech\results\stage2\2f\mirror_F4.png
-C:\userfile\alcedo-perch\mech\results\stage2\2f\mirror_F5.png
-C:\userfile\alcedo-perch\mech\results\stage2\2f\mirror_F6.png
-C:\userfile\alcedo-perch\mech\results\stage2\2f\mirror_F7.png
+C:\userfile\alcedo-perch\mech\results\stage2\2f\mirror_Z1.png
+C:\userfile\alcedo-perch\mech\results\stage2\2f\mirror_Z2.png
+C:\userfile\alcedo-perch\mech\results\stage2\2f\mirror_Z3.png
 F1 hum direct sim vs python: max |dE| 0.237 |dM| 0.185, rodTypes SRS, sim prot (ellipsoid) 7.93
-F2 direct direct sim vs python: max |dE| 0.326 |dM| 0.229, rodTypes SS, sim prot (ellipsoid) 8.68
-F3 direct direct sim vs python: max |dE| 0.263 |dM| 0.145, rodTypes SS, sim prot (ellipsoid) 8.16
-F4 direct direct sim vs python: max |dE| 0.297 |dM| 0.186, rodTypes SS, sim prot (ellipsoid) 8.71
-F5 hum direct sim vs python: max |dE| 0.057 |dM| 0.057, rodTypes SRS, sim prot (ellipsoid) 8.49
-F6 hum direct sim vs python: max |dE| 0.198 |dM| 0.131, rodTypes SRS, sim prot (ellipsoid) 1.57
-F7 hum direct sim vs python: max |dE| 0.024 |dM| 0.030, rodTypes SRS, sim prot (ellipsoid) 8.02
-C:\userfile\alcedo-perch\mech\results\local\kingfisher_wing_fold_standalone.html 364 KB
+F2 hum direct sim vs python: max |dE| 0.024 |dM| 0.030, rodTypes SRS, sim prot (ellipsoid) 8.02
+F3 hum direct sim vs python: max |dE| 0.040 |dM| 0.025, rodTypes SRS, sim prot (ellipsoid) 8.52
+Z1 direct direct sim vs python: max |dE| 0.326 |dM| 0.229, rodTypes SS, sim prot (ellipsoid) 8.68
+Z2 direct direct sim vs python: max |dE| 0.263 |dM| 0.145, rodTypes SS, sim prot (ellipsoid) 8.16
+Z3 direct direct sim vs python: max |dE| 0.297 |dM| 0.186, rodTypes SS, sim prot (ellipsoid) 8.71
+C:\userfile\alcedo-perch\mech\results\local\kingfisher_wing_fold_standalone.html 363 KB

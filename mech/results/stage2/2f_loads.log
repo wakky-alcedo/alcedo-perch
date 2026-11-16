@@ -1,9 +1,8 @@
 C:\userfile\alcedo-perch\mech\tools\stage2\loads.py:61: RuntimeWarning: divide by zero encountered in divide
   need = float(np.max(np.abs(Gk).max(1).max(1) / smin))     # N mm of spring so that gravity never wins
 F1 hum direct gravity max N {'Lc1': 0.137, 'L2': 0.1313, 'L4': 0.04} flip share {'Lc1': 0.27, 'L2': 0.27, 'L4': 0.38} spring {'tau': 1.45, 'tauE': np.float64(1.02), 'tauW': np.float64(0.44), 'motor': 1.9}
-F2 direct direct gravity max N {'L4': 0.0327, 'Ld': 0.1436} flip share {'L4': 0.47, 'Ld': 0.32} spring {'tau': 1.25, 'tauE': np.float64(0.82), 'tauW': np.float64(0.44), 'motor': 1.58}
-F3 direct direct gravity max N {'L4': 0.0365, 'Ld': 0.1676} flip share {'L4': 0.43, 'Ld': 0.34} spring {'tau': 1.37, 'tauE': np.float64(0.96), 'tauW': np.float64(0.41), 'motor': 1.88}
-F4 direct direct gravity max N {'L4': 0.0347, 'Ld': 0.1485} flip share {'L4': 0.47, 'Ld': 0.32} spring {'tau': 1.24, 'tauE': np.float64(0.8), 'tauW': np.float64(0.43), 'motor': 1.55}
-F5 hum direct gravity max N {'Lc1': 0.1552, 'L2': 0.1466, 'L4': 0.0355} flip share {'Lc1': 0.29, 'L2': 0.29, 'L4': 0.46} spring {'tau': 1.72, 'tauE': np.float64(1.29), 'tauW': np.float64(0.43), 'motor': 2.26}
-F6 hum direct gravity max N {'Lc1': 0.1191, 'L2': 0.1372, 'L4': 0.0371} flip share {'Lc1': 0.33, 'L2': 0.33, 'L4': 0.42} spring {'tau': 1.42, 'tauE': np.float64(0.99), 'tauW': np.float64(0.43), 'motor': 1.82}
-F7 hum direct gravity max N {'Lc1': 0.1886, 'L2': 0.1474, 'L4': 0.0355} flip share {'Lc1': 0.3, 'L2': 0.3, 'L4': 0.46} spring {'tau': 2.25, 'tauE': np.float64(1.8), 'tauW': np.float64(0.45), 'motor': 3.0}
+F2 hum direct gravity max N {'Lc1': 0.1886, 'L2': 0.1474, 'L4': 0.0355} flip share {'Lc1': 0.3, 'L2': 0.3, 'L4': 0.46} spring {'tau': 2.25, 'tauE': np.float64(1.8), 'tauW': np.float64(0.45), 'motor': 3.0}
+F3 hum direct gravity max N {'Lc1': 0.143, 'L2': 0.128, 'L4': 0.0349} flip share {'Lc1': 0.29, 'L2': 0.29, 'L4': 0.47} spring {'tau': 1.92, 'tauE': np.float64(1.53), 'tauW': np.float64(0.38), 'motor': 2.52}
+Z1 direct direct gravity max N {'L4': 0.0327, 'Ld': 0.1436} flip share {'L4': 0.47, 'Ld': 0.32} spring {'tau': 1.25, 'tauE': np.float64(0.82), 'tauW': np.float64(0.44), 'motor': 1.58}
+Z2 direct direct gravity max N {'L4': 0.0365, 'Ld': 0.1676} flip share {'L4': 0.43, 'Ld': 0.34} spring {'tau': 1.37, 'tauE': np.float64(0.96), 'tauW': np.float64(0.41), 'motor': 1.88}
+Z3 direct direct gravity max N {'L4': 0.0347, 'Ld': 0.1485} flip share {'L4': 0.47, 'Ld': 0.32} spring {'tau': 1.24, 'tauE': np.float64(0.8), 'tauW': np.float64(0.43), 'motor': 1.55}

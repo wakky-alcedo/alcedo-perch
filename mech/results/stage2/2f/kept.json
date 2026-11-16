@@ -1,0 +1,47 @@
+{
+ "note": "stage 2f candidates kept with their ids (user 2026-11-17); matched on the front by config and objectives (2 decimals); new no-bellcrank picks get the prefix in \"new\"",
+ "new": {
+  "direct/direct": "Z"
+ },
+ "kept": [
+  {
+   "id": "F1",
+   "pick": "A:hum/direct:repeat",
+   "C": "A:hum/direct",
+   "F": [
+    3.12,
+    -29.68,
+    1.99,
+    2.28,
+    17.46,
+    23.34
+   ]
+  },
+  {
+   "id": "F2",
+   "pick": "B:hum/direct:repeat",
+   "C": "B:hum/direct",
+   "F": [
+    3.77,
+    -32.8,
+    1.49,
+    2.84,
+    15.98,
+    17.98
+   ]
+  },
+  {
+   "id": "F3",
+   "pick": "B:hum/direct:shape",
+   "C": "B:hum/direct",
+   "F": [
+    3.95,
+    -34.096,
+    1.271,
+    2.305,
+    17.547,
+    17.689
+   ]
+  }
+ ]
+}

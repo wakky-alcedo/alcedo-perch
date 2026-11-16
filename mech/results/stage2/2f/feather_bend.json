@@ -44,6 +44,94 @@
   }
  },
  "F2": {
+  "fit_flat": 15.99,
+  "fit_bent": 13.31,
+  "parts_flat": [
+   2.5,
+   0.0,
+   0.43,
+   0.66,
+   2.15,
+   1.1,
+   0.0,
+   9.14
+  ],
+  "parts_bent": [
+   0.82,
+   0.15,
+   0.43,
+   0.0,
+   1.67,
+   1.1,
+   0.0,
+   9.14
+  ],
+  "flat": {
+   "bury_max": 4.91,
+   "float_max": 0.0
+  },
+  "bent": {
+   "bury_max": 4.85,
+   "float_max": 1.6
+  },
+  "sec": {
+   "alpha_deg": 25.0,
+   "R_mm": 35.0,
+   "camber": 0.143,
+   "rub_mm": 3.07
+  },
+  "pri": {
+   "alpha_deg": 20.0,
+   "R_mm": 70.0,
+   "camber": 0.089,
+   "rub_mm": 1.86
+  }
+ },
+ "F3": {
+  "fit_flat": 17.55,
+  "fit_bent": 15.3,
+  "parts_flat": [
+   2.51,
+   0.03,
+   0.6,
+   0.21,
+   2.24,
+   1.49,
+   0.0,
+   10.46
+  ],
+  "parts_bent": [
+   0.8,
+   0.21,
+   0.6,
+   0.0,
+   1.74,
+   1.49,
+   0.0,
+   10.46
+  ],
+  "flat": {
+   "bury_max": 4.96,
+   "float_max": 0.37
+  },
+  "bent": {
+   "bury_max": 4.68,
+   "float_max": 2.15
+  },
+  "sec": {
+   "alpha_deg": 25.0,
+   "R_mm": 35.0,
+   "camber": 0.143,
+   "rub_mm": 3.07
+  },
+  "pri": {
+   "alpha_deg": 20.0,
+   "R_mm": 70.0,
+   "camber": 0.089,
+   "rub_mm": 1.86
+  }
+ },
+ "Z1": {
   "fit_flat": 19.5,
   "fit_bent": 14.69,
   "parts_flat": [
@@ -87,7 +175,7 @@
    "rub_mm": 3.73
   }
  },
- "F3": {
+ "Z2": {
   "fit_flat": 15.01,
   "fit_bent": 12.45,
   "parts_flat": [
@@ -131,7 +219,7 @@
    "rub_mm": 1.86
   }
  },
- "F4": {
+ "Z3": {
   "fit_flat": 19.42,
   "fit_bent": 14.7,
   "parts_flat": [
@@ -173,138 +261,6 @@
    "R_mm": 35.0,
    "camber": 0.179,
    "rub_mm": 3.73
-  }
- },
- "F5": {
-  "fit_flat": 15.69,
-  "fit_bent": 13.09,
-  "parts_flat": [
-   2.91,
-   0.0,
-   0.4,
-   0.0,
-   2.21,
-   1.01,
-   0.0,
-   9.16
-  ],
-  "parts_bent": [
-   0.59,
-   0.14,
-   0.4,
-   0.0,
-   1.78,
-   1.01,
-   0.0,
-   9.16
-  ],
-  "flat": {
-   "bury_max": 5.55,
-   "float_max": 0.0
-  },
-  "bent": {
-   "bury_max": 2.72,
-   "float_max": 1.43
-  },
-  "sec": {
-   "alpha_deg": 20.0,
-   "R_mm": 50.0,
-   "camber": 0.1,
-   "rub_mm": 2.15
-  },
-  "pri": {
-   "alpha_deg": 30.0,
-   "R_mm": 50.0,
-   "camber": 0.125,
-   "rub_mm": 2.59
-  }
- },
- "F6": {
-  "fit_flat": 15.3,
-  "fit_bent": 12.28,
-  "parts_flat": [
-   2.86,
-   0.0,
-   0.18,
-   0.89,
-   2.44,
-   0.47,
-   0.0,
-   8.45
-  ],
-  "parts_bent": [
-   1.1,
-   0.05,
-   0.18,
-   0.0,
-   2.02,
-   0.47,
-   0.0,
-   8.45
-  ],
-  "flat": {
-   "bury_max": 5.48,
-   "float_max": 0.0
-  },
-  "bent": {
-   "bury_max": 5.53,
-   "float_max": 0.63
-  },
-  "sec": {
-   "alpha_deg": 25.0,
-   "R_mm": 35.0,
-   "camber": 0.143,
-   "rub_mm": 3.07
-  },
-  "pri": {
-   "alpha_deg": 20.0,
-   "R_mm": 70.0,
-   "camber": 0.089,
-   "rub_mm": 1.86
-  }
- },
- "F7": {
-  "fit_flat": 15.99,
-  "fit_bent": 13.31,
-  "parts_flat": [
-   2.5,
-   0.0,
-   0.43,
-   0.66,
-   2.15,
-   1.1,
-   0.0,
-   9.14
-  ],
-  "parts_bent": [
-   0.82,
-   0.15,
-   0.43,
-   0.0,
-   1.67,
-   1.1,
-   0.0,
-   9.14
-  ],
-  "flat": {
-   "bury_max": 4.91,
-   "float_max": 0.0
-  },
-  "bent": {
-   "bury_max": 4.85,
-   "float_max": 1.6
-  },
-  "sec": {
-   "alpha_deg": 25.0,
-   "R_mm": 35.0,
-   "camber": 0.143,
-   "rub_mm": 3.07
-  },
-  "pri": {
-   "alpha_deg": 20.0,
-   "R_mm": 70.0,
-   "camber": 0.089,
-   "rub_mm": 1.86
   }
  }
 }

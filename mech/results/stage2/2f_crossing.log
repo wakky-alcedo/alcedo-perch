@@ -1,7 +1,6 @@
 F1 A plan {'hum': 0, 'uln': -1, 'hand': 0, 'bc1': -3, 'rod2': -2, 'rod4': 0} ok {'hum-uln': 0.0, 'uln-rod2': 0.0, 'bc1-rod2': -0.0}
-F2 B plan {'hum': 0, 'uln': 1, 'hand': 0, 'rod4': 0} ok {'hum-uln': 0.0, 'uln-rod4': 0.22, 'uln-rod1': 0.34}
-F3 B plan {'hum': 0, 'uln': 1, 'hand': -3, 'rod4': 0} ok {'hum-uln': 0.0, 'uln-rod1': 0.17, 'hum-rod4': 0.65}
-F4 B plan {'hum': 0, 'uln': 1, 'hand': 0, 'rod4': 0} ok {'hum-uln': 0.0, 'uln-rod4': 0.45, 'uln-rod1': 0.47}
-F5 B plan {'hum': 0, 'uln': -1, 'hand': 1, 'bc1': -3, 'rod2': -2, 'rod4': -1} ok {'hum-uln': 0.0, 'uln-rod2': 0.0, 'bc1-rod2': -0.0}
-F6 B plan {'hum': -2, 'uln': -1, 'hand': 1, 'bc1': -3, 'rod2': 0, 'rod4': -1} ok {'hum-uln': 0.0, 'hum-bc1': -0.0, 'uln-rod2': 0.0}
-F7 B plan {'hum': 0, 'uln': -2, 'hand': 0, 'bc1': -2, 'rod2': -3, 'rod4': 3} ok {'uln-rod2': -0.0, 'bc1-rod2': -0.0, 'hum-rod4': 0.24}
+F2 B plan {'hum': 0, 'uln': -2, 'hand': 0, 'bc1': -2, 'rod2': -3, 'rod4': 3} ok {'uln-rod2': -0.0, 'bc1-rod2': -0.0, 'hum-rod4': 0.24}
+F3 B plan {'hum': -1, 'uln': -2, 'hand': 2, 'bc1': -2, 'rod2': -3, 'rod4': 0} ok {'hum-uln': 0.0, 'hum-bc1': 0.0, 'uln-rod2': -0.0}
+Z1 B plan {'hum': 0, 'uln': 1, 'hand': 0, 'rod4': 0} ok {'hum-uln': 0.0, 'uln-rod4': 0.22, 'uln-rod1': 0.34}
+Z2 B plan {'hum': 0, 'uln': 1, 'hand': -3, 'rod4': 0} ok {'hum-uln': 0.0, 'uln-rod1': 0.17, 'hum-rod4': 0.65}
+Z3 B plan {'hum': 0, 'uln': 1, 'hand': 0, 'rod4': 0} ok {'hum-uln': 0.0, 'uln-rod4': 0.45, 'uln-rod1': 0.47}

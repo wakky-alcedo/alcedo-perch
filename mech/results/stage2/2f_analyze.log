@@ -39,9 +39,8 @@ feasible 6300 global non-dominated 3694
  }
 }
 F1 A:hum/direct:repeat hum direct F [  3.12 -29.68   1.99   2.28  17.46  23.34] MC0.05 p95 2.56 max 3.64 fail 0.000 swivel 24 w40 fit 20.4 w50 fit 18.5
-F2 B:direct/direct:repeat direct direct F [  1.63 -31.91  11.72   1.89  19.5   13.37] MC0.05 p95 2.05 max 2.86 fail 0.000 swivel 25 w40 fit 23.2 w50 fit 21.1
-F3 B:direct/direct:shape direct direct F [  1.94 -28.87  11.22   2.16  15.01  13.17] MC0.05 p95 2.42 max 3.28 fail 0.000 swivel 25 w40 fit 18.4 w50 fit 16.6
-F4 B:direct/direct:open direct direct F [  1.52 -32.4   10.99   1.98  19.42  13.53] MC0.05 p95 2.18 max 2.96 fail 0.000 swivel 25 w40 fit 23.2 w50 fit 21.0
-F5 B:hum/direct:repeat hum direct F [  3.8  -27.12   1.49   2.5   15.69  17.65] MC0.05 p95 2.63 max 3.87 fail 0.000 swivel 25 w40 fit 19.4 w50 fit 15.6
-F6 B:hum/direct:shape hum direct F [  2.94 -28.76   1.81   2.26  15.3   22.62] MC0.05 p95 2.41 max 3.87 fail 0.000 swivel 22 w40 fit 19.6 w50 fit 15.6
-F7 B:hum/direct:open hum direct F [  3.77 -32.8    1.49   2.84  15.98  17.98] MC0.05 p95 2.94 max 4.61 fail 0.000 swivel 24 w40 fit 19.9 w50 fit 16.0
+F2 B:hum/direct:repeat hum direct F [  3.77 -32.8    1.49   2.84  15.98  17.98] MC0.05 p95 2.94 max 4.61 fail 0.000 swivel 24 w40 fit 19.9 w50 fit 16.0
+F3 B:hum/direct:shape hum direct F [  3.95 -34.1    1.27   2.31  17.55  17.69] MC0.05 p95 2.48 max 3.57 fail 0.000 swivel 25 w40 fit 21.7 w50 fit 17.5
+Z1 B:direct/direct:repeat direct direct F [  1.63 -31.91  11.72   1.89  19.5   13.37] MC0.05 p95 2.05 max 2.86 fail 0.000 swivel 25 w40 fit 23.2 w50 fit 21.1
+Z2 B:direct/direct:shape direct direct F [  1.94 -28.87  11.22   2.16  15.01  13.17] MC0.05 p95 2.42 max 3.28 fail 0.000 swivel 25 w40 fit 18.4 w50 fit 16.6
+Z3 B:direct/direct:open direct direct F [  1.52 -32.4   10.99   1.98  19.42  13.53] MC0.05 p95 2.18 max 2.96 fail 0.000 swivel 25 w40 fit 23.2 w50 fit 21.0
