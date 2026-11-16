@@ -1,6 +1,6 @@
 """Stage-2f report, second part (2026-11-16): full post-check gate, candidates chosen by the user's priorities, no-bellcrank runs,
 bowed feathers -> results/local/stage2_2f2_report.html (embeds CG-derived figures, CC BY-SA 4.0: stays out of git).
-usage: MIDLINE=1 STACK_BUD_JOINT=6 report_2f2.py [interim]
+usage: MIDLINE=1 STACK_BUD_JOINT=8 STACK_NSUB=24 report_2f2.py
        (after gate_2f.py, analyze.py 45 2e, check_2e.py, crossing_check.py, mirror_check.py, loads.py 2e, feather_bend.py,
         stack_figs.py, cand_figs.py 2e, mirror_figs.py F1 ..)"""
 import sys, json, base64, pathlib, collections, numpy as np
@@ -58,7 +58,7 @@ def cells(c):
             mc(c['mc_play']), mc(c['mc005']), mc(c['mc020']), f"{fb['fit_flat']:.1f} → <b>{fb['fit_bent']:.1f}</b>",
             f"{F[2]:.1f}", f"{F[3]:.2f}", f"{MC[i]['min_clear']:.1f}", f"{cr:.2f}", f"{thick(ch['plan']):.1f}",
             f"{pair(st_[0])} {st_[1]:.1f}", f"{max(c['rods']):.0f}", f"{c['lever_min']:.1f}",
-            f"{fm['Lc1']:.2f} / {fm['L2']:.2f} / {fm['L4']:.2f}", f"{sp['tau_E']:.2f} / {sp['tau_W']:.2f}", f"{sp['motor_extra_Nmm']:.1f}"]
+            ' / '.join(f"{fm[k]:.2f}" if k in fm else '–' for k in ('Lc1', 'L2', 'L4')) + (f" （直結 {fm['Ld']:.2f}）" if 'Ld' in fm else ''), f"{sp['tau_E']:.2f} / {sp['tau_W']:.2f}", f"{sp['motor_extra_Nmm']:.1f}"]
 
 
 HEAD = ['案', '設計', '選び方', '関節角誤差 °', '最小伝達角 °', 'ゲイン最大 °/°', 'ガタだけ 95% / 最大 °', '±0.05 mm 95% / 最大 °', '±0.20 mm 95% / 最大 °',
@@ -86,21 +86,31 @@ def worst3(t):
 cr_rows = ''.join(f"<tr><td>{i}</td><td style='text-align:left'>{worst3(t)}</td></tr>" for i, t in CR.items())
 zs = summ.get('B:direct/direct', {}); za = summ.get('A:direct/direct', {})
 
+ZP = [r for r in Z if r['pass']]
+zpair_f = collections.Counter(r['cross_pair'] for r in Z if not r['pass'])
+zpmc = np.array([r['mc020'] for r in ZP]); zpprot = np.array([r['F'][2] for r in ZP]); zperr = np.array([r['F'][0] for r in ZP])
+zpfit = np.array([r['fit_bent'] for r in ZP])
+hperr = np.array([r['F'][0] for r in hd]); hpprot = np.array([r['F'][2] for r in hd]); hpfit = np.array([r['fit_bent'] for r in hd])
 z_html = f"""
-<p>案Bでは {zs.get('seeds_with_feasible', 0)}/{zs.get('seeds', 8)} シードで解が出ました（案Aは {za.get('seeds_with_feasible', 0)}/{za.get('seeds', 8)}）。継ぎ手の厚さ枠は {BUD_JOINT:.0f} mm 必要でした。
-4 mm では成立しません。尺骨のレバーの玉が尺骨の面から約 8 mm 上にあり、その上を竹串が通るためです。</p>
+<p>継ぎ手の厚さ枠を {BUD_JOINT:.0f} mm に緩め、層の判定を直して計算し直しました（案B、8シード）。今回は {zs.get('seeds_with_feasible', 0)}/{zs.get('seeds', 8)} シードで解が出ました。
+確認の手順にかけた {len(Z)} 解のうち、{len(ZP)} 解がすべての確認を通りました。案Aは前回の計算のままで、解はありません（{za.get('seeds_with_feasible', 0)}/{za.get('seeds', 8)}）。</p>
 <ul>
-<li>層の配置が成立したのは {len(Z)} 解です。そのすべてで、ロッド1（竹串）と尺骨が平面図で交差し、高さ方向にも当たりました。
- 最良でも {zbest['cross_min']:.2f} mm 食い込んでいます（当たる組：{'、'.join(pair(k) + f' {v}解' for k, v in zpair.items())}）。</li>
-<li>竹串は傾いて通るので、最適化の中の層の判定は竹串を短い区間に分けて調べます。{NSUB if NSUB != 8 else 8} 分割では、尺骨のレバーの玉の近くで粗すぎて、この当たりを見逃していました。</li>
-<li>参考：通らなかった解の値（範囲）。
+<li><b>直したこと：</b>前回は、傾いて通る竹串とロッド4を短い区間に分けて層を判定していました。そのため、尺骨のレバーの玉の近くで当たりを見逃していました（独立の交差チェックで −0.3〜−1.1 mm）。
+ 今回は、傾いた棒を各層の高さの範囲で切り取って、平らな部品と直接比べるようにしました。継ぎ手の周り 3 mm は、交差チェックと同じく除外します。
+ それでも、層の配置は通ったのに交差チェックで当たった解が {len(Z) - len(ZP)} 解残りました。
+ 食い込みは {min(r['cross_min'] for r in Z):.2f}〜{max(r['cross_min'] for r in Z if not r['pass']):.2f} mm と小さく（{'、'.join(pair(k) + f' {v}解' for k, v in zpair_f.items())}）、確認の手順で落としています。
+ 玉継手の近くで、2つの判定の除外範囲が少し違うためと考えています（未確認）。</li>
+<li><b>通った解の範囲（1個の構成で通った解との比較）：</b>
  <ul>
- <li>関節角誤差 {zerr.min():.1f}〜{zerr.max():.1f}°、最小伝達角 {zt.min():.0f}〜{zt.max():.0f}°。</li>
- <li>±0.20 mm の 95%：{zmc.min():.1f}〜{np.median(zmc):.1f}°（最小〜中央値）。1個の構成で通った解は {hmc.min():.1f}〜{np.median(hmc):.1f}° です。</li>
- <li>反らせた羽根での当てはまり {zfit.min():.1f}〜{np.median(zfit):.1f}、はみ出し {zprot.min():.1f}〜{zprot.max():.1f} mm（体側のレバーと玉が胴から出ます）。</li>
- <li>左右のすき間は約 10〜14 mm です。ベルクランクが中心線の近くに来ないためです。</li>
+ <li>関節角誤差 {zperr.min():.1f}〜{np.median(zperr):.1f}°（最小〜中央値）。1個の構成は {hperr.min():.1f}〜{np.median(hperr):.1f}°。</li>
+ <li>±0.20 mm の 95%：{zpmc.min():.1f}〜{np.median(zpmc):.1f}°。1個の構成は {hmc.min():.1f}〜{np.median(hmc):.1f}°。</li>
+ <li>反らせた羽根での当てはまり {zpfit.min():.1f}〜{np.median(zpfit):.1f}。1個の構成は {hpfit.min():.1f}〜{np.median(hpfit):.1f}。</li>
+ <li>はみ出し {zpprot.min():.1f}〜{np.median(zpprot):.1f} mm。1個の構成は {hpprot.min():.1f}〜{np.median(hpprot):.1f} mm。</li>
  </ul></li>
-<li class="bad">{'いま竹串を 24 分割にして計算し直しています（昨日 20:34 開始、未完了）。この節は暫定です。' if INTERIM else ''}</li>
+<li><b>はみ出しが約 10 mm と大きいままです。</b>体側のレバーと、竹串の体側の玉が胴から出ます。肘を直接ロッドで引くには、体側に長いレバーが要るためです。
+ 継ぎ手の厚さ枠を緩めても、この量はほとんど変わりませんでした。</li>
+<li>左右のすき間は 9〜13 mm あります。ベルクランクが中心線の近くに来ないためです。</li>
+<li>部品は少なくなります（ベルクランク・ロッド2がない）。部品の評価値は 13 前後で、1個の構成（17〜23）より小さい値です。</li>
 </ul>"""
 
 html = f"""<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -115,12 +125,12 @@ th{{background:var(--bg);white-space:normal;min-width:4.5em;vertical-align:botto
 img{{max-width:100%;height:auto}} figure{{margin:1.2em 0}} figcaption{{color:var(--mute);font-size:13px}} li{{margin:.3em 0}}
 </style></head><body>
 <h1>段階2f（続き）：すべての確認を通った候補と、反らせた羽根</h1>
-<p class="mute">2026-11-16{'（暫定版：ベルクランク0個の構成は計算し直し中）' if INTERIM else ''}。数値はすべて計算値で、実測ではありません。
+<p class="mute">2026-11-17。数値はすべて計算値で、実測ではありません。
 各シードの局所的なパレート解なので、大域最適の保証はありません。</p>
 
 <h2>結論（先に）</h2>
 <ul>
-<li><b>ベルクランク1個の構成で、すべての確認を通った候補は3つです（F1〜F3）。</b>確認したのは次の5つです。
+<li><b>すべての確認を通った候補は7つです（F1〜F7）。</b>ベルクランク0個の構成（F2〜F4）が、今回初めて確認を通りました。確認したのは次の5つです。
  <ul>
  <li>層の配置（全41姿勢）</li>
  <li>部品どうしの交差（竹串の実際の太さで判定）</li>
@@ -129,36 +139,43 @@ img{{max-width:100%;height:auto}} figure{{margin:1.2em 0}} figcaption{{color:var
  <li>反らせた羽根での当てはまり</li>
  </ul>
  選び方は、ご指定の優先順位（開きやすさ、畳んだときと開いたときの形、動きの滑らかさと再現性）に合わせました。
- 案Aでは、3通りの選び方がどれも同じ解（F1）になりました。</li>
+ 案A・ベルクランク1個では、3通りの選び方がどれも同じ解（F1）になりました。</li>
+<li><b>ベルクランク0個（F2〜F4）は、動きの精度と再現性で1個の構成より良く、はみ出しで劣ります。</b>
+ <ul>
+ <li>関節角誤差 1.5〜1.9°（1個の構成の候補は 2.9〜3.8°）。</li>
+ <li>±0.20 mm の 95%：6.2〜7.4°（同 8.6〜9.9°）。</li>
+ <li>はみ出し 11〜12 mm（同 1.5〜2 mm）。体側のレバーと玉が胴から出ます。</li>
+ <li>反らせた羽根での当てはまりは、F3 が 12.5 で1個の構成と同程度、F2・F4 は 14.7 でやや劣ります。</li>
+ <li>部品が2つ（ベルクランク、ロッド2）減ります。左右のすき間は 9〜13 mm と大きく余裕があります。</li>
+ </ul></li>
 <li><b>羽根を軸に沿って反らせると、畳み当てはまりが {min(gain):.0f}〜{max(gain):.0f}% 良くなります。</b>
  <ul>
- <li>根元の角度は約 20°、曲げ半径は次列風切が 35〜50 mm、初列風切が 70 mm です。</li>
- <li>開いた翼では、反りの高さが羽根の長さの 9〜14% になります。本物の翼より強く反っています。</li>
- <li>畳む途中で、隣り合う羽根の高さの差が 2〜3 mm 変わります。羽根の間隔か、羽根のしなりで吸収する必要があります。</li>
+ <li>根元の角度は 15〜35°、曲げ半径は 35〜70 mm です。</li>
+ <li>開いた翼では、反りの高さが羽根の長さの 9〜18% になります。本物の翼より強く反っています。</li>
+ <li>畳む途中で、隣り合う羽根の高さの差が 2〜4 mm 変わります。羽根の間隔か、羽根のしなりで吸収する必要があります。</li>
  </ul></li>
-<li class="bad"><b>ベルクランク0個の構成は、いまのところ全滅です。</b>
+<li>最適化の中の層の判定を2か所直しました。
  <ul>
- <li>竹串と尺骨が約 0.8 mm 当たります。</li>
- <li>層の判定を細かくして計算し直しています。</li>
- <li>±0.20 mm に対する再現性は、1個の構成より良い見込みです。</li>
- </ul></li>
-<li>途中で見つけた不具合があります。最適化の中の層の判定が、平面図で交差する部品どうしに甘くなっていました。
- 1個の構成で前線に残った解の多くは、独立した交差チェックで 0.05〜0.5 mm 当たっていました。
- そのため、最適化の結果をそのまま使わず、前線の解すべてに後段の確認をかけてから選ぶ方式にしました（下の「確認の手順」）。</li>
+ <li>傾いて通る竹串・ロッド4と平らな部品の当たりを、厳密に判定するようにしました。</li>
+ <li>玉継手のまわり 5 mm では、継ぎ手の厚さ枠（{BUD_JOINT:.0f} mm）を使うようにしました。前は翼の厚さ枠（{BUD_WING:.0f} mm）が掛かり、玉のすぐ横で成立しない場合がありました。</li>
+ </ul>
+ 最適化の結果はそのまま使わず、前線の解すべてに後段の確認をかけてから選んでいます（下の「確認の手順」）。</li>
+<li>シミュレータと Python の関節角の差は、7案とも 0.33° 以下です。</li>
 </ul>
 
 <h2>決めていただきたいこと</h2>
 <ol>
 <li>段階3（CAD）に進める候補。
  <ul>
- <li>F1（案A、手首が平面で作りやすい）：関節角誤差が最小で、±0.20 mm でも F3 並みです。</li>
- <li>F3（案B）：±0.20 mm で最良、開きやすさも最良です。ただし手首のピンが 6 mm と長くなります。</li>
- <li>F2：「再現性重視」で選んだ解ですが、400 回で計算し直すと ±0.20 mm が3つの中で最も悪くなりました。勧めません。</li>
+ <li><b>はみ出しを 10 mm 程度まで許せるなら、F3（ベルクランク0個・形重視）を勧めます。</b>関節角誤差 1.9°、±0.20 mm の 95% が 7.4° で、当てはまりも 1個の構成と同程度です。部品も少なくなります。</li>
+ <li>F2・F4（ベルクランク0個）：F3 より精度と再現性が少し良く（±0.20 mm で 6.2〜6.7°）、当てはまりがやや劣ります。</li>
+ <li>はみ出しを抑えたいなら F1（案A・ベルクランク1個、手首が平面で作りやすい）です。ただし ±0.20 mm の 95% が 9.0° で、F2〜F4 より悪くなります。</li>
+ <li>F5〜F7（案B・ベルクランク1個）は、F1 に比べて良い点が少ないです。</li>
  </ul>
- ベルクランク0個の計算し直しの結果を待ってから決めることもできます。</li>
+ 「ところどころ出っ張るのは仕方ない」とのことでしたが、約 10 mm は局所的な出っ張りとしては大きい量です。許せるかどうかをシミュレータで見て判断してください。</li>
 <li>反らせた羽根の反りの量。
  <ul>
- <li>当てはまりが最良になる値では、開いた翼が強く反ります（9〜14%）。</li>
+ <li>当てはまりが最良になる値では、開いた翼が強く反ります（9〜18%）。</li>
  <li>開いた形を優先するなら反りを弱めます（例：半径を大きくする）。当てはまりの改善はその分小さくなります。</li>
  <li>反りの量と当てはまりの関係を一覧にすることもできます（未計算）。</li>
  </ul></li>
@@ -215,7 +232,7 @@ img{{max-width:100%;height:auto}} figure{{margin:1.2em 0}} figcaption{{color:var
 <ul>
 <li>製作は、平らに印刷してから温め、ジグで曲げる前提です。ジグは半径 R の円筒（または R の型）で、根元の角度 α は取り付け部で付けます。
  PLA / PETG では、温めて曲げたあと少し戻ります。ジグは狙いより小さい半径で作り、戻り量を試し曲げで測る必要があります（未実測）。</li>
-<li>反らせると胴への埋まりは減りますが、根元側が浮きます（最大 1.3〜1.6 mm）。反りの量を変えると、浮きと埋まりの釣り合いが変わります。</li>
+<li>反らせると胴への埋まりは減りますが、根元側が浮くことがあります（最大 0.4〜3.2 mm）。反りの量を変えると、浮きと埋まりの釣り合いが変わります。</li>
 <li>羽根の重なりの順番（上下）と、畳むときに羽根どうしがこすれる量は、段階3のCADで確認します。</li>
 </ul>
 

@@ -1,0 +1,47 @@
+runs 32
+feasible 6300 global non-dominated 3694
+{
+ "A:hum/direct": {
+  "label": "案A（平面） 肘BC:上腕骨／手首:直結ロッド",
+  "seeds": 8,
+  "seeds_with_feasible": 7,
+  "best_cheb_median": 2.308063755534686,
+  "best_cheb_min": 2.1850791681802093,
+  "best_cheb_max": 6.1676252439237,
+  "n_in_global_front": 824
+ },
+ "A:direct/direct": {
+  "label": "案A（平面） 肘・手首とも直結ロッド（ベルクランクなし）",
+  "seeds": 8,
+  "seeds_with_feasible": 0,
+  "best_cheb_median": null,
+  "best_cheb_min": null,
+  "best_cheb_max": null,
+  "n_in_global_front": 0
+ },
+ "B:hum/direct": {
+  "label": "案B（手首傾き） 肘BC:上腕骨／手首:直結ロッド",
+  "seeds": 8,
+  "seeds_with_feasible": 6,
+  "best_cheb_median": 1.8736528345311543,
+  "best_cheb_min": 1.8042819396412737,
+  "best_cheb_max": 3.6935863162672797,
+  "n_in_global_front": 1465
+ },
+ "B:direct/direct": {
+  "label": "案B（手首傾き） 肘・手首とも直結ロッド（ベルクランクなし）",
+  "seeds": 8,
+  "seeds_with_feasible": 8,
+  "best_cheb_median": 10.469359874725342,
+  "best_cheb_min": 9.802382275944469,
+  "best_cheb_max": 10.574484825134277,
+  "n_in_global_front": 1405
+ }
+}
+F1 A:hum/direct:repeat hum direct F [  3.12 -29.68   1.99   2.28  17.46  23.34] MC0.05 p95 2.56 max 3.64 fail 0.000 swivel 24 w40 fit 20.4 w50 fit 18.5
+F2 B:direct/direct:repeat direct direct F [  1.63 -31.91  11.72   1.89  19.5   13.37] MC0.05 p95 2.05 max 2.86 fail 0.000 swivel 25 w40 fit 23.2 w50 fit 21.1
+F3 B:direct/direct:shape direct direct F [  1.94 -28.87  11.22   2.16  15.01  13.17] MC0.05 p95 2.42 max 3.28 fail 0.000 swivel 25 w40 fit 18.4 w50 fit 16.6
+F4 B:direct/direct:open direct direct F [  1.52 -32.4   10.99   1.98  19.42  13.53] MC0.05 p95 2.18 max 2.96 fail 0.000 swivel 25 w40 fit 23.2 w50 fit 21.0
+F5 B:hum/direct:repeat hum direct F [  3.8  -27.12   1.49   2.5   15.69  17.65] MC0.05 p95 2.63 max 3.87 fail 0.000 swivel 25 w40 fit 19.4 w50 fit 15.6
+F6 B:hum/direct:shape hum direct F [  2.94 -28.76   1.81   2.26  15.3   22.62] MC0.05 p95 2.41 max 3.87 fail 0.000 swivel 22 w40 fit 19.6 w50 fit 15.6
+F7 B:hum/direct:open hum direct F [  3.77 -32.8    1.49   2.84  15.98  17.98] MC0.05 p95 2.94 max 4.61 fail 0.000 swivel 24 w40 fit 19.9 w50 fit 16.0

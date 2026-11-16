@@ -1,40 +1,65 @@
 {
  "F1": {
-  "unplaced": 1,
+  "unplaced": 0,
   "plan": {
    "hum": 0,
    "uln": -1,
-   "hand": 1,
+   "hand": 0,
    "bc1": -3,
-   "rod2": -2
+   "rod2": -2,
+   "rod4": 0
   },
-  "studs_mm": {}
+  "studs_mm": {
+   "hum-uln": 1.2,
+   "uln-hand": 1.2,
+   "bc1-hum": 3.6,
+   "bc1-rod1": 3.6,
+   "bc1-rod2": 1.2,
+   "rod2-uln": 1.2,
+   "rod4-hum": 2.84,
+   "rod4-hand": 2.74
+  },
+  "rod4": {
+   "L_mm": 31.8,
+   "crank_offset_mm": 0.0,
+   "F_max_N": 0.186,
+   "dM_dL_deg_per_mm": 9.6,
+   "stretch": {
+    "plate 2.0 x 0.9": {
+     "delta_mm": 0.0,
+     "angle_deg": 0.0
+    },
+    "plate 2.0 x 2.1 (two layers)": {
+     "delta_mm": 0.0,
+     "angle_deg": 0.0
+    },
+    "tube/truss equiv. 3 x 3": {
+     "delta_mm": 0.0,
+     "angle_deg": 0.0
+    }
+   }
+  }
  },
  "F2": {
   "unplaced": 0,
   "plan": {
-   "hum": -1,
+   "hum": 0,
    "uln": 1,
    "hand": 0,
-   "bc1": -2,
-   "rod2": 0,
    "rod4": 0
   },
   "studs_mm": {
-   "hum-uln": 2.4,
+   "hum-uln": 1.2,
    "uln-hand": 1.2,
-   "bc1-hum": 1.2,
-   "bc1-rod1": 2.4,
-   "bc1-rod2": 2.4,
-   "rod2-uln": 1.2,
-   "rod4-hum": 1.67,
-   "rod4-hand": 1.24
+   "rod1-uln": 6.7,
+   "rod4-hum": 4.03,
+   "rod4-hand": 4.24
   },
   "rod4": {
-   "L_mm": 31.9,
+   "L_mm": 32.9,
    "crank_offset_mm": 0.0,
-   "F_max_N": 0.169,
-   "dM_dL_deg_per_mm": 9.33,
+   "F_max_N": 0.171,
+   "dM_dL_deg_per_mm": 8.59,
    "stretch": {
     "plate 2.0 x 0.9": {
      "delta_mm": 0.0,
@@ -52,283 +77,118 @@
   }
  },
  "F3": {
-  "unplaced": 1,
+  "unplaced": 0,
   "plan": {
    "hum": 0,
-   "uln": -1,
-   "hand": 1,
-   "bc1": -3,
-   "rod2": -2
+   "uln": 1,
+   "hand": -3,
+   "rod4": 0
   },
-  "studs_mm": {}
+  "studs_mm": {
+   "hum-uln": 1.2,
+   "uln-hand": 4.8,
+   "rod1-uln": 6.79,
+   "rod4-hum": 1.67,
+   "rod4-hand": 3.1
+  },
+  "rod4": {
+   "L_mm": 32.3,
+   "crank_offset_mm": 0.0,
+   "F_max_N": 0.148,
+   "dM_dL_deg_per_mm": 8.47,
+   "stretch": {
+    "plate 2.0 x 0.9": {
+     "delta_mm": 0.0,
+     "angle_deg": 0.0
+    },
+    "plate 2.0 x 2.1 (two layers)": {
+     "delta_mm": 0.0,
+     "angle_deg": 0.0
+    },
+    "tube/truss equiv. 3 x 3": {
+     "delta_mm": 0.0,
+     "angle_deg": 0.0
+    }
+   }
+  }
  },
  "F4": {
   "unplaced": 0,
   "plan": {
    "hum": 0,
-   "uln": -1,
+   "uln": 1,
    "hand": 0,
-   "bc1": -3,
-   "rod2": -2,
    "rod4": 0
   },
   "studs_mm": {
    "hum-uln": 1.2,
    "uln-hand": 1.2,
-   "bc1-hum": 3.6,
-   "bc1-rod1": 3.6,
-   "bc1-rod2": 1.2,
-   "rod2-uln": 1.2,
-   "rod4-hum": 1.9,
-   "rod4-hand": 1.45
-  },
-  "rod4": {
-   "L_mm": 32.0,
-   "crank_offset_mm": 0.0,
-   "F_max_N": 0.19,
-   "dM_dL_deg_per_mm": 9.0,
-   "stretch": {
-    "plate 2.0 x 0.9": {
-     "delta_mm": 0.0,
-     "angle_deg": 0.0
-    },
-    "plate 2.0 x 2.1 (two layers)": {
-     "delta_mm": 0.0,
-     "angle_deg": 0.0
-    },
-    "tube/truss equiv. 3 x 3": {
-     "delta_mm": 0.0,
-     "angle_deg": 0.0
-    }
-   }
+   "rod1-uln": 6.74,
+   "rod4-hum": 3.64,
+   "rod4-hand": 5.67
   }
  },
  "F5": {
   "unplaced": 0,
   "plan": {
-   "hum": -1,
-   "uln": -3,
-   "hand": -1,
+   "hum": 0,
+   "uln": -1,
+   "hand": 1,
    "bc1": -3,
    "rod2": -2,
-   "rod4": 1
+   "rod4": -1
   },
   "studs_mm": {
-   "hum-uln": 2.4,
+   "hum-uln": 1.2,
    "uln-hand": 2.4,
-   "bc1-hum": 2.4,
+   "bc1-hum": 3.6,
    "bc1-rod1": 3.6,
    "bc1-rod2": 1.2,
    "rod2-uln": 1.2,
-   "rod4-hum": 2.05,
-   "rod4-hand": 1.97
-  },
-  "rod4": {
-   "L_mm": 31.7,
-   "crank_offset_mm": 1.2,
-   "F_max_N": 0.19,
-   "dM_dL_deg_per_mm": 10.11,
-   "stretch": {
-    "plate 2.0 x 0.9": {
-     "delta_mm": 0.0239,
-     "angle_deg": 0.241
-    },
-    "plate 2.0 x 2.1 (two layers)": {
-     "delta_mm": 0.0019,
-     "angle_deg": 0.019
-    },
-    "tube/truss equiv. 3 x 3": {
-     "delta_mm": 0.0004,
-     "angle_deg": 0.004
-    }
-   }
+   "rod4-hum": 3.87,
+   "rod4-hand": 1.26
   }
  },
  "F6": {
-  "unplaced": 1,
+  "unplaced": 0,
   "plan": {
-   "hum": 1,
-   "uln": 2,
-   "hand": 0,
-   "bc1": 2,
-   "rod2": 3
+   "hum": -2,
+   "uln": -1,
+   "hand": 1,
+   "bc1": -3,
+   "rod2": 0,
+   "rod4": -1
   },
-  "studs_mm": {}
+  "studs_mm": {
+   "hum-uln": 1.2,
+   "uln-hand": 2.4,
+   "bc1-hum": 1.2,
+   "bc1-rod1": 3.6,
+   "bc1-rod2": 3.6,
+   "rod2-uln": 1.2,
+   "rod4-hum": 3.13,
+   "rod4-hand": 1.29
+  }
  },
  "F7": {
   "unplaced": 0,
   "plan": {
    "hum": 0,
-   "uln": 2,
+   "uln": -2,
    "hand": 0,
    "bc1": -2,
-   "rod2": 1,
-   "rod4": -1
+   "rod2": -3,
+   "rod4": 3
   },
   "studs_mm": {
    "hum-uln": 2.4,
    "uln-hand": 2.4,
    "bc1-hum": 2.4,
    "bc1-rod1": 2.4,
-   "bc1-rod2": 3.6,
-   "rod2-uln": 1.2,
-   "rod4-hum": 1.43,
-   "rod4-hand": 1.67
-  },
-  "rod4": {
-   "L_mm": 31.7,
-   "crank_offset_mm": 1.2,
-   "F_max_N": 0.216,
-   "dM_dL_deg_per_mm": 10.21,
-   "stretch": {
-    "plate 2.0 x 0.9": {
-     "delta_mm": 0.0271,
-     "angle_deg": 0.277
-    },
-    "plate 2.0 x 2.1 (two layers)": {
-     "delta_mm": 0.0021,
-     "angle_deg": 0.022
-    },
-    "tube/truss equiv. 3 x 3": {
-     "delta_mm": 0.0005,
-     "angle_deg": 0.005
-    }
-   }
-  }
- },
- "F8": {
-  "unplaced": 0,
-  "plan": {
-   "hum": -1,
-   "uln": -2,
-   "hand": -1,
-   "bc1": -2,
-   "rod2": -3,
-   "rod4": 0
-  },
-  "studs_mm": {
-   "hum-uln": 1.2,
-   "uln-hand": 1.2,
-   "bc1-hum": 1.2,
-   "bc1-rod1": 2.4,
    "bc1-rod2": 1.2,
    "rod2-uln": 1.2,
-   "rod4-hum": 1.7,
-   "rod4-hand": 2.0
-  },
-  "rod4": {
-   "L_mm": 32.2,
-   "crank_offset_mm": 0.0,
-   "F_max_N": 0.168,
-   "dM_dL_deg_per_mm": 9.11,
-   "stretch": {
-    "plate 2.0 x 0.9": {
-     "delta_mm": 0.0,
-     "angle_deg": 0.0
-    },
-    "plate 2.0 x 2.1 (two layers)": {
-     "delta_mm": 0.0,
-     "angle_deg": 0.0
-    },
-    "tube/truss equiv. 3 x 3": {
-     "delta_mm": 0.0,
-     "angle_deg": 0.0
-    }
-   }
+   "rod4-hum": 3.6,
+   "rod4-hand": 4.74
   }
- },
- "F9": {
-  "unplaced": 0,
-  "plan": {
-   "hum": -1,
-   "uln": -2,
-   "hand": 0,
-   "bc1": -2,
-   "rod2": -3,
-   "rod4": 0
-  },
-  "studs_mm": {
-   "hum-uln": 1.2,
-   "uln-hand": 2.4,
-   "bc1-hum": 1.2,
-   "bc1-rod1": 2.4,
-   "bc1-rod2": 1.2,
-   "rod2-uln": 1.2,
-   "rod4-hum": 1.61,
-   "rod4-hand": 1.39
-  },
-  "rod4": {
-   "L_mm": 32.0,
-   "crank_offset_mm": 0.0,
-   "F_max_N": 0.195,
-   "dM_dL_deg_per_mm": 9.7,
-   "stretch": {
-    "plate 2.0 x 0.9": {
-     "delta_mm": 0.0,
-     "angle_deg": 0.0
-    },
-    "plate 2.0 x 2.1 (two layers)": {
-     "delta_mm": 0.0,
-     "angle_deg": 0.0
-    },
-    "tube/truss equiv. 3 x 3": {
-     "delta_mm": 0.0,
-     "angle_deg": 0.0
-    }
-   }
-  }
- },
- "F10": {
-  "unplaced": 3,
-  "plan": {
-   "hum": -3,
-   "uln": -1,
-   "hand": 0
-  },
-  "studs_mm": {}
- },
- "F11": {
-  "unplaced": 1,
-  "plan": {
-   "hum": 0,
-   "uln": -2,
-   "hand": 0,
-   "bc1": -2,
-   "rod2": -3
-  },
-  "studs_mm": {}
- },
- "F12": {
-  "unplaced": 1,
-  "plan": {
-   "hum": 1,
-   "uln": 2,
-   "hand": 0,
-   "bc1": 2,
-   "rod2": 3
-  },
-  "studs_mm": {}
- },
- "F13": {
-  "unplaced": 1,
-  "plan": {
-   "hum": 0,
-   "uln": -2,
-   "hand": 0,
-   "bc1": -2,
-   "rod2": -3
-  },
-  "studs_mm": {}
- },
- "F14": {
-  "unplaced": 1,
-  "plan": {
-   "hum": -1,
-   "uln": -3,
-   "hand": 0,
-   "bc1": -3,
-   "rod2": -2
-  },
-  "studs_mm": {}
  }
 }
