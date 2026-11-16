@@ -35,6 +35,9 @@ SLOPED, NSUB = ('rod1', 'rod4', 'hand'), int(os.environ.get('STACK_NSUB', 8))
 hh = lambda n: HALF.get(n, TP / 2)
 FLAT = np.array([1., 1., 0.])
 GRADED = os.environ.get('STACK_GRADED') == '1'   # add a graded term (ball-stud thickness excess) to the unplaced count
+JR_CLIP = 3.0                                        # = crossing_check.JR
+JB_ZONE = 5.0                                        # mm (plan) around a ball joint where its stack budget applies to the two parts it joins
+CLIP = os.environ.get('STACK_CLIP', '1') == '1'      # exact sloped-rod / flat-plate test (clip_tables); 0 = before 2026-11-17
 
 
 def seg2(p1, q1, p2, q2):
@@ -85,13 +88,13 @@ class Geometry:
             if nm in ('hum', 'uln', 'bc1', 'rod2', 'bc2', 'rod3'): flat[nm] = lambda X: X * np.array([1, 1, 0.])
             elif nm == 'hand': flat[nm] = plane_hand
             else: flat[nm] = lambda X: X                  # rod 4 (cranked, base = its kinematic line), rod 1 (fixed)
-        self.caps = {}
+        self.caps = {}; self.raw = {}
         for nm, lst in P_.items():
-            cs = []
+            cs = []; self.raw[nm] = []
             for j, (p, q, r) in enumerate(lst):
                 if nm == 'rod1' and j == 0: r = R_SKEW
-                P0, Q0 = flat[nm](h(p)), flat[nm](h(q))
-                if nm in SLOPED:                          # height varies along it: one closest point per pair is not enough
+                P0, Q0 = flat[nm](h(p)), flat[nm](h(q)); self.raw[nm].append((P0, Q0, r))
+                if nm in SLOPED and not np.array_equal(P0, Q0):     # (end caps of zero length: nothing to split)                          # height varies along it: one closest point per pair is not enough
                     for a0, a1 in zip(np.linspace(0, 1, NSUB + 1)[:-1], np.linspace(0, 1, NSUB + 1)[1:]):
                         cs.append((P0 + a0 * (Q0 - P0), P0 + a1 * (Q0 - P0), r))
                 else:
@@ -175,7 +178,12 @@ class Geometry:
                             tight = dd < (ra + RB)[k]
                             if tight.any():
                                 xa = pa_ + s_[:, None] * (qa_ - pa_); xb = pb_ + t_[:, None] * (qb_ - pb_)
-                                bud = np.where(self.wing_at((xa + xb) / 2, p, si), BUD_WING, BUD_BODY)
+                                mid = (xa + xb) / 2; wg = self.wing_at(mid, p, si)
+                                bud = np.where(wg, BUD_WING, BUD_BODY)
+                                if CLIP:                  # 2026-11-17: next to a ball joint the two share, the joint budget
+                                    for X in [X for a_, b_, X, ball in self.J if ball and {a_, b_} == {a, b}]:
+                                        nj = np.linalg.norm((mid - X[p, si])[:, :2], axis=-1) < JB_ZONE
+                                        bud = np.where(wg & nj, max(BUD_WING, BUD_JOINT), bud)
                                 bad |= tight[:, None, None] & (np.abs(dz) + TP > bud[:, None, None] + 1e-6)
                         bb = orby(p, bad)
                         binary[key] |= bb if key == (a, b) else np.swapaxes(bb, 1, 2)
@@ -210,7 +218,53 @@ class Geometry:
                     bad = (lo_e[..., None] - hc + 1e-6 < zcl[:, None, None]) & (zcl[:, None, None] < hi_e[..., None] + hc - 1e-6)
                     bad = orby(p, bad)
                     self._put(unary, binary, ternary, a, b, c, bad)
+        if CLIP: self.clip_tables(unary, binary, stk)
         self.unary, self.binary, self.ternary = unary, binary, ternary
+
+    def clip_tables(self, unary, binary, stk):
+        """2026-11-17 fix: a sloped rod (skewer rod 1, rod 4) against a flat plate, exact. The closest point in plan of a short
+        piece is not where the height clash is worst (the skewer descends while it is still inside the plan band; seen as -0.3 to
+        -0.9 mm in crossing_check). For every level offset o of the plate, the rod is clipped to the part whose height is within
+        the clash window |z - o| < h1 + h2 + GAP (height is linear along it), and that piece's plan distance to the plate decides."""
+        P = self.P; Lz = LV * T
+        for a in ('rod1', 'rod4'):
+            if a not in self.raw: continue
+            for b in ('hum', 'uln', 'bc1', 'rod2', 'bc2', 'rod3'):
+                if b not in self.names: continue
+                PB, QB, RB = stk[b]; PBf, QBf = PB * FLAT, QB * FLAT
+                thr = hh(a) + hh(b) + GAP - 1e-6
+                O = Lz if a in FIXED else np.arange(-(NL - 1), NL) * T             # plate level lb, or lb - la
+                bad = np.zeros((len(O), P), bool)
+                Js = [X * FLAT for a_, b_, X, ball in self.J if {a_, b_} == {a, b}]   # shared joints: as crossing_check, the
+                for pa, qa, ra in self.raw[a]:                                         # rod within JR (plan) of it is by design
+                    z0, z1 = pa[..., 2], qa[..., 2]; dz = z1 - z0                       # (P,S)
+                    o = O[:, None, None]
+                    flat_ = np.abs(dz) < 1e-9
+                    with np.errstate(divide='ignore', invalid='ignore'):
+                        s1, s2 = (o - thr - z0) / dz, (o + thr - z0) / dz
+                    lo_ = np.where(flat_, 0.0, np.clip(np.minimum(s1, s2), 0, 1)); hi_ = np.where(flat_, 1.0, np.clip(np.maximum(s1, s2), 0, 1))
+                    ok = np.where(flat_, np.abs(z0 - o) < thr, lo_ < hi_)                # (nO,P,S)
+                    pieces = [(lo_, hi_)]
+                    for J in Js:                                                        # cut [e1, e2] (within JR of J) out
+                        dv = ((qa - pa) * FLAT)[..., :2]; w = ((pa - J) * FLAT)[..., :2]
+                        A_, B_, C_ = np.sum(dv * dv, -1), 2 * np.sum(dv * w, -1), np.sum(w * w, -1) - JR_CLIP ** 2
+                        disc = B_ * B_ - 4 * A_ * C_; has = (disc > 0) & (A_ > 1e-12)
+                        sq = np.sqrt(np.maximum(disc, 0)); Aq = np.maximum(A_, 1e-12)
+                        e1 = np.where(has, (-B_ - sq) / (2 * Aq), 2.0); e2 = np.where(has, (-B_ + sq) / (2 * Aq), 2.0)
+                        pieces = [pc for l_, h_ in pieces for pc in ((l_, np.minimum(h_, e1)), (np.maximum(l_, e2), h_))]
+                    for l_, h_ in pieces:
+                        A0 = pa[None] + l_[..., None] * (qa - pa)[None]; A1 = pa[None] + h_[..., None] * (qa - pa)[None]
+                        dd, _, _ = seg2((A0 * FLAT)[:, None], (A1 * FLAT)[:, None], PBf[None], QBf[None])    # (nO,Kb,P,S)
+                        hit = ok & (l_ < h_) & (dd < (ra + RB)[None, :, None, None] + GAP).any(1)
+                        bad |= hit.any(-1)
+                if a in FIXED:
+                    unary[b] |= bad.T
+                else:
+                    la, lb = np.meshgrid(np.arange(NL), np.arange(NL), indexing='ij')
+                    B = np.moveaxis(bad[(lb - la) + NL - 1], -1, 0)                       # (P, la, lb)
+                    key = (a, b) if self.var.index(a) < self.var.index(b) else (b, a)
+                    if key not in binary: binary[key] = np.zeros((P, NL, NL), bool)
+                    binary[key] |= B if key == (a, b) else np.swapaxes(B, 1, 2)
 
     def tables_ref(self):
         P = self.P; Lz = LV * T
