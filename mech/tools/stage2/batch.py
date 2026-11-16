@@ -1,6 +1,6 @@
 """Run all configurations x seeds in parallel (one process per run). usage: batch.py gens pop seeds workers [width] [tilt]
 tilt: design B, without the body-mounted elbow bellcrank (it protruded 7-17 mm in every planar run)."""
-import sys, subprocess, itertools, pathlib, time
+import os, sys, subprocess, itertools, pathlib, time
 from concurrent.futures import ThreadPoolExecutor
 HERE = pathlib.Path(__file__).resolve().parent
 PY = sys.executable
@@ -17,7 +17,7 @@ if S2E: jobs = [(ec, wc, s, dsg) for s in range(nseeds) for dsg in ('dA', 'dB') 
 # stage 2f (run with MIDLINE=1 in the environment): midline constraint, only the configuration that admitted a layer plan in 2e
 if S2F: jobs = [('hum', 'direct', s, dsg) for s in range(nseeds) for dsg in ('dA', 'dB')]
 # stage 2f, 'zero': no bellcrank at all (elbow and wrist both direct rods), asked for by the user 2026-11-15
-if S2F and ZERO: jobs = [('direct', 'direct', s, dsg) for s in range(nseeds) for dsg in ('dA', 'dB')]
+if S2F and ZERO: jobs = [('direct', 'direct', s, dsg) for s in range(nseeds) for dsg in os.environ.get('BATCH_DSG', 'dA,dB').split(',')]   # BATCH_DSG=dB: design B only (2026-11-16)
 jobs.sort(key=lambda j: 0 if j[0] == 'ulna' else 1)
 t0 = time.time()
 
