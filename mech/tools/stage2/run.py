@@ -16,13 +16,15 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 
 class Log(Callback):
     def __init__(self):
-        super().__init__(); self.rows = []
+        super().__init__(); self.rows = []; self.progress = None; self.t0 = time.time()
 
     def notify(self, algo):
         F, G = algo.pop.get('F'), algo.pop.get('G'); feas = np.all(G <= 0, 1)
         cv = np.maximum(G, 0).sum(1)
         best = F[feas].min(0) if feas.any() else np.full(F.shape[1], np.nan)
         self.rows.append([algo.n_gen, feas.sum(), cv.min()] + list(best))
+        if self.progress and algo.n_gen % 10 == 0:          # 2026-11-16: the batch log only shows finished runs
+            self.progress.write_text(f'gen {algo.n_gen} feasible {feas.sum()} minCV {cv.min():.3f} t {time.time() - self.t0:.0f}s')
 
 
 def main(ec, wc, seed, gens=300, pop=300, width=45, tilt=False, design=None):
@@ -54,9 +56,12 @@ def main(ec, wc, seed, gens=300, pop=300, width=45, tilt=False, design=None):
         m = min(len(Xo), pop // (2 if os.environ.get('WARM2F') == '1' else 4)); X0[half:half + m] = np.clip(Xo[rng.choice(len(Xo), m, replace=False)], xl, xu)
     algo = NSGA3(ref_dirs=ref, pop_size=pop, sampling=X0, eliminate_duplicates=True)
     log = Log(); t = time.time()
+    out = ROOT / 'results' / 'stage2' / (('runs_2f' if MIDLINE else 'runs_2e') if design else 'runs_2d' if tilt else 'runs')
+    if os.environ.get('RUN_OUT'): out = ROOT / 'results' / 'stage2' / os.environ['RUN_OUT']      # parallel runs must not overwrite
+    out.mkdir(parents=True, exist_ok=True)
+    log.progress = out / f'{design + "-" if design else ""}{ec}_{wc}_w{int(width)}_s{seed}.progress'
     res = minimize(prob, algo, ('n_gen', gens), seed=seed, callback=log, verbose=False)
     pop_ = res.pop; X, F, G = pop_.get('X'), pop_.get('F'), pop_.get('G')
-    out = ROOT / 'results' / 'stage2' / (('runs_2f' if MIDLINE else 'runs_2e') if design else 'runs_2d' if tilt else 'runs'); out.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(out / f'{design + "-" if design else ""}{ec}_{wc}_w{int(width)}_s{seed}.npz', X=X, F=F, G=G, log=np.array(log.rows), time=time.time() - t,
                         vars=np.array([v[0] for v in prob.ev.vars]))
     feas = np.all(G <= 0, 1)

@@ -16,7 +16,7 @@ import kin
 from kin import SEC, PRIM, LU, LMAN
 
 PER = 5
-A_GRID = np.radians([0, 4, 8, 12, 16, 20, 25])
+A_GRID = np.radians([0, 5, 10, 15, 20, 25, 30, 35])
 R_GRID = np.array([25, 35, 50, 70, 100, 150, np.inf])
 FLAT0 = (kin.SEC_F.copy(), kin.pri_local, kin.feather_local)
 

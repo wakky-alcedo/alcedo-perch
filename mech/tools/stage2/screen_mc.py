@@ -7,6 +7,9 @@ sys.argv = sys.argv[:1] + ['45', '2e']
 from analyze import make_ev, monte_carlo, OUT
 z = np.load(OUT / 'front.npz', allow_pickle=True); F, C = z['F'], z['C']
 m = (F[:, 3] <= 3.0) & (F[:, 0] <= 4.5) & (F[:, 2] <= 2.0) & (-F[:, 1] >= 25) & (F[:, 4] <= 18)
+# no bellcrank (direct/direct): its elbow rod always stands 10+ mm off the body; the user accepts local protrusions (2026-11-15)
+zero = np.array(['direct/direct' in str(c) for c in C])
+m |= zero & (F[:, 3] <= 3.0) & (F[:, 0] <= 4.5) & (F[:, 2] <= 15.0) & (-F[:, 1] >= 25) & (F[:, 4] <= 19.5)
 evs = {}; rows = []
 for i in np.nonzero(m)[0]:
     dsg, cfg = str(C[i]).split(':'); ec, wc = cfg.split('/')

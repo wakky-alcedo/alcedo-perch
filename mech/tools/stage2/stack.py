@@ -31,7 +31,7 @@ NODE_LIMIT = 20000
 # half height of each part: plates TP / 2; rod 1 is a round skewer (stage 2f fix: before, every pair only needed one pitch T apart,
 # and plan overlap was taken from 3D distance with the plates at their own plane, which missed the skewer crossing a shifted plate)
 HALF = {'rod1': R_SKEW}
-SLOPED, NSUB = ('rod1', 'rod4', 'hand'), 8
+SLOPED, NSUB = ('rod1', 'rod4', 'hand'), int(os.environ.get('STACK_NSUB', 8))
 hh = lambda n: HALF.get(n, TP / 2)
 FLAT = np.array([1., 1., 0.])
 GRADED = os.environ.get('STACK_GRADED') == '1'   # add a graded term (ball-stud thickness excess) to the unplaced count
@@ -110,7 +110,109 @@ class Geometry:
             return np.linalg.norm(X - a - ab * t[..., None], axis=-1)
         return np.minimum(d(self.E, self.W), d(self.W, self.T)) < d(0 * self.E, self.E)
 
+    def wing_at(self, X, p, s):
+        """wing() for scattered points X (N,3) of design p, pose s (N,)"""
+        E, W, T_ = self.E[p, s], self.W[p, s], self.T[p, s]
+        def d(a, b):
+            ab = b - a; t = np.clip(np.sum((X - a) * ab, -1) / np.maximum(np.sum(ab * ab, -1), 1e-12), 0, 1)
+            return np.linalg.norm(X - a - ab * t[..., None], axis=-1)
+        return np.minimum(d(E, W), d(W, T_)) < d(0 * E, E)
+
     def tables(self):
+        if os.environ.get('STACK_REF') == '1': return self.tables_ref()
+        return self.tables_fast()
+
+    def tables_fast(self):
+        """same tables as tables_ref (2026-11-16 speed-up, checked equal): each cap of a part against all caps of the other part
+        in one call, and the level tests only on the (design, pose, cap) entries that overlap in plan"""
+        P = self.P; Lz = LV * T
+        unary = {v: np.zeros((P, NL), bool) for v in self.var}
+        binary = {}; ternary = {}
+        stk = {nm: (np.stack([c[0] for c in cs]), np.stack([c[1] for c in cs]), np.array([c[2] for c in cs], float))
+               for nm, cs in self.caps.items()}
+
+        def orby(pidx, B):
+            """OR of the rows of B grouped by design (pidx sorted) -> (P, ...)"""
+            out = np.zeros((P,) + B.shape[1:], bool)
+            if len(pidx): u, st = np.unique(pidx, return_index=True); out[u] = np.logical_or.reduceat(B, st, axis=0)
+            return out
+
+        mh = lambda p, q: ((p[..., :2] + q[..., :2]) / 2, np.linalg.norm((q - p)[..., :2], axis=-1) / 2)   # plan midpoint, half length
+        MH = {nm: mh(v[0], v[1]) for nm, v in stk.items()}
+
+        def cand(m, h, nm, lim):
+            """(design, cap, pose) entries of part nm whose plan distance to the segment (m, h) may be < lim -- a lower bound of the
+            distance from the midpoints, so seg2 runs only on these (exact same values as running it everywhere); sorted by design"""
+            mB, hB = MH[nm]
+            lb = np.linalg.norm(m[None] - mB, axis=-1) - h[None] - hB
+            p, k, si = np.nonzero(np.moveaxis(lb < lim + 1e-6, 0, 1)); return p, k, si
+
+        for i, a in enumerate(self.names):
+            for b in self.names[i + 1:]:
+                if a in FIXED and b in FIXED: continue
+                thick = {a, b} != {'hand', 'uln'} and 'rod1' not in (a, b)
+                PB, QB, RB = stk[b]; PBf, QBf = PB * FLAT, QB * FLAT
+                thr = hh(a) + hh(b) + GAP - 1e-6
+                for pa, qa, ra in self.caps[a]:
+                    mA, hA = mh(pa, qa)
+                    p, k, si = cand(mA, hA, b, (ra + RB).max() + GAP)
+                    dd, s_, t_ = seg2(pa[p, si] * FLAT, qa[p, si] * FLAT, PBf[k, p, si], QBf[k, p, si])
+                    near = dd < ra + RB[k] + GAP
+                    if not near.any(): continue
+                    p, k, si, dd, s_, t_ = p[near], k[near], si[near], dd[near], s_[near], t_[near]
+                    pa_, qa_, pb_, qb_ = pa[p, si], qa[p, si], PB[k, p, si], QB[k, p, si]
+                    za = pa_[:, 2] + s_ * (qa_[:, 2] - pa_[:, 2]); zb = pb_[:, 2] + t_ * (qb_[:, 2] - pb_[:, 2])
+                    if a in FIXED or b in FIXED:
+                        v, zv, zf = (b, zb, za) if a in FIXED else (a, za, zb)
+                        dz = (zv[:, None] + Lz) - zf[:, None]
+                        unary[v] |= orby(p, np.abs(dz) < thr)
+                    else:
+                        key = bin_key = (a, b) if self.var.index(a) < self.var.index(b) else (b, a)
+                        if key not in binary: binary[key] = np.zeros((P, NL, NL), bool)
+                        dz = (za[:, None, None] + Lz[None, :, None]) - (zb[:, None, None] + Lz[None, None, :])   # (N, la, lb)
+                        bad = np.abs(dz) < thr
+                        if thick:
+                            tight = dd < (ra + RB)[k]
+                            if tight.any():
+                                xa = pa_ + s_[:, None] * (qa_ - pa_); xb = pb_ + t_[:, None] * (qb_ - pb_)
+                                bud = np.where(self.wing_at((xa + xb) / 2, p, si), BUD_WING, BUD_BODY)
+                                bad |= tight[:, None, None] & (np.abs(dz) + TP > bud[:, None, None] + 1e-6)
+                        bb = orby(p, bad)
+                        binary[key] |= bb if key == (a, b) else np.swapaxes(bb, 1, 2)
+        # ---- pins and studs
+        for a, b, X, ball in self.J:
+            zX = X[..., 2]
+            ba, bb_ = self.base(a, X), self.base(b, X)
+            bud = np.where(self.wing(X), max(BUD_WING, BUD_JOINT), BUD_BODY)
+            la_set = Lz if a not in FIXED else np.array([0.])
+            lb_set = Lz if b not in FIXED else np.array([0.])
+            za = ba[None, None] + la_set[:, None, None, None]; zb = bb_[None, None] + lb_set[None, :, None, None]
+            lo, hi = np.minimum(za, zb), np.maximum(za, zb)
+            if ball: lo, hi = np.minimum(lo, zX), np.maximum(hi, zX)
+            if ball:
+                bad = ((hi - lo + TP) > bud + 1e-6).any(-1)
+                self._put(unary, binary, ternary, a, b, None, np.moveaxis(bad, -1, 0))
+            Xf = X * FLAT
+            for c in self.names:
+                if c in (a, b): continue
+                PC, QC, RC = stk[c]
+                p, k, si = cand(Xf[..., :2], np.zeros(Xf.shape[:2]), c, R_PIN + RC.max() + GAP)
+                dd, s_, t_ = seg2(Xf[p, si], Xf[p, si], PC[k, p, si] * FLAT, QC[k, p, si] * FLAT)
+                near = dd < R_PIN + RC[k] + GAP
+                p, k, si, t_ = p[near], k[near], si[near], t_[near]
+                lc_set = Lz if c not in FIXED else np.array([0.])
+                hc = hh(c) + TP / 2 + GAP
+                if len(p):
+                    pc_, qc_ = PC[k, p, si], QC[k, p, si]
+                    zc = pc_[:, 2] + t_ * (qc_[:, 2] - pc_[:, 2])
+                    zcl = zc[:, None] + lc_set[None]                                             # (N, nc)
+                    lo_e, hi_e = np.moveaxis(lo[:, :, p, si], -1, 0), np.moveaxis(hi[:, :, p, si], -1, 0)   # (N, na, nb)
+                    bad = (lo_e[..., None] - hc + 1e-6 < zcl[:, None, None]) & (zcl[:, None, None] < hi_e[..., None] + hc - 1e-6)
+                    bad = orby(p, bad)
+                    self._put(unary, binary, ternary, a, b, c, bad)
+        self.unary, self.binary, self.ternary = unary, binary, ternary
+
+    def tables_ref(self):
         P = self.P; Lz = LV * T
         unary = {v: np.zeros((P, NL), bool) for v in self.var}
         binary = {}; ternary = {}

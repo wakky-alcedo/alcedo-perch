@@ -153,6 +153,20 @@ def main():
             if k:
                 b_ = min(k, key=lambda r: r['F'][4]); assert np.allclose(F[nd[b_['i']]], b_['F'], atol=1e-3)
                 cand.insert(0, (g + ':robust-mc', nd[b_['i']]))
+    gate = OUT / 'gate.json'
+    if S2E and STAGE == '2f' and gate.exists():                           # stage 2f gate (gate_2f.py): only designs that passed every post-check,
+        rows = [r for r in json.load(open(gate, encoding='utf-8')) if r['pass']]   # picked by the user's priorities (2026-11-15):
+        cand = []                                                         # repeatable, folded / open shape, opens easily
+        for grp in sorted({r['C'] for r in rows}):
+            k = [r for r in rows if r['C'] == grp and r['F'][0] <= 4.0]
+            rules = [('repeat', lambda r: r['fit_bent'] <= 15, lambda r: r['mc020']),
+                     ('shape', lambda r: r['mc020'] <= 9.0, lambda r: r['fit_bent']),
+                     ('open', lambda r: r['mc020'] <= 9.5 and r['fit_bent'] <= 15, lambda r: r['F'][1])]
+            for nm, keep, key in rules:
+                kk = [r for r in k if keep(r)]
+                if kk:
+                    b_ = min(kk, key=key); assert np.allclose(F[nd[b_['i']]], b_['F'], atol=1e-3)
+                    cand.append((f'{grp}:{nm}', nd[b_['i']]))
     seen, uniq = set(), []
     for nm, i in cand:
         if i in seen: continue
