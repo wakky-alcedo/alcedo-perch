@@ -10,9 +10,9 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 TOOLS = ROOT / 'tools'
 r4 = lambda v: round(float(v), 4)
 TILT = 'tilt' in sys.argv; S2D = '2d' in sys.argv; S2E = '2e' in sys.argv; TILT = TILT or S2E
-from problem import STAGE
-MARK = ('STAGE2F' if STAGE == '2f' else 'STAGE2E') if S2E else 'STAGE2D' if S2D else 'STAGE2B' if TILT else 'STAGE2'
-CAND = ROOT / 'results' / 'stage2' / (STAGE if S2E else '2d' if S2D else 'tilt' if TILT else '') / 'candidates.json'
+from problem import STAGE, TAG, SWIVEL
+MARK = (('STAGE2F' if STAGE == '2f' else 'STAGE2E') + TAG.upper()) if S2E else 'STAGE2D' if S2D else 'STAGE2B' if TILT else 'STAGE2'
+CAND = ROOT / 'results' / 'stage2' / (STAGE + TAG if S2E else '2d' if S2D else 'tilt' if TILT else '') / 'candidates.json'
 
 
 def make_ev(c):
@@ -69,7 +69,7 @@ def entry(c, mesh):
     else:
         why = why0 + why
     v = dict(id=c['id'], status='candidate', date='2026-11-14' if TILT else '2026-11-13',
-             title=(f"段階{STAGE}候補 {c['id']}：{c['label']}" if S2E else f"段階2d候補 {c['id']}：{c['label']}" if S2D else f"案B候補 {c['id']}：{c['label']}（手首軸 傾き）" if TILT else f"段階2候補 {c['id']}：{c['label']}"), topo=topo, wristMount=c['wc'], elbowMount=em,
+             title=(f"段階{STAGE}候補 {c['id']}：{c['label']}" + (f"（首振り上限{SWIVEL:.0f}°）" if TAG else '') if S2E else f"段階2d候補 {c['id']}：{c['label']}" if S2D else f"案B候補 {c['id']}：{c['label']}（手首軸 傾き）" if TILT else f"段階2候補 {c['id']}：{c['label']}"), topo=topo, wristMount=c['wc'], elbowMount=em,
              why=why, shoulder=dict(axis=[r4(v) for v in d['axis'][0]], Ro=[[r4(v) for v in row] for row in Ro]), body=dict(c=occ['c'], r=occ['r']),
              bodyMesh='w45', featherZ=r4(d['fz'][0]),
              target=dict(AH0=0, AH1=round(float(np.degrees(d['th'][0])), 3), E0=150.0, E1=r4(d['E1'][0]), M0=160.0, M1=r4(d['M1'][0])),

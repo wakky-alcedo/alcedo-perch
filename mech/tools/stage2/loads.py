@@ -12,8 +12,8 @@ from problem import Evaluator, U
 from mech import forward, RODS
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-from problem import STAGE
-OUT = ROOT / 'results' / 'stage2' / (STAGE if '2e' in sys.argv else '2d')
+from problem import STAGE, TAG
+OUT = ROOT / 'results' / 'stage2' / (STAGE + TAG if '2e' in sys.argv else '2d')
 M_U, M_H = 1.5e-3, 1.0e-3          # kg (estimates)
 G0 = 9.81
 H = 1e-3                            # mm, finite-difference step on a rod length

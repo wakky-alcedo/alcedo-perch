@@ -1,0 +1,34 @@
+{
+ "width": 45,
+ "configs": {
+  "A:hum/direct": {
+   "label": "案A（平面） 肘BC:上腕骨／手首:直結ロッド",
+   "seeds": 8,
+   "seeds_with_feasible": 8,
+   "best_cheb_median": 2.6724946120299773,
+   "best_cheb_min": 2.1661428127262115,
+   "best_cheb_max": 6.613219324931032,
+   "n_in_global_front": 694
+  },
+  "B:hum/direct": {
+   "label": "案B（手首傾き） 肘BC:上腕骨／手首:直結ロッド",
+   "seeds": 8,
+   "seeds_with_feasible": 6,
+   "best_cheb_median": 1.8810353625983913,
+   "best_cheb_min": 1.818770364677491,
+   "best_cheb_max": 3.9058283519410253,
+   "n_in_global_front": 1571
+  },
+  "B:direct/direct": {
+   "label": "案B（手首傾き） 肘・手首とも直結ロッド（ベルクランクなし）",
+   "seeds": 8,
+   "seeds_with_feasible": 0,
+   "best_cheb_median": null,
+   "best_cheb_min": null,
+   "best_cheb_max": null,
+   "n_in_global_front": 0
+  }
+ },
+ "n_feasible": 4200,
+ "n_front": 2265
+}

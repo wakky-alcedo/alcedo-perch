@@ -27,6 +27,9 @@ from mech import *
 from body import Body
 
 LMIN, SWIVEL, MARGIN_MIN, SWEEP_MIN, FIT_MAX = 8.0, 25.0, 0.3, -4.0, 20.0
+import os as _os
+SWIVEL = float(_os.environ.get('SWIVEL', SWIVEL))   # user 2026-11-20: try 20 deg (small commercial ball links)
+TAG = _os.environ.get('STAGE_TAG', '')            # e.g. '_sw20': separate runs / results directories
 TMIN_MIN = 35.0
 CT = json.load(open(pathlib.Path(__file__).resolve().parents[2] / 'results' / 'stage2' / 'ct_target.json'))['target']
 CT_E, CT_W, CT_H = (np.array(CT[k]) for k in ('elbow', 'wrist', 'hand_dir'))

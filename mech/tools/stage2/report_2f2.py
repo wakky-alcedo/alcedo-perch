@@ -5,12 +5,12 @@ usage: MIDLINE=1 STACK_BUD_JOINT=8 STACK_NSUB=24 report_2f2.py
         stack_figs.py, cand_figs.py 2e, mirror_figs.py <ids>)"""
 import sys, json, base64, pathlib, collections, numpy as np
 INTERIM = 'interim' in sys.argv; sys.argv = sys.argv[:1]
-from problem import LAYER_T, GAP
+from problem import LAYER_T, GAP, TAG, SWIVEL
 from stack import BUD_BODY, BUD_WING, BUD_JOINT, R_SKEW, NSUB
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 R2, RL = ROOT / 'results' / 'stage2', ROOT / 'results' / 'local'
-Fd = R2 / '2f'
+Fd = R2 / ('2f' + TAG)
 J = lambda p: json.load(open(p, encoding='utf-8'))
 D = J(Fd / 'candidates.json'); summ = J(Fd / 'summary.json')['configs']
 CHK, LD, MC, CR, FB = (J(Fd / f'{n}.json') for n in ('check_2e', 'loads', 'mirror_check', 'crossing_check', 'feather_bend'))
@@ -260,6 +260,6 @@ img{{max-width:100%;height:auto}} figure{{margin:1.2em 0}} figcaption{{color:var
 </ul>
 <p class="mute">体の形の参照：「Common Kingfisher」Alejandro Guzmán（Sketchfab）CC BY-SA 4.0 を縮尺・変形して使用。図に体の形が含まれるため、このページも CC BY-SA 4.0 です。</p>
 </body></html>"""
-out = RL / 'stage2_2f2_report.html'
+out = RL / f'stage2_2f2{TAG}_report.html'
 out.write_text(html, encoding='utf-8')
 print(out, out.stat().st_size // 1024, 'KB', dict(st))

@@ -10,8 +10,8 @@ from problem import U
 from stack import seg2, T, R_SKEW
 from problem import GAP
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-from problem import STAGE
-OUT = ROOT / 'results' / 'stage2' / STAGE
+from problem import STAGE, TAG
+OUT = ROOT / 'results' / 'stage2' / (STAGE + TAG)
 MID = -12.7
 
 

@@ -14,9 +14,9 @@ from mech import *
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 TILT = 'tilt' in sys.argv; S2D = '2d' in sys.argv; S2E = '2e' in sys.argv; sys.argv = [v for v in sys.argv if v not in ('tilt', '2d', '2e')]
 TILT = TILT or S2E
-from problem import STAGE
-RUNS = ROOT / 'results' / 'stage2' / (f'runs_{STAGE}' if S2E else 'runs_2d' if S2D else 'runs_tilt' if TILT else 'runs')
-OUT = ROOT / 'results' / 'stage2' / (STAGE if S2E else '2d' if S2D else 'tilt' if TILT else ''); OUT.mkdir(exist_ok=True); LOCAL = ROOT / 'results' / 'local'
+from problem import STAGE, TAG
+RUNS = ROOT / 'results' / 'stage2' / (f'runs_{STAGE}{TAG}' if S2E else 'runs_2d' if S2D else 'runs_tilt' if TILT else 'runs')
+OUT = ROOT / 'results' / 'stage2' / (STAGE + TAG if S2E else '2d' if S2D else 'tilt' if TILT else ''); OUT.mkdir(exist_ok=True); LOCAL = ROOT / 'results' / 'local'
 PREFIX = ('F' if STAGE == '2f' else 'E') if S2E else 'D' if S2D else 'B' if TILT else 'c'
 WIDTH = int(sys.argv[1]) if len(sys.argv) > 1 else 45
 OBJ = ['joint error (deg)', 'min transmission (deg)', 'protrusion (mm)', 'sensitivity 2σ (deg)', 'fold fit', 'max part (mm)']

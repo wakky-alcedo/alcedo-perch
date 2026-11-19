@@ -1,0 +1,202 @@
+{
+ "F20-1": {
+  "hum-uln": {
+   "clear": 0.0,
+   "u": 1.0,
+   "plan_gap": -0.11,
+   "z_gap": 0.0
+  },
+  "hum-bc1": {
+   "clear": 0.0,
+   "u": 1.0,
+   "plan_gap": -0.04,
+   "z_gap": 0.0
+  },
+  "hum-rod1": {
+   "clear": 0.3,
+   "u": 1.0,
+   "plan_gap": 0.27,
+   "z_gap": 0.3
+  },
+  "hum-rod4": {
+   "clear": 0.23,
+   "u": 0.775,
+   "plan_gap": 0.03,
+   "z_gap": 0.23
+  },
+  "uln-rod2": {
+   "clear": -0.0,
+   "u": 1.0,
+   "plan_gap": -0.04,
+   "z_gap": -0.0
+  },
+  "hand-rod4": {
+   "clear": 0.67,
+   "u": 0.0,
+   "plan_gap": 0.67,
+   "z_gap": 0.67
+  },
+  "bc1-rod1": {
+   "clear": 0.8,
+   "u": 1.0,
+   "plan_gap": 0.65,
+   "z_gap": 0.8
+  },
+  "bc1-rod2": {
+   "clear": -0.0,
+   "u": 0.0,
+   "plan_gap": -0.19,
+   "z_gap": -0.0
+  },
+  "rod1-rod4": {
+   "clear": 0.49,
+   "u": 1.0,
+   "plan_gap": 0.49,
+   "z_gap": 0.49
+  }
+ },
+ "F20-2": {
+  "hum-uln": {
+   "clear": 0.0,
+   "u": 1.0,
+   "plan_gap": -0.14,
+   "z_gap": 0.0
+  },
+  "hum-bc1": {
+   "clear": 0.0,
+   "u": 1.0,
+   "plan_gap": -0.11,
+   "z_gap": 0.0
+  },
+  "hum-rod1": {
+   "clear": 0.25,
+   "u": 1.0,
+   "plan_gap": 0.22,
+   "z_gap": 0.25
+  },
+  "hum-rod4": {
+   "clear": 0.2,
+   "u": 0.95,
+   "plan_gap": -0.07,
+   "z_gap": 0.2
+  },
+  "uln-rod2": {
+   "clear": -0.0,
+   "u": 1.0,
+   "plan_gap": -0.04,
+   "z_gap": -0.0
+  },
+  "hand-rod4": {
+   "clear": 0.41,
+   "u": 0.0,
+   "plan_gap": 0.41,
+   "z_gap": 0.41
+  },
+  "bc1-rod1": {
+   "clear": 0.79,
+   "u": 1.0,
+   "plan_gap": 0.7,
+   "z_gap": 0.79
+  },
+  "bc1-rod2": {
+   "clear": -0.0,
+   "u": 0.0,
+   "plan_gap": -0.2,
+   "z_gap": -0.0
+  },
+  "rod1-rod4": {
+   "clear": 0.57,
+   "u": 1.0,
+   "plan_gap": 0.56,
+   "z_gap": 0.57
+  }
+ },
+ "F20-3": {
+  "hum-uln": {
+   "clear": 0.0,
+   "u": 1.0,
+   "plan_gap": -0.04,
+   "z_gap": 0.0
+  },
+  "hum-bc1": {
+   "clear": 0.0,
+   "u": 0.95,
+   "plan_gap": -0.07,
+   "z_gap": 0.0
+  },
+  "hum-rod1": {
+   "clear": 0.5,
+   "u": 1.0,
+   "plan_gap": 0.45,
+   "z_gap": 0.5
+  },
+  "uln-rod2": {
+   "clear": -0.0,
+   "u": 1.0,
+   "plan_gap": -0.05,
+   "z_gap": -0.0
+  },
+  "bc1-rod2": {
+   "clear": -0.0,
+   "u": 0.0,
+   "plan_gap": -0.1,
+   "z_gap": -0.0
+  },
+  "rod1-rod4": {
+   "clear": 0.03,
+   "u": 1.0,
+   "plan_gap": 0.02,
+   "z_gap": 0.03
+  }
+ },
+ "F20-4": {
+  "hum-uln": {
+   "clear": 0.0,
+   "u": 1.0,
+   "plan_gap": -0.05,
+   "z_gap": 0.0
+  },
+  "hum-bc1": {
+   "clear": 0.0,
+   "u": 0.875,
+   "plan_gap": -0.13,
+   "z_gap": 0.0
+  },
+  "hum-rod1": {
+   "clear": 0.65,
+   "u": 1.0,
+   "plan_gap": 0.65,
+   "z_gap": 0.64
+  },
+  "hum-rod4": {
+   "clear": 0.01,
+   "u": 1.0,
+   "plan_gap": 0.0,
+   "z_gap": 0.01
+  },
+  "uln-rod2": {
+   "clear": -0.0,
+   "u": 1.0,
+   "plan_gap": -0.02,
+   "z_gap": -0.0
+  },
+  "hand-rod4": {
+   "clear": 0.8,
+   "u": 0.0,
+   "plan_gap": 0.8,
+   "z_gap": 0.8
+  },
+  "bc1-rod1": {
+   "clear": 0.93,
+   "u": 1.0,
+   "plan_gap": 0.82,
+   "z_gap": 0.93
+  },
+  "bc1-rod2": {
+   "clear": -0.0,
+   "u": 0.0,
+   "plan_gap": -0.1,
+   "z_gap": -0.0
+  }
+ }
+}

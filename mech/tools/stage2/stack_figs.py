@@ -7,8 +7,8 @@ from analyze import make_ev
 from problem import U
 from stack import Geometry, T
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-from problem import STAGE
-OUT = ROOT / 'results' / 'stage2' / STAGE
+from problem import STAGE, TAG
+OUT = ROOT / 'results' / 'stage2' / (STAGE + TAG)
 NAME = dict(hum='humerus', uln='ulna', hand='hand', bc1='bellcrank 1', rod1='rod 1 (skewer)', rod2='rod 2', rod4='rod 4 (wrist)')
 
 

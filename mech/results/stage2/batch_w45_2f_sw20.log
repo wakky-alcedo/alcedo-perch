@@ -1,0 +1,25 @@
+[ 3315s] Bdirect/direct tilt seed 0: 3296s, feasible 0/300 min CV 3.63
+[ 3336s] Bdirect/direct tilt seed 1: 3317s, feasible 0/300 min CV 3.32
+[ 5407s] Bhum/direct tilt seed 0: 5388s, feasible 300/300 best 1.30 -38.28 1.38 2.15 15.28 14.95
+[ 5458s] Ahum/direct tilt seed 1: 5439s, feasible 300/300 best 2.42 -37.23 1.87 2.42 16.14 10.05
+[ 5504s] Ahum/direct tilt seed 0: 5485s, feasible 300/300 best 2.46 -37.61 1.65 2.21 17.11 14.48
+[ 5522s] Bhum/direct tilt seed 1: 5503s, feasible 300/300 best 1.15 -38.50 0.62 2.14 14.68 10.67
+[ 5844s] Ahum/direct tilt seed 2: 5825s, feasible 300/300 best 4.07 -29.89 6.61 4.63 18.25 35.99
+[ 5874s] Bhum/direct tilt seed 2: 5855s, feasible 0/300 min CV 1.00
+[ 6236s] Bdirect/direct tilt seed 2: 2904s, feasible 0/300 min CV 3.38
+[ 8103s] Bdirect/direct tilt seed 3: 2632s, feasible 0/300 min CV 3.37
+[ 8355s] Ahum/direct tilt seed 3: 5000s, feasible 300/300 best 2.41 -39.01 5.66 2.31 15.54 26.60
+[ 8513s] Bdirect/direct tilt seed 4: 2654s, feasible 0/300 min CV 3.56
+[10045s] Bhum/direct tilt seed 3: 4622s, feasible 300/300 best 2.50 -38.57 3.91 2.01 15.23 30.07
+[10304s] Ahum/direct tilt seed 4: 4786s, feasible 300/300 best 1.70 -38.59 6.60 2.28 15.85 11.45
+[10423s] Bhum/direct tilt seed 4: 4889s, feasible 0/300 min CV 1.00
+[10547s] Ahum/direct tilt seed 5: 4660s, feasible 300/300 best 2.58 -31.31 0.00 2.04 16.24 8.52
+[10737s] Bhum/direct tilt seed 5: 4488s, feasible 300/300 best 1.46 -32.98 0.00 1.86 15.08 9.12
+[10888s] Bdirect/direct tilt seed 5: 2771s, feasible 0/300 min CV 3.14
+[12389s] Bdirect/direct tilt seed 6: 2331s, feasible 0/300 min CV 3.22
+[12503s] Bhum/direct tilt seed 6: 3978s, feasible 300/300 best 1.28 -38.33 1.13 2.23 15.51 11.71
+[12522s] Ahum/direct tilt seed 6: 4154s, feasible 300/300 best 2.20 -37.52 1.31 2.33 16.28 10.25
+[12599s] Bdirect/direct tilt seed 7: 2036s, feasible 0/300 min CV 3.39
+[13285s] Bhum/direct tilt seed 7: 2849s, feasible 300/300 best 1.36 -38.74 2.87 2.19 14.59 12.52
+[13305s] Ahum/direct tilt seed 7: 2988s, feasible 300/300 best 1.87 -38.24 2.70 2.29 16.43 10.69
+done 13305.42704796791

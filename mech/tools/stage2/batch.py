@@ -18,6 +18,8 @@ if S2E: jobs = [(ec, wc, s, dsg) for s in range(nseeds) for dsg in ('dA', 'dB') 
 if S2F: jobs = [('hum', 'direct', s, dsg) for s in range(nseeds) for dsg in ('dA', 'dB')]
 # stage 2f, 'zero': no bellcrank at all (elbow and wrist both direct rods), asked for by the user 2026-11-15
 if S2F and ZERO: jobs = [('direct', 'direct', s, dsg) for s in range(nseeds) for dsg in os.environ.get('BATCH_DSG', 'dA,dB').split(',')]   # BATCH_DSG=dB: design B only (2026-11-16)
+if os.environ.get('BATCH_CFG'):   # e.g. 'dA:hum/direct,dB:hum/direct,dB:direct/direct' (2026-11-20, swivel 20 deg)
+    jobs = [tuple(c.split(':')[1].split('/')) + (s, c.split(':')[0]) for s in range(nseeds) for c in os.environ['BATCH_CFG'].split(',')]
 jobs.sort(key=lambda j: 0 if j[0] == 'ulna' else 1)
 t0 = time.time()
 

@@ -1,0 +1,4 @@
+F20-1 A {'anchor_A': [-0.4, -31.0, -14.8], 'anchor_from_mid': 12.3, 'min_clear': 1.53, 'pair': ('bc1', 'bc1'), 'u': 0.0, 'clashes': {}}
+F20-2 A {'anchor_A': [-0.3, -31.0, -14.9], 'anchor_from_mid': 12.4, 'min_clear': 1.46, 'pair': ('bc1', 'bc1'), 'u': 0.0, 'clashes': {}}
+F20-3 B {'anchor_A': [-2.5, -32.1, -13.9], 'anchor_from_mid': 10.2, 'min_clear': 1.59, 'pair': ('bc1', 'bc1'), 'u': 0.0, 'clashes': {}}
+F20-4 B {'anchor_A': [-2.6, -32.1, -13.1], 'anchor_from_mid': 10.1, 'min_clear': 1.3, 'pair': ('bc1', 'bc1'), 'u': 0.0, 'clashes': {}}

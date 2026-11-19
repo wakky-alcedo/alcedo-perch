@@ -9,8 +9,8 @@ import json, pathlib, numpy as np
 from analyze import make_ev
 from stack import full_check, T
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-from problem import STAGE
-OUT = ROOT / 'results' / 'stage2' / STAGE
+from problem import STAGE, TAG
+OUT = ROOT / 'results' / 'stage2' / (STAGE + TAG)
 E_PLA = 3000.0
 SECTIONS = {'plate 2.0 x 0.9': (2.0, 0.9), 'plate 2.0 x 2.1 (two layers)': (2.0, 2.1), 'tube/truss equiv. 3 x 3': (3.0, 3.0)}
 
