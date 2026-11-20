@@ -1,0 +1,26 @@
+runs 16
+feasible 4200 global non-dominated 2401
+{
+ "A:hum/direct": {
+  "label": "ˆÄAi•½–Êj •IBC:ã˜rœ^èñ:’¼Œ‹ƒƒbƒh",
+  "seeds": 8,
+  "seeds_with_feasible": 8,
+  "best_cheb_median": 2.550605485737657,
+  "best_cheb_min": 2.162271956889424,
+  "best_cheb_max": 6.384705561380949,
+  "n_in_global_front": 787
+ },
+ "B:hum/direct": {
+  "label": "ˆÄBièñŒX‚«j •IBC:ã˜rœ^èñ:’¼Œ‹ƒƒbƒh",
+  "seeds": 8,
+  "seeds_with_feasible": 6,
+  "best_cheb_median": 1.9190109629788343,
+  "best_cheb_min": 1.8043992629781642,
+  "best_cheb_max": 3.8402872528760845,
+  "n_in_global_front": 1614
+ }
+}
+V8-1 A:hum/direct:repeat hum direct F [  3.96 -26.02   0.     2.52  17.98   9.97] MC0.05 p95 2.66 max 3.66 fail 0.000 swivel 15 w40 fit 22.4 w50 fit 17.6
+V8-2 B:hum/direct:repeat hum direct F [  3.94 -29.7    0.24   2.11  16.17  12.8 ] MC0.05 p95 2.31 max 3.35 fail 0.000 swivel 16 w40 fit 20.8 w50 fit 15.8
+V8-3 B:hum/direct:shape hum direct F [  3.94 -29.01   0.29   2.22  15.95  10.36] MC0.05 p95 2.46 max 3.53 fail 0.000 swivel 15 w40 fit 20.3 w50 fit 15.7
+V8-4 B:hum/direct:open hum direct F [  3.33 -31.87   1.61   2.8   17.29  16.35] MC0.05 p95 2.89 max 4.51 fail 0.000 swivel 19 w40 fit 21.5 w50 fit 17.4

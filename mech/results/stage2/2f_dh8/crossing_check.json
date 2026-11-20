@@ -1,0 +1,166 @@
+{
+ "V8-1": {
+  "hum-uln": {
+   "clear": 0.0,
+   "u": 1.0,
+   "plan_gap": -0.17,
+   "z_gap": 0.0
+  },
+  "hum-bc1": {
+   "clear": 0.0,
+   "u": 0.7,
+   "plan_gap": -0.04,
+   "z_gap": 0.0
+  },
+  "hum-rod1": {
+   "clear": 0.33,
+   "u": 1.0,
+   "plan_gap": 0.29,
+   "z_gap": 0.33
+  },
+  "hum-rod4": {
+   "clear": 0.73,
+   "u": 0.725,
+   "plan_gap": 0.55,
+   "z_gap": 0.73
+  },
+  "uln-rod2": {
+   "clear": -0.0,
+   "u": 1.0,
+   "plan_gap": -0.07,
+   "z_gap": -0.0
+  },
+  "bc1-rod2": {
+   "clear": -0.0,
+   "u": 0.0,
+   "plan_gap": -0.04,
+   "z_gap": -0.0
+  },
+  "rod1-rod4": {
+   "clear": 0.38,
+   "u": 1.0,
+   "plan_gap": 0.38,
+   "z_gap": 0.38
+  }
+ },
+ "V8-2": {
+  "hum-uln": {
+   "clear": 0.0,
+   "u": 1.0,
+   "plan_gap": -0.09,
+   "z_gap": 0.0
+  },
+  "hum-bc1": {
+   "clear": 0.0,
+   "u": 0.675,
+   "plan_gap": -0.07,
+   "z_gap": 0.0
+  },
+  "hum-rod1": {
+   "clear": 0.16,
+   "u": 1.0,
+   "plan_gap": 0.15,
+   "z_gap": 0.16
+  },
+  "hum-rod4": {
+   "clear": 0.65,
+   "u": 1.0,
+   "plan_gap": 0.65,
+   "z_gap": 0.65
+  },
+  "uln-rod2": {
+   "clear": -0.0,
+   "u": 1.0,
+   "plan_gap": -0.03,
+   "z_gap": -0.0
+  },
+  "bc1-rod2": {
+   "clear": -0.0,
+   "u": 0.0,
+   "plan_gap": -0.02,
+   "z_gap": -0.0
+  }
+ },
+ "V8-3": {
+  "hum-uln": {
+   "clear": 0.0,
+   "u": 1.0,
+   "plan_gap": -0.01,
+   "z_gap": 0.0
+  },
+  "hum-bc1": {
+   "clear": 0.0,
+   "u": 0.625,
+   "plan_gap": -0.0,
+   "z_gap": 0.0
+  },
+  "hum-rod1": {
+   "clear": 0.18,
+   "u": 1.0,
+   "plan_gap": 0.18,
+   "z_gap": 0.17
+  },
+  "hum-rod4": {
+   "clear": 0.54,
+   "u": 1.0,
+   "plan_gap": 0.53,
+   "z_gap": 0.54
+  },
+  "uln-rod1": {
+   "clear": 0.56,
+   "u": 1.0,
+   "plan_gap": 0.56,
+   "z_gap": 0.56
+  },
+  "bc1-rod2": {
+   "clear": -0.0,
+   "u": 0.0,
+   "plan_gap": -0.05,
+   "z_gap": -0.0
+  },
+  "rod2-rod4": {
+   "clear": 0.01,
+   "u": 1.0,
+   "plan_gap": 0.01,
+   "z_gap": -0.83
+  }
+ },
+ "V8-4": {
+  "hum-uln": {
+   "clear": 0.0,
+   "u": 0.975,
+   "plan_gap": -0.08,
+   "z_gap": 0.0
+  },
+  "hum-bc1": {
+   "clear": 0.0,
+   "u": 0.5,
+   "plan_gap": -0.13,
+   "z_gap": 0.0
+  },
+  "hum-rod1": {
+   "clear": 0.77,
+   "u": 0.0,
+   "plan_gap": 0.77,
+   "z_gap": 0.77
+  },
+  "uln-rod2": {
+   "clear": 0.0,
+   "u": 0.0,
+   "plan_gap": -0.01,
+   "z_gap": 0.0
+  },
+  "hand-rod4": {
+   "clear": 0.05,
+   "u": 0.0,
+   "plan_gap": 0.05,
+   "z_gap": 0.05
+  },
+  "bc1-rod1": {
+   "clear": 0.82,
+   "u": 1.0,
+   "plan_gap": 0.6,
+   "z_gap": 0.82
+  }
+ }
+}

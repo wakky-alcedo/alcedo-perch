@@ -1,0 +1,62 @@
+{
+ "V8-1": {
+  "anchor_A": [
+   -4.1,
+   -30.5,
+   -17.6
+  ],
+  "anchor_from_mid": 8.6,
+  "min_clear": 1.91,
+  "pair": [
+   "bc1",
+   "bc1"
+  ],
+  "u": 0.0,
+  "clashes": {}
+ },
+ "V8-2": {
+  "anchor_A": [
+   -1.1,
+   -32.0,
+   -17.5
+  ],
+  "anchor_from_mid": 11.6,
+  "min_clear": 1.03,
+  "pair": [
+   "rod2",
+   "rod2"
+  ],
+  "u": 0.0,
+  "clashes": {}
+ },
+ "V8-3": {
+  "anchor_A": [
+   -2.8,
+   -33.3,
+   -17.0
+  ],
+  "anchor_from_mid": 9.9,
+  "min_clear": 1.19,
+  "pair": [
+   "rod2",
+   "rod2"
+  ],
+  "u": 0.0,
+  "clashes": {}
+ },
+ "V8-4": {
+  "anchor_A": [
+   -1.0,
+   12.9,
+   9.4
+  ],
+  "anchor_from_mid": 11.7,
+  "min_clear": 1.78,
+  "pair": [
+   "rod4",
+   "rod4"
+  ],
+  "u": 1.0,
+  "clashes": {}
+ }
+}

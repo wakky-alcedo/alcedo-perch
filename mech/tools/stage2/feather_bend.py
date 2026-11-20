@@ -8,8 +8,11 @@ For each candidate the pair (alpha, R) per group that minimises the fold fit is 
 - camber of the open wing = arc height over the root-tip chord / feather length (real bird wings: a few %);
 - feather-feather: for neighbouring feathers that overlap in plan, how much their height difference changes during the fold
   (flat: 0). That change must be taken by feather spacing or by flexing; reported as the max over the fold.
+Option DROOP=<deg> (user 2026-11-21 'tip slightly lowered'): the primaries' root-tip chord (longest primary, 56 mm) must point
+at least DROOP deg below the wing plane in the open wing; finer R grid. chord_deg is reported for both groups.
+Option CAMBER_MAX=<x>: cap on the primaries' camber; FB_OUT=<name>: output file name (for sweeps).
 usage: feather_bend.py [ID ...]   (MIDLINE=1)  -> results/stage2/<STAGE>/feather_bend.json"""
-import sys, json, numpy as np
+import sys, os, json, numpy as np
 IDS, sys.argv = sys.argv[1:], sys.argv[:1] + ['45', '2e']
 from analyze import make_ev, OUT
 import kin
@@ -30,6 +33,12 @@ def r_of(table, per=PER):
 
 RS, RP = r_of(SEC), r_of(PRIM)
 bow = lambda r, a, R: r * np.tan(a) - (0 if np.isinf(R) else r ** 2 / (2 * R))
+chord = lambda a, R, L: float(np.degrees(np.arctan(bow(L, a, R) / L)))
+DROOP = float(os.environ.get('DROOP', 'nan'))
+LP = max(L for f, L, a0, a1 in PRIM)
+if DROOP == DROOP: R_GRID = np.array([25, 30, 35, 40, 45, 50, 60, 70, 85, 100, 125, 150, 200, np.inf])
+CAMBER_MAX = float(os.environ.get('CAMBER_MAX', 'inf'))   # optional cap on the primaries' camber (same measure as reported)
+ok_p = lambda a, R: (not (DROOP == DROOP) or chord(a, R, LP) <= -DROOP) and camber(a, R, 50) <= CAMBER_MAX
 
 
 def patch(aS, RS_, aP, RP_):
@@ -96,19 +105,20 @@ def main(ids):
         best = (f0, (0, np.inf, 0, np.inf))
         # secondaries and primaries are almost independent: search each with the other flat, then refine jointly around the best
         bs = min(((fit_of(ev, d, (a, R, 0, np.inf))[0], a, R) for a in A_GRID for R in R_GRID))
-        bp = min(((fit_of(ev, d, (bs[1], bs[2], a, R))[0], a, R) for a in A_GRID for R in R_GRID))
+        bp = min(((fit_of(ev, d, (bs[1], bs[2], a, R))[0], a, R) for a in A_GRID for R in R_GRID if ok_p(a, R)))
         prm = (bs[1], bs[2], bp[1], bp[2]); f1, fx1 = fit_of(ev, d, prm)
         sd = lambda fx: dict(bury_max=round(float(fx['bury_max'][0]), 2), float_max=round(float(fx['float_max'][0]), 2))
         r = dict(fit_flat=round(f0, 2), fit_bent=round(f1, 2), parts_flat=np.round(fx0['parts'][0], 2).tolist(),
                  parts_bent=np.round(fx1['parts'][0], 2).tolist(), flat=sd(fx0), bent=sd(fx1),
                  sec=dict(alpha_deg=round(float(np.degrees(prm[0])), 1), R_mm=None if np.isinf(prm[1]) else float(prm[1]),
-                          camber=round(camber(prm[0], prm[1], 40), 3), rub_mm=round(rub(SEC, prm[0], prm[1]), 2)),
+                          camber=round(camber(prm[0], prm[1], 40), 3), chord_deg=round(chord(prm[0], prm[1], 40), 1), rub_mm=round(rub(SEC, prm[0], prm[1]), 2)),
                  pri=dict(alpha_deg=round(float(np.degrees(prm[2])), 1), R_mm=None if np.isinf(prm[3]) else float(prm[3]),
-                          camber=round(camber(prm[2], prm[3], 50), 3), rub_mm=round(rub(PRIM, prm[2], prm[3]), 2)))
+                          camber=round(camber(prm[2], prm[3], 50), 3), chord_deg=round(chord(prm[2], prm[3], LP), 1), rub_mm=round(rub(PRIM, prm[2], prm[3]), 2)))
+        if DROOP == DROOP: r['droop_min_deg'] = DROOP
         out[c['id']] = r
         print(c['id'], c['dsg'], 'fit flat', r['fit_flat'], '-> bent', r['fit_bent'], 'flat', r['flat'], 'bent', r['bent'],
               'sec', r['sec'], 'pri', r['pri'], flush=True)
-    json.dump(out, open(OUT / 'feather_bend.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    json.dump(out, open(OUT / os.environ.get('FB_OUT', 'feather_bend.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 
 
 if __name__ == '__main__':

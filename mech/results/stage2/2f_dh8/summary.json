@@ -1,0 +1,25 @@
+{
+ "width": 45,
+ "configs": {
+  "A:hum/direct": {
+   "label": "案A（平面） 肘BC:上腕骨／手首:直結ロッド",
+   "seeds": 8,
+   "seeds_with_feasible": 8,
+   "best_cheb_median": 2.550605485737657,
+   "best_cheb_min": 2.162271956889424,
+   "best_cheb_max": 6.384705561380949,
+   "n_in_global_front": 787
+  },
+  "B:hum/direct": {
+   "label": "案B（手首傾き） 肘BC:上腕骨／手首:直結ロッド",
+   "seeds": 8,
+   "seeds_with_feasible": 6,
+   "best_cheb_median": 1.9190109629788343,
+   "best_cheb_min": 1.8043992629781642,
+   "best_cheb_max": 3.8402872528760845,
+   "n_in_global_front": 1614
+  }
+ },
+ "n_feasible": 4200,
+ "n_front": 2401
+}

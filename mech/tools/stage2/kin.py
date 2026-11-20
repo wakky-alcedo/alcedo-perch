@@ -21,7 +21,9 @@ D = np.pi / 180
 LH, LU, LCMC, LDIG = 25.7, 32.0, 13.3, 7.0
 LMAN = LCMC + LDIG
 E0, M0 = 150.0, 160.0
-Ro = Rot.from_euler('z', -15, degrees=True).as_matrix()
+import os as _os
+DIHEDRAL = float(_os.environ.get('DIHEDRAL', 0.0))   # deg, open wing raised about the body's fore-aft axis (user 2026-11-21: +8); 0 = flat (stage 1-2f)
+Ro = Rot.from_euler('y', -DIHEDRAL, degrees=True).as_matrix() @ Rot.from_euler('z', -15, degrees=True).as_matrix()
 
 
 # ---------------------------------------------------------------- small helpers
