@@ -16,7 +16,10 @@ def dec(m, n):
 
 out = dict(source='Common Kingfisher by Alejandro Guzman (Sketchfab), CC BY-SA 4.0. Decimated and transformed: mech/tools/stage1/export_mesh_js.py. This file is CC BY-SA 4.0.',
            frame='v4 shoulder frame, mm: x lateral (right), y cranial, z dorsal; origin = right shoulder (ESTIMATE)', variants={})
-for name, kw, label in [('asis', {}, 'CG（翼長で縮尺、幅58 mm）')] + [(f'w{w}', dict(kx=w / 57.7, kz=w / 57.7), f'CG 幅{w} mm') for w in (40, 45, 50)]:
+CT = dict(SX=12.7, DY=8.7, DZ=5.0)   # shoulder rule measured on the CT (stage2/body.py RULES['ct']), used by the optimisation since stage 2b
+VARS = ([('asis', {}, 'CG（翼長で縮尺、幅58 mm）')] + [(f'w{w}', dict(kx=w / 57.7, kz=w / 57.7), f'CG 幅{w} mm（旧い肩の位置）') for w in (40, 45, 50)]
+        + [(f'ct{w}', dict(kx=w / 57.7, kz=w / 57.7, **CT), f'CG 幅{w} mm（CTの肩の位置）') for w in (40, 45, 50)])
+for name, kw, label in VARS:
     tr = transform(**kw); A = aligned_parts(tr)
     parts = {}
     for k, n in TARGET_FACES.items():

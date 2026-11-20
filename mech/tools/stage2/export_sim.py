@@ -53,7 +53,8 @@ def entry(c, mesh):
     why = (f"肘{c['E'][0]:.0f}→{c['E'][1]:.0f}°、手首{c['M'][0]:.0f}→{c['M'][1]:.0f}°、関節角の誤差{F0[0]:.1f}°、最小伝達角{-F0[1]:.0f}°、"
            f"はみ出し（CGメッシュ基準）{F0[2]:.1f} mm、寸法感度2σ {F0[3]:.1f}°（MC ±0.05 mmで95%が{c['mc005']['p95']:.1f}°以内）、"
            f"畳み姿勢の当てはまり{F0[4]:.1f}、最大部品{F0[5]:.0f} mm、ボールジョイント首振り{c['swivel']:.0f}°、羽根の浮かせ{c['fz']:.1f} mm、モーター{c['theta']:.0f}°。")
-    occ = mesh['variants']['w45']['occluder']
+    BM = 'ct45' if S2E else 'w45'   # 2026-11-21: the optimisation uses the CT shoulder rule since stage 2b; the old 'w45' mesh put the body midline 3.7 mm off
+    occ = mesh['variants'][BM]['occluder']
     if S2E:
         st = c.get('stack', {})
         lay = (f"立体の層チェック：{'合格' if st.get('unplaced', 1) == 0 else '不合格'}（ロッド1は竹串で直線、ロッド4は曲げて層を移る）、"
@@ -71,7 +72,7 @@ def entry(c, mesh):
     v = dict(id=c['id'], status='candidate', date='2026-11-14' if TILT else '2026-11-13',
              title=(f"段階{STAGE}候補 {c['id']}：{c['label']}" + (f"（首振り上限{SWIVEL:.0f}°）" if TAG else '') if S2E else f"段階2d候補 {c['id']}：{c['label']}" if S2D else f"案B候補 {c['id']}：{c['label']}（手首軸 傾き）" if TILT else f"段階2候補 {c['id']}：{c['label']}"), topo=topo, wristMount=c['wc'], elbowMount=em,
              why=why, shoulder=dict(axis=[r4(v) for v in d['axis'][0]], Ro=[[r4(v) for v in row] for row in Ro]), body=dict(c=occ['c'], r=occ['r']),
-             bodyMesh='w45', featherZ=r4(d['fz'][0]),
+             bodyMesh=BM, featherZ=r4(d['fz'][0]),
              target=dict(AH0=0, AH1=round(float(np.degrees(d['th'][0])), 3), E0=150.0, E1=r4(d['E1'][0]), M0=160.0, M1=r4(d['M1'][0])),
              tilt3d=dict(tS=0, tE=0, tW=0), dims=dims)
     if TILT: v.update(wristTilt=r4(np.degrees(d['tw'][0])), featherTwist=r4(np.degrees(d['phi'][0])), primFold=r4(d['dl'][0]))
