@@ -16,15 +16,18 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 
 class Log(Callback):
     def __init__(self):
-        super().__init__(); self.rows = []; self.progress = None; self.t0 = time.time()
+        super().__init__(); self.rows = []; self.progress = None; self.t0 = time.time(); self.ckpt = None; self.g0 = 0
 
     def notify(self, algo):
         F, G = algo.pop.get('F'), algo.pop.get('G'); feas = np.all(G <= 0, 1)
         cv = np.maximum(G, 0).sum(1)
         best = F[feas].min(0) if feas.any() else np.full(F.shape[1], np.nan)
-        self.rows.append([algo.n_gen, feas.sum(), cv.min()] + list(best))
-        if self.progress and algo.n_gen % 10 == 0:          # 2026-11-16: the batch log only shows finished runs
-            self.progress.write_text(f'gen {algo.n_gen} feasible {feas.sum()} minCV {cv.min():.3f} t {time.time() - self.t0:.0f}s')
+        g = algo.n_gen + self.g0
+        self.rows.append([g, feas.sum(), cv.min()] + list(best))
+        if self.progress and g % 10 == 0:          # 2026-11-16: the batch log only shows finished runs
+            self.progress.write_text(f'gen {g} feasible {feas.sum()} minCV {cv.min():.3f} t {time.time() - self.t0:.0f}s')
+            # 2026-11-21: checkpoint (a PC restart lost a 2.7 h batch); run.py resumes from it with the remaining generations
+            if self.ckpt: np.savez_compressed(self.ckpt, X=algo.pop.get('X'), n_gen=g, log=np.array(self.rows))
 
 
 def main(ec, wc, seed, gens=300, pop=300, width=45, tilt=False, design=None):
@@ -60,10 +63,17 @@ def main(ec, wc, seed, gens=300, pop=300, width=45, tilt=False, design=None):
     if os.environ.get('RUN_OUT'): out = ROOT / 'results' / 'stage2' / os.environ['RUN_OUT']      # parallel runs must not overwrite
     out.mkdir(parents=True, exist_ok=True)
     log.progress = out / f'{design + "-" if design else ""}{ec}_{wc}_w{int(width)}_s{seed}.progress'
+    ck = ROOT / 'results' / 'local' / (out.name + '_ckpt'); ck.mkdir(parents=True, exist_ok=True)
+    log.ckpt = ck / (log.progress.stem + '.npz')
+    if log.ckpt.exists():                       # resume: the saved population as the initial one, only the remaining generations
+        with np.load(log.ckpt) as c: log.g0 = int(c['n_gen']); log.rows = [list(r) for r in c['log']]; Xc = c['X']
+        algo = NSGA3(ref_dirs=ref, pop_size=pop, sampling=Xc, eliminate_duplicates=True); gens = max(gens - log.g0, 1)
+        print(f'resume from gen {log.g0}', file=sys.stderr)
     res = minimize(prob, algo, ('n_gen', gens), seed=seed, callback=log, verbose=False)
     pop_ = res.pop; X, F, G = pop_.get('X'), pop_.get('F'), pop_.get('G')
     np.savez_compressed(out / f'{design + "-" if design else ""}{ec}_{wc}_w{int(width)}_s{seed}.npz', X=X, F=F, G=G, log=np.array(log.rows), time=time.time() - t,
                         vars=np.array([v[0] for v in prob.ev.vars]))
+    log.ckpt.unlink(missing_ok=True)
     feas = np.all(G <= 0, 1)
     print(f'{design or ""}{ec}/{wc}{" tilt" if tilt else ""} seed {seed}: {time.time() - t:.0f}s, feasible {feas.sum()}/{len(X)}',
           ('best ' + ' '.join(f'{v:.2f}' for v in F[feas].min(0))) if feas.any() else f'min CV {np.maximum(G, 0).sum(1).min():.2f}', flush=True)
