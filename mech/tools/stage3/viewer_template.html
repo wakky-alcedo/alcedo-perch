@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>__TITLE__</title>
+<style>
+:root{--bg:#f4f6f9;--ink:#1d2430;--panel:#ffffffe6;--line:#d0d6df}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14181f;--ink:#e6eaf0;--panel:#1d2430e6;--line:#2c3440}}
+:root[data-theme="dark"]{--bg:#14181f;--ink:#e6eaf0;--panel:#1d2430e6;--line:#2c3440}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:14px system-ui,'Yu Gothic UI',sans-serif;overflow:hidden}
+#ui{position:absolute;left:8px;right:8px;bottom:8px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+#ui input[type=range]{flex:1 1 200px}
+#leg{position:absolute;left:8px;top:8px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px;max-width:calc(100% - 32px)}
+#leg span{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 8px;vertical-align:middle}
+button{font:inherit;padding:3px 10px}
+</style></head><body>
+<div id="leg"></div>
+<div id="ui"><button id="play">▶</button><input id="u" type="range" min="0" max="40" value="0"><span id="ut">開 0%</span>
+<label><input id="mir" type="checkbox" checked> 左の翼</label><label><input id="hw" type="checkbox" checked> 金具</label>
+<label><input id="mid" type="checkbox" checked> 中心線</label></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const D = /*DATA*/null;
+if (!D) { document.body.innerHTML = '<p style="padding:16px">これは雛形です。データ入りのビューアは cad.py が results/stage3/&lt;ID&gt;/&lt;ID&gt;_viewer.html に作ります。</p>'; throw new Error('template only'); }
+const JA = {hum:'上腕骨', uln:'尺骨', hand:'手', bc1:'肘レバー', rod2:'ロッド2', rod1:'ロッド1（竹串）', rod4:'ロッド4'};
+const scene = new THREE.Scene();
+const cam = new THREE.PerspectiveCamera(35, innerWidth / innerHeight, 0.5, 2000); cam.up.set(0, 0, 1);
+const ren = new THREE.WebGLRenderer({antialias: true}); ren.setPixelRatio(devicePixelRatio); ren.setSize(innerWidth, innerHeight);
+document.body.prepend(ren.domElement);
+const dark = matchMedia('(prefers-color-scheme: dark)').matches; scene.background = new THREE.Color(dark ? 0x14181f : 0xf4f6f9);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x445566, 0.9)); const dl = new THREE.DirectionalLight(0xffffff, 0.6); dl.position.set(40, 60, 120); scene.add(dl);
+const ctl = new THREE.OrbitControls(cam, ren.domElement);
+const right = new THREE.Group(), left = new THREE.Group(); scene.add(right, left);
+const groups = {R: {}, L: {}}, hwObjs = [];
+const mirror = new THREE.Matrix4().makeTranslation(D.mid, 0, 0).multiply(new THREE.Matrix4().makeScale(-1, 1, 1)).multiply(new THREE.Matrix4().makeTranslation(-D.mid, 0, 0));
+left.matrixAutoUpdate = false; left.matrix.copy(mirror);
+for (const side of ['R', 'L']) for (const it of D.items) {
+  const g = groups[side][it.owner] || (groups[side][it.owner] = Object.assign(new THREE.Group(), {matrixAutoUpdate: false}));
+  (side === 'R' ? right : left).add(g);
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(it.mesh.v, 3)); geo.setIndex(it.mesh.f); geo.computeVertexNormals();
+  const mat = new THREE.MeshStandardMaterial({color: it.col, metalness: it.name.startsWith('pin') ? 0.6 : 0.05, roughness: 0.55, side: THREE.DoubleSide, transparent: side === 'L', opacity: side === 'L' ? 0.55 : 1});
+  const mesh = new THREE.Mesh(geo, mat); g.add(mesh); if (it.name !== it.owner) hwObjs.push(mesh);
+}
+// body points: shoulder, rod-1 anchor, shoulder axis; midline plane
+const pt = (p, c) => { const s = new THREE.Mesh(new THREE.SphereGeometry(1.6, 16, 12), new THREE.MeshStandardMaterial({color: c})); s.position.set(...p); right.add(s); };
+pt(D.body.A, 0x555555);
+const ax = new THREE.Vector3(...D.body.axis); const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([ax.clone().multiplyScalar(-12), ax.clone().multiplyScalar(14)]), new THREE.LineBasicMaterial({color: 0xaa0000}));
+right.add(line);
+const plane = new THREE.Mesh(new THREE.PlaneGeometry(120, 60), new THREE.MeshBasicMaterial({color: 0x888888, transparent: true, opacity: 0.12, side: THREE.DoubleSide}));
+plane.rotation.y = Math.PI / 2; plane.position.set(D.mid, -25, 0); scene.add(plane);
+document.getElementById('leg').innerHTML = Object.entries(JA).filter(([k]) => D.mats[k]).map(([k, v]) => `<span style="background:${D.items.find(i => i.owner === k && i.name === k).col}"></span>${v}`).join('') +
+  '<span style="background:#aa0000"></span>肩の軸<span style="background:#555"></span>竹串の体側の玉';
+function pose(k) {
+  for (const side of ['R', 'L']) for (const [o, g] of Object.entries(groups[side])) { g.matrix.fromArray(D.mats[o][k]); }
+  document.getElementById('ut').textContent = '畳み ' + Math.round(k / (D.N - 1) * 100) + '%';
+}
+const u = document.getElementById('u'); u.oninput = () => pose(+u.value);
+document.getElementById('mir').onchange = e => left.visible = e.target.checked;
+document.getElementById('hw').onchange = e => hwObjs.forEach(m => m.visible = e.target.checked);
+document.getElementById('mid').onchange = e => plane.visible = e.target.checked;
+let play = false, dir = 1; document.getElementById('play').onclick = e => { play = !play; e.target.textContent = play ? '❚❚' : '▶'; };
+setInterval(() => { if (!play) return; let k = +u.value + dir; if (k >= D.N - 1 || k <= 0) dir = -dir; u.value = Math.max(0, Math.min(D.N - 1, k)); pose(+u.value); }, 60);
+pose(0); scene.updateMatrixWorld(true);
+const box = new THREE.Box3().setFromObject(right); const c = box.getCenter(new THREE.Vector3());
+ctl.target.copy(c); cam.position.set(c.x + 20, c.y - 110, c.z + 70); ctl.update();
+addEventListener('resize', () => { cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); ren.setSize(innerWidth, innerHeight); });
+(function loop() { requestAnimationFrame(loop); ren.render(scene, cam); })();
+</script></body></html>
