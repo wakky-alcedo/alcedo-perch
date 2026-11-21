@@ -1,0 +1,17 @@
+set -e
+cd /c/userfile/alcedo-perch/mech/tools/stage2
+export MIDLINE=1 STACK_BUD_JOINT=8 STACK_NSUB=24 SWIVEL=20 DIHEDRAL=8 STAGE_TAG=_dh8m ELBOW_MERGE=1 STACK_BALL=1 STACK_SHAFT=1 DROOP=3
+PY=../../../.venv/Scripts/python; L=../../results/stage2; T=2f_dh8m
+$PY analyze.py 45 2e > $L/${T}_analyze.log 2>&1
+$PY screen_mc.py > $L/${T}_screen.log 2>&1
+$PY gate_2f.py > $L/${T}_gate.log 2>&1
+$PY analyze.py 45 2e > $L/${T}_analyze.log 2>&1
+$PY loads.py 2e > $L/${T}_loads.log 2>&1
+$PY check_2e.py > $L/${T}_check.log 2>&1
+$PY crossing_check.py > $L/${T}_crossing.log 2>&1
+$PY mirror_check.py > $L/${T}_mirror.log 2>&1
+$PY feather_bend.py > $L/${T}_feather.log 2>&1
+CAMBER_MAX=0.10 CAMBER_MAX_SEC=0.075 FB_OUT=feather_bend_chosen.json $PY feather_bend.py > $L/${T}_feather_chosen.log 2>&1
+IDS=$($PY -c "import json;print(' '.join(c['id'] for c in json.load(open('$L/$T/candidates.json',encoding='utf-8'))))")
+($PY stack_figs.py && $PY cand_figs.py 2e && $PY mirror_figs.py $IDS) > $L/${T}_figs.log 2>&1
+echo PIPELINE_DONE $IDS

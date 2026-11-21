@@ -1,0 +1,14 @@
+runs 8
+feasible 600 global non-dominated 300
+{
+ "B:hum/direct": {
+  "label": "ˆÄBièñŒX‚«j •IBC:ã˜rœ^èñ:’¼Œ‹ƒƒbƒh",
+  "seeds": 8,
+  "seeds_with_feasible": 2,
+  "best_cheb_median": 3.351692933068886,
+  "best_cheb_min": 2.0897117023194127,
+  "best_cheb_max": 4.613674163818359,
+  "n_in_global_front": 300
+ }
+}
+C1 B:hum/direct:repeat hum direct F [  3.96 -26.5    0.68   2.44  16.59  11.13] MC0.05 p95 2.74 max 3.55 fail 0.000 swivel 20 w40 fit 21.2 w50 fit 16.4

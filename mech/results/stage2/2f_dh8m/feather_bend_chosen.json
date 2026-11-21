@@ -1,0 +1,49 @@
+{
+ "C1": {
+  "fit_flat": 16.59,
+  "fit_bent": 15.29,
+  "parts_flat": [
+   2.8,
+   0.0,
+   0.4,
+   0.0,
+   2.48,
+   1.01,
+   0.0,
+   9.9
+  ],
+  "parts_bent": [
+   1.54,
+   0.14,
+   0.4,
+   0.0,
+   2.3,
+   1.01,
+   0.0,
+   9.9
+  ],
+  "flat": {
+   "bury_max": 5.46,
+   "float_max": 0.0
+  },
+  "bent": {
+   "bury_max": 3.43,
+   "float_max": 1.44
+  },
+  "sec": {
+   "alpha_deg": 15.0,
+   "R_mm": 70.0,
+   "camber": 0.071,
+   "chord_deg": -1.0,
+   "rub_mm": 1.54
+  },
+  "pri": {
+   "alpha_deg": 15.0,
+   "R_mm": 85.0,
+   "camber": 0.074,
+   "chord_deg": -3.9,
+   "rub_mm": 1.54
+  },
+  "droop_min_deg": 3.0
+ }
+}

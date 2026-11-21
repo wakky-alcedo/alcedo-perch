@@ -1,0 +1,1 @@
+{"note": "stage 3 fixes (2026-11-21, found in CAD): elbow lever with one joint (ELBOW_MERGE), ball sockets (STACK_BALL), shoulder hub (STACK_SHAFT); dihedral +8, swivel 20, design B. Picks C-n; V8-n in ../2f_dh8.", "new": {"hum/direct": "C"}, "kept": []}

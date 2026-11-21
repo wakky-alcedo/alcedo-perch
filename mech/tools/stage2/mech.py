@@ -39,6 +39,10 @@ TILT_VARS_A = [v for v in TILT_VARS if v[0] not in ('tw', 'phi')]
 DIMS_WD = [('b4', 3), ('L4', 1), ('q', 3)]                                                       # direct wrist rod: b4 = anchor on the humerus
 DIMS_B = [('LH', 1), ('LU', 1)]
 RODS = ['Lc1', 'L2', 'Lc3', 'L4', 'Ld']
+# stage 3 (2026-11-21): the optimiser put the rod-2 pin 0.5-1.3 mm from the rod-1 ball on bellcrank 1 (no room for two joints);
+# ELBOW_MERGE=1 makes them one joint (ball under the lever, pin above), i.e. bellcrank 1 becomes a plain lever
+import os as _os
+ELBOW_MERGE = _os.environ.get('ELBOW_MERGE') == '1'
 # rod-length play = sum of the radial clearances of its two end joints (mm): 681 bearing 0.01, ball joint / rod end 0.03,
 # printed resin pin on the hand (no bearing, light wing tip) 0.05
 ROD_PLAY = dict(Lc1=0.06, L2=0.02, Lc3=0.02, L4=0.08, Ld=0.06)
@@ -172,7 +176,10 @@ def synthesise(ec, wc, X, u, tilt=False):
         if ec == 'hum':
             Uh = np.array([LH, 0]) + rot2(pe_t, np.c_[x['wx'], x['wy']][:, None])        # humerus 2D
             Ub = rot2(-b, Uh - g[:, None])
-            c, L2, res = circle_fit2(Ub)
+            if ELBOW_MERGE:                               # rod 2 pinned at the rod-1 ball (one joint B on the lever): centre fixed at (rb1, 0)
+                c = np.c_[x['rb1'], 0 * x['rb1']]; dist = nrm(Ub - c[:, None]); L2 = (dist.max(1) + dist.min(1)) / 2; res = dist - L2[:, None]
+            else:
+                c, L2, res = circle_fit2(Ub)
             d.update(A=A, g=g, rb1=x['rb1'], Lc1=x['Lc1'], b2=c, L2=L2, w=np.c_[x['wx'], x['wy']])
         else:
             k = np.c_[x['kx'], x['ky']]

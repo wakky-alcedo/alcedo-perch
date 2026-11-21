@@ -1,0 +1,34 @@
+{
+ "C1": {
+  "hum-uln": {
+   "clear": 0.0,
+   "u": 1.0,
+   "plan_gap": -0.03,
+   "z_gap": 0.0
+  },
+  "hum-bc1": {
+   "clear": 0.0,
+   "u": 0.95,
+   "plan_gap": -0.0,
+   "z_gap": 0.0
+  },
+  "uln-rod2": {
+   "clear": -0.0,
+   "u": 1.0,
+   "plan_gap": -0.03,
+   "z_gap": -0.0
+  },
+  "bc1-rod1": {
+   "clear": 0.56,
+   "u": 1.0,
+   "plan_gap": 0.48,
+   "z_gap": 0.56
+  },
+  "bc1-rod2": {
+   "clear": -0.0,
+   "u": 0.0,
+   "plan_gap": -0.0,
+   "z_gap": -0.0
+  }
+ }
+}

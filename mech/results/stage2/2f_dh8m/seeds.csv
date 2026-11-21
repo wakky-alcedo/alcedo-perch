@@ -1,0 +1,9 @@
+dsg,ec,wc,seed,feasible,best_err,best_negtmin,best_prot,best_sens,best_fit,best_part,best_cheb,time_s
+B,hum,direct,0,300,2.492,-30.484,0.422,2.17,15.868,8.658,2.09,15811
+B,hum,direct,1,0,,,,,,,,15541
+B,hum,direct,2,0,,,,,,,,15829
+B,hum,direct,3,0,,,,,,,,15818
+B,hum,direct,4,300,4.678,-26.529,4.614,2.468,17.271,14.88,4.614,15489
+B,hum,direct,5,0,,,,,,,,15795
+B,hum,direct,6,0,,,,,,,,15407
+B,hum,direct,7,0,,,,,,,,15749

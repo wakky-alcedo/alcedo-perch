@@ -38,6 +38,11 @@ GRADED = os.environ.get('STACK_GRADED') == '1'   # add a graded term (ball-stud 
 JR_CLIP = 3.0                                        # = crossing_check.JR
 JB_ZONE = 5.0                                        # mm (plan) around a ball joint where its stack budget applies to the two parts it joins
 CLIP = os.environ.get('STACK_CLIP', '1') == '1'      # exact sloped-rod / flat-plate test (clip_tables); 0 = before 2026-11-17
+BALL = os.environ.get('STACK_BALL') == '1'               # stage 3: ball sockets (ball_tables)
+R_SOCK, R_SOCK_H = float(os.environ.get('R_SOCK', 2.5)), float(os.environ.get('R_SOCK_H', 1.5))
+SHAFT = os.environ.get('STACK_SHAFT') == '1'             # stage 3: shoulder hub / shaft under the humerus plate (shaft_tables)
+SH_R, SH_L = 2.0, 4.0                                     # hub radius, length along the shoulder axis from the humerus plate into the body
+BODY_C = np.array([-12.7, -18.0, -6.0])                   # a point inside the body (world): the shaft goes towards it
 
 
 def seg2(p1, q1, p2, q2):
@@ -104,6 +109,8 @@ class Geometry:
         self.var = [n for n in ORDER if n in self.names]
         ep = {kk: h(v[:, k]) for kk, v in f['elbow_pts'].items()}; wp = {kk: h(v[:, k]) for kk, v in f['wrist_pts'].items()}
         self.J = joints(ev.ec, ev.wc, ep, wp, self.E, self.W)
+        ax = d['axis'] * np.sign(d['axis'] @ BODY_C)[:, None]                          # world, into the body
+        self.a_h = np.einsum('pji,pj->pi', f['Rh'][:, 0], ax)                         # humerus frame (constant over the motion)
         self.base = lambda nm, X: (plane_hand(X)[..., 2] if nm == 'hand' else X[..., 2] if nm in ('rod1', 'rod4') else 0 * X[..., 2])
         self.tables()
 
@@ -218,8 +225,64 @@ class Geometry:
                     bad = (lo_e[..., None] - hc + 1e-6 < zcl[:, None, None]) & (zcl[:, None, None] < hi_e[..., None] + hc - 1e-6)
                     bad = orby(p, bad)
                     self._put(unary, binary, ternary, a, b, c, bad)
+        if BALL: self.ball_tables(unary, stk)
+        if SHAFT: self.shaft_tables(unary, binary, stk)
         if CLIP: self.clip_tables(unary, binary, stk)
         self.unary, self.binary, self.ternary = unary, binary, ternary
+
+    def ball_tables(self, unary, stk):
+        """stage 3 (2026-11-21, found in CAD): a ball joint is a ball (diameter 2 R_SOCK_H) in a socket on the rod (outer radius
+        R_SOCK, height 2 R_SOCK_H) at the kinematic ball centre. (1) the plate carrying the stud keeps the socket clear:
+        |z_ball - z_plate| >= R_SOCK_H + TP / 2 + GAP; (2) any other plate whose footprint comes within R_SOCK + r + GAP (plan)
+        of the ball centre must clear the socket in height the same way. Both are level forbids (unary)."""
+        Lz = LV * T
+        for a, b, X, ball in self.J:
+            if not ball: continue
+            zX = X[..., 2]
+            for c in self.var:
+                if c in ('rod1', 'rod4'): continue
+                zc = self.base(c, X)[..., None] + Lz                                            # (P,S,NL) plate centre at X
+                thr = R_SOCK_H + hh(c) + GAP - 1e-6
+                if c in (a, b):
+                    unary[c] |= (np.abs(zc - zX[..., None]) < thr).any(1)
+                    continue
+                PC, QC, RC = stk[c]
+                dd, _, t_ = seg2(np.broadcast_to(X, PC.shape)[..., :], np.broadcast_to(X, PC.shape), PC * FLAT, QC * FLAT)   # (K,P,S)
+                near = dd < R_SOCK + RC[:, None, None] + GAP
+                zcap = (PC[..., 2] + t_ * (QC[..., 2] - PC[..., 2]))[..., None] + Lz                       # (K,P,S,NL)
+                bad = near[..., None] & (np.abs(zcap - zX[None, ..., None]) < thr)
+                unary[c] |= bad.any(0).any(1)
+
+    def shaft_tables(self, unary, binary, stk):
+        """stage 3 (2026-11-21, found in CAD): the shoulder shaft. It runs along the shoulder axis through the shoulder centre;
+        the humerus plate holds it in a hub (radius SH_R) from the plate (level of hum) SH_L mm towards the body. Sampled as
+        balls along that piece; any other part closer than SH_R + r + GAP in plan and SH_R + h + GAP in height clashes.
+        -> (hum, c) level pairs (unary on hum for the fixed rod 1)."""
+        Lz = LV * T; ah = self.a_h; az = np.where(np.abs(ah[:, 2]) < 0.2, np.sign(ah[:, 2] + 1e-9) * 0.2, ah[:, 2])
+        ts = np.linspace(0, SH_L, 12)
+        for c in self.names:
+            if c == 'hum': continue
+            PC, QC, RC = stk[c]
+            thr = SH_R + hh(c) + GAP - 1e-6
+            bad = np.zeros((self.P, NL, 1 if c in FIXED else NL), bool)
+            for li, lh in enumerate(Lz):
+                X0 = (lh / az)[:, None] * ah                                                   # (P,3) axis meets the plate mid-plane
+                for t in ts:
+                    X = np.broadcast_to((X0 + t * ah)[:, None, :], PC.shape[1:])              # (P,S,3)
+                    dd, _, tt = seg2(np.broadcast_to(X, PC.shape), np.broadcast_to(X, PC.shape), PC * FLAT, QC * FLAT)   # (K,P,S)
+                    near = dd < SH_R + RC[:, None, None] + GAP
+                    if not near.any(): continue
+                    zc = PC[..., 2] + tt * (QC[..., 2] - PC[..., 2])
+                    if c in FIXED:
+                        bad[:, li, 0] |= (near & (np.abs(X[None, ..., 2] - zc) < thr)).any(0).any(-1)
+                    else:
+                        dz = np.abs(X[None, ..., 2, None] - zc[..., None] - Lz)                        # (K,P,S,NL)
+                        bad[:, li, :] |= (near[..., None] & (dz < thr)).any(0).any(1)
+            if c in FIXED: unary['hum'] |= bad[..., 0]
+            else:
+                key = ('hum', c) if self.var.index('hum') < self.var.index(c) else (c, 'hum')
+                if key not in binary: binary[key] = np.zeros((self.P, NL, NL), bool)
+                binary[key] |= bad if key == ('hum', c) else np.swapaxes(bad, 1, 2)
 
     def clip_tables(self, unary, binary, stk):
         """2026-11-17 fix: a sloped rod (skewer rod 1, rod 4) against a flat plate, exact. The closest point in plan of a short
