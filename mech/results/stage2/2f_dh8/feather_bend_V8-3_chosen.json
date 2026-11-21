@@ -1,0 +1,49 @@
+{
+ "V8-3": {
+  "fit_flat": 15.95,
+  "fit_bent": 14.13,
+  "parts_flat": [
+   2.75,
+   0.0,
+   0.45,
+   0.3,
+   2.39,
+   1.13,
+   0.0,
+   8.93
+  ],
+  "parts_bent": [
+   1.47,
+   0.03,
+   0.45,
+   0.0,
+   2.12,
+   1.13,
+   0.0,
+   8.93
+  ],
+  "flat": {
+   "bury_max": 5.26,
+   "float_max": 0.0
+  },
+  "bent": {
+   "bury_max": 3.19,
+   "float_max": 0.36
+  },
+  "sec": {
+   "alpha_deg": 15.0,
+   "R_mm": 70.0,
+   "camber": 0.071,
+   "chord_deg": -1.0,
+   "rub_mm": 1.54
+  },
+  "pri": {
+   "alpha_deg": 15.0,
+   "R_mm": 85.0,
+   "camber": 0.074,
+   "chord_deg": -3.9,
+   "rub_mm": 1.54
+  },
+  "droop_min_deg": 3.0
+ }
+}
